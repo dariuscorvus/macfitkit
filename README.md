@@ -56,13 +56,17 @@ OverlayWindow (nicht aktivierbares, klicktransparentes NSPanel)
 ## Build und Tests
 
 ```sh
-swift test
+./script/test.sh
 ./script/build_and_run.sh --build-only
 ./script/build_and_run.sh --verify
 ```
 
 `--verify` bestätigt den laufenden Prozess, nicht die sichtbare Rahmenfunktion.
 `--debug`, `--logs` und `--telemetry` starten Debugger bzw. lokale Logs.
+Das Testskript verwendet Swift Testing und einen temporären Buildordner außerhalb
+von synchronisierten Dokumentenordnern. Es übergibt den vorhandenen
+Testing-Makro-Pfad explizit, um einen Fehler des Swift-6.4-Buildsystems zu umgehen.
+Mit einer vollständigen Xcode-Installation kann auch `swift test` verwendet werden.
 Die Unit-Tests prüfen Koordinaten auf verschieden angeordneten Displays,
 ungültige Geometrie und den äußeren Rahmenabstand.
 

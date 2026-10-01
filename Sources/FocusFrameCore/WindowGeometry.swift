@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 public enum WindowGeometry {
     /// AX coordinates have their origin at the main display's upper-left corner.

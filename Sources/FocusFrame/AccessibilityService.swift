@@ -1,5 +1,5 @@
 import AppKit
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import OSLog
 
 @MainActor
@@ -21,22 +21,22 @@ final class AccessibilityService: NSObject {
 
     func observeFrontmostApplication() {
         let frontmost = NSWorkspace.shared.frontmostApplication
-        guard isTrusted, let frontmost, frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+        guard isTrusted, let frontmost, !frontmost.isHidden,
+              frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
             stop()
             return
         }
-        if pid == frontmost.processIdentifier { return }
+        if pid == frontmost.processIdentifier, observer != nil { return }
         stop()
         pid = frontmost.processIdentifier
         let app = AXUIElementCreateApplication(frontmost.processIdentifier)
         AXUIElementSetMessagingTimeout(app, 0.2)
         application = app
         var newObserver: AXObserver?
-        let result = AXObserverCreate(frontmost.processIdentifier, { _, _, notification, context in
+        let result = AXObserverCreate(frontmost.processIdentifier, { _, _, _, context in
             guard let context else { return }
             MainActor.assumeIsolated {
                 let service = Unmanaged<AccessibilityService>.fromOpaque(context).takeUnretainedValue()
-                if notification as String == kAXUIElementDestroyedNotification { service.window = nil }
                 service.onChange?()
             }
         }, &newObserver)
@@ -60,14 +60,14 @@ final class AccessibilityService: NSObject {
             observeWindow(nil)
             return nil
         }
-        let focusedWindow = unsafeBitCast(focused, to: AXUIElement.self)
+        let focusedWindow = unsafeDowncast(focused, to: AXUIElement.self)
         observeWindow(focusedWindow)
         if let minimized = attribute(focusedWindow, kAXMinimizedAttribute) as? Bool, minimized { return nil }
         guard let positionValue = attribute(focusedWindow, kAXPositionAttribute),
               let sizeValue = attribute(focusedWindow, kAXSizeAttribute),
               CFGetTypeID(positionValue) == AXValueGetTypeID(), CFGetTypeID(sizeValue) == AXValueGetTypeID() else { return nil }
-        let positionAX = unsafeBitCast(positionValue, to: AXValue.self)
-        let sizeAX = unsafeBitCast(sizeValue, to: AXValue.self)
+        let positionAX = unsafeDowncast(positionValue, to: AXValue.self)
+        let sizeAX = unsafeDowncast(sizeValue, to: AXValue.self)
         guard AXValueGetType(positionAX) == .cgPoint, AXValueGetType(sizeAX) == .cgSize else { return nil }
         var position = CGPoint.zero
         var size = CGSize.zero

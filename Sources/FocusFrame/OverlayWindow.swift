@@ -19,7 +19,7 @@ final class OverlayWindow: NSPanel {
         isExcludedFromWindowsMenu = true
         animationBehavior = .none
         contentView = border
-        accessibilitySetOverrideValue(true, forAttribute: .hidden)
+        setAccessibilityHidden(true)
     }
 
     override var canBecomeKey: Bool { false }

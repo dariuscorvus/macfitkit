@@ -37,6 +37,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
 PLIST
 # Stable bundle identifier and designated requirement for local TCC permissions.
 # For distribution, replace ad-hoc signing with a Developer ID signature.
+xattr -cr "$APP_BUNDLE"
 codesign --force --sign - --identifier "$BUNDLE_ID" \
   --requirements "=designated => identifier \"$BUNDLE_ID\"" "$APP_BUNDLE"
 
