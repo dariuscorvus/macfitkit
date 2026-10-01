@@ -26,11 +26,21 @@ final class OverlayWindow: NSPanel {
     override var canBecomeMain: Bool { false }
 
     func show(around rect: CGRect, color: NSColor, width: CGFloat) {
+        let nextFrame = WindowGeometry.overlayRect(for: rect, width: width)
+        let needsRedraw = border.color != color || border.width != width || frame.size != nextFrame.size
         border.color = color
         border.width = width
-        setFrame(WindowGeometry.overlayRect(for: rect, width: width), display: true)
-        border.needsDisplay = true
-        orderFrontRegardless()
+        if frame.size == nextFrame.size {
+            // Moving an unchanged border needs no layout or redraw.
+            if frame.origin != nextFrame.origin { setFrameOrigin(nextFrame.origin) }
+        } else {
+            setFrame(nextFrame, display: false, animate: false)
+        }
+        if needsRedraw {
+            border.needsDisplay = true
+            border.displayIfNeeded()
+        }
+        if !isVisible { orderFrontRegardless() }
     }
 }
 
@@ -43,7 +53,9 @@ private final class BorderView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         color.setStroke()
         // Center the stroke entirely outside the target window.
-        let path = NSBezierPath(rect: bounds.insetBy(dx: width / 2, dy: width / 2))
+        let radius: CGFloat = 10 + width / 2
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: width / 2, dy: width / 2),
+                                xRadius: radius, yRadius: radius)
         path.lineWidth = width
         path.stroke()
     }

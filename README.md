@@ -49,13 +49,20 @@ OverlayWindow (nicht aktivierbares, klicktransparentes NSPanel)
   fokussiertes Fenster. Beim App-/Fensterwechsel entfernt er alte Beobachtungen.
 - Fokus, Verschieben, Größe, Minimieren und Schließen werden über AX-Ereignisse
   verfolgt. Fehlende oder ungültige Fensterdaten blenden den Rahmen aus.
+- Bewegungs-/Größenereignisse lesen die Geometrie des bereits beobachteten
+  Fensters direkt in einer AX-Anfrage. Globale Maus-Ziehereignisse ergänzen diese
+  Aktualisierung während einer Ziehgeste, falls eine App AX-Meldungen verzögert.
+  Es gibt weiterhin keinen wiederkehrenden Timer.
 - NSWorkspace meldet App- und Space-Wechsel, Ruhezustand und Aufwachen.
   Displayänderungen kommen von AppKit. Ein Space-Wechsel löst genau eine um
   150 ms verzögerte Aktualisierung aus; es gibt kein Polling.
 - AX-Koordinaten werden anhand der Oberkante des Hauptdisplays nach AppKit
   umgerechnet, einschließlich negativer Koordinaten für weitere Monitore.
 - Der Rahmen liegt außerhalb des Fensters, nimmt weder Fokus noch Mausklicks
-  an und zeichnet keine gefüllte Fläche über den Inhalt.
+  an und zeichnet keine gefüllte Fläche über den Inhalt. Seine Ecken sind
+  abgerundet (10 pt Innenradius); beim Verschieben wird er ohne Neuzeichnen
+  versetzt. macOS stellt keinen universellen AX-Wert für den Fensterradius bereit,
+  daher ist dies eine feste Annäherung an native Fenster.
 
 ## Build und Tests
 

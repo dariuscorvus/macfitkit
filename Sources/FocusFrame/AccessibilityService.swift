@@ -5,6 +5,7 @@ import OSLog
 @MainActor
 final class AccessibilityService: NSObject {
     var onChange: (() -> Void)?
+    var onGeometryChange: (() -> Void)?
     private let logger = Logger(subsystem: "de.highbytetech.FocusFrame", category: "Accessibility")
     private var observer: AXObserver?
     private var application: AXUIElement?
@@ -33,11 +34,17 @@ final class AccessibilityService: NSObject {
         AXUIElementSetMessagingTimeout(app, 0.2)
         application = app
         var newObserver: AXObserver?
-        let result = AXObserverCreate(frontmost.processIdentifier, { _, _, _, context in
+        let result = AXObserverCreate(frontmost.processIdentifier, { _, element, notification, context in
             guard let context else { return }
             MainActor.assumeIsolated {
                 let service = Unmanaged<AccessibilityService>.fromOpaque(context).takeUnretainedValue()
-                service.onChange?()
+                let event = notification as String
+                if (event == kAXMovedNotification || event == kAXResizedNotification),
+                   let window = service.window, CFEqual(element, window) {
+                    service.onGeometryChange?()
+                } else {
+                    service.onChange?()
+                }
             }
         }, &newObserver)
         guard result == .success, let newObserver else {
@@ -62,9 +69,26 @@ final class AccessibilityService: NSObject {
         }
         let focusedWindow = unsafeDowncast(focused, to: AXUIElement.self)
         observeWindow(focusedWindow)
-        if let minimized = attribute(focusedWindow, kAXMinimizedAttribute) as? Bool, minimized { return nil }
-        guard let positionValue = attribute(focusedWindow, kAXPositionAttribute),
-              let sizeValue = attribute(focusedWindow, kAXSizeAttribute),
+        return trackedWindowGeometry()
+    }
+
+    /// Movement events already identify the tracked window: avoid another focus
+    /// lookup and read its geometry in one cross-process AX request.
+    func trackedWindowGeometry() -> (CGPoint, CGSize)? {
+        guard let window else { return nil }
+        let names = [kAXPositionAttribute, kAXSizeAttribute, kAXMinimizedAttribute]
+        var values: CFArray?
+        let result = AXUIElementCopyMultipleAttributeValues(window, names as CFArray, [], &values)
+        let attributes: [CFTypeRef?]
+        if result == .success, let values, CFArrayGetCount(values) == names.count {
+            attributes = (values as [AnyObject]).map { $0 }
+        } else if result == .notImplemented {
+            attributes = names.map { attribute(window, $0) }
+        } else {
+            return nil
+        }
+        if let minimized = attributes[2] as? Bool, minimized { return nil }
+        guard let positionValue = attributes[0], let sizeValue = attributes[1],
               CFGetTypeID(positionValue) == AXValueGetTypeID(), CFGetTypeID(sizeValue) == AXValueGetTypeID() else { return nil }
         let positionAX = unsafeDowncast(positionValue, to: AXValue.self)
         let sizeAX = unsafeDowncast(sizeValue, to: AXValue.self)

@@ -10,17 +10,32 @@ Deployment Target: macOS 14. Keine externen Paketabhängigkeiten.
 - `./script/test.sh`: 4 Tests in einer Suite erfolgreich. Geometrie auf dem
   Hauptdisplay, Display-Anordnungen links/oben/unten, ungültige Fensterdaten
   und Rahmenabstand.
-- Startprotokoll: `Started; accessibility trusted: false`. Der Start ohne
-  Bedienungshilfen-Zugriff verursacht keinen Absturz.
+- Der erste Start ohne Bedienungshilfen-Zugriff verursacht keinen Absturz.
+  Nach der Freigabe durch den Nutzer bestätigt das Startprotokoll
+  `Started; accessibility trusted: true`. Der Nutzer hat den sichtbaren Rahmen bestätigt.
 - `git diff --check`: erfolgreich.
 
 ## Noch manuell zu prüfen
 
-Die Bedienungshilfen-Berechtigung wurde noch nicht erteilt. Deshalb sind
-sichtbarer Rahmen, AX-Ereignisse beim Fokuswechsel/Verschieben/Skalieren,
-Klickdurchleitung, reale Multi-Monitor-, Spaces- und Vollbild-Szenarien noch
-nicht praktisch abgenommen. Die UI-Automation war beim Prüfversuch nicht
-erreichbar (Timeout). Die manuelle Prüfliste steht in der README.
+Reale Multi-Monitor-, Spaces- und Vollbild-Szenarien sowie Klickdurchleitung
+sind noch nicht vollständig praktisch abgenommen. Die manuelle Prüfliste steht
+in der README. Die UI-Automation war zunächst nicht erreichbar, funktioniert
+inzwischen jedoch wieder.
+
+## Nachbesserung: Rundung und Bewegung
+
+- Abgerundeter Rahmen mit 10 pt Innenradius.
+- AXMoved/AXResized aktualisieren das bekannte Fenster unmittelbar, ohne
+  vollständige Fokus-/Berechtigungsprüfung und ohne Dispatch-Verzögerung.
+- Position, Größe und Minimierungsstatus werden gebündelt gelesen.
+- Globale Maus-Zieh-/Loslassereignisse ergänzen die Aktualisierung während
+  einer Geste. Kein Polling und kein zusätzlicher wiederkehrender Timer.
+- Bei reiner Bewegung wird das vorhandene Overlay verschoben; Neuzeichnen
+  und erneutes Anheben erfolgen nur bei Bedarf.
+- Build, Start und erhaltene Bedienungshilfen-Berechtigung bestätigt. Finder-
+  Testfenster geöffnet, eine Ziehgeste ausgeführt und das Testfenster geschlossen.
+  Die verbleibende Bewegungsverzögerung wurde nicht quantitativ gemessen und
+  hängt weiterhin von den AX-Antwortzeiten der Ziel-App ab.
 
 ## Toolchain-Besonderheiten
 
