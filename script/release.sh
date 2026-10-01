@@ -87,7 +87,7 @@ s=s[:a]+'SIGNATUR UND NOTARISIERUNG\nDiese App ist Developer-ID-signiert und von
 PY
 fi
 ln -s /Applications "$STAGE/image/Applications"
-hdiutil create -volname "FocusFrame $VERSION" -srcfolder "$STAGE/image" -format UDZO "$DMG"
+hdiutil create -volname "FocusFrame $VERSION" -srcfolder "$STAGE/image" -fs HFS+ -format UDZO "$DMG"
 codesign --timestamp --sign "$SIGN_ID" "$DMG"
 codesign --verify --strict "$DMG"
 if [[ -n "$PROFILE" ]]; then
