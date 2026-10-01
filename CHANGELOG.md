@@ -2,6 +2,9 @@
 
 ## 0.5.2 – 2. Oktober 2026
 
+- Release-Verpackung: Universal-DMG, Developer-ID-Signatur, Hardened Runtime,
+  Installationsanleitung, Prüfsumme und optionaler Notarisierungsablauf.
+
 - Klassisches Xcode-App-Projekt mit geteilten App-/Fixture-Schemes,
   statischer Kernbibliothek und Swift-Testing-Target; gemeinsame Quellen mit SwiftPM.
 - Gemeinsame Versionsdatei, optionaler Xcode-Build/Start im vorhandenen Skript.

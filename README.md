@@ -177,3 +177,33 @@ AppKit-Optionen und AXFullScreen, sofern die Ziel-App dieses Attribut bereitstel
 Ein tatsächlicher Anmeldestart und physische Tastenkürzeleingabe benötigen
 manuelle Prüfung. Lokale Ad-hoc-Signatur, noch keine Notarisierung/Verteilung.
 Kein Glow, Preset-System, Installer oder Update-Dienst. Keine Netzwerkfunktion.
+
+## Release für Freunde
+
+`./script/release.sh` erstellt einen optimierten Universal-Build (Apple Silicon
+und Intel, macOS 14+), Developer-ID-signierte App mit Hardened Runtime und eine
+signierte DMG mit Applications-Link und Installationsanleitung. Die laufende
+Entwicklungs-App wird dabei nicht ersetzt. Die Datei landet unter
+`outputs/releases/<Version>/`, inklusive SHA-256 und Source-Revision.
+Ein vorhandenes Release-Paket wird nicht überschrieben.
+
+Ohne Notarisierungsprofil heißt die Datei ausdrücklich `-unnotarized.dmg`.
+Das ist keine Bestätigung durch Apple; beim ersten Start kann die einzelne App
+unter Datenschutz & Sicherheit > Dennoch öffnen freigegeben werden, wenn der
+Empfänger dem Absender vertraut. Es werden keine globalen Sicherheitsoptionen
+abgeschaltet. Details: [Apple – Apps sicher öffnen](https://support.apple.com/de-de/102445).
+
+Mit eingerichtetem Keychain-Profil:
+
+```sh
+./script/release.sh --notarize FocusFrame-notary
+```
+
+Dieser Aufruf übermittelt App und DMG an Apples Notarisierungsdienst. Nur nach
+Status Accepted werden Tickets angeheftet und geprüft. Das Profil wird lokal
+interaktiv mit `xcrun notarytool store-credentials FocusFrame-notary` eingerichtet;
+Zugangsdaten gehören nicht in den Chat, ins Repository oder in Skripte. Die
+Signatur kann über FOCUSFRAME_SIGN_IDENTITY explizit gewählt werden.
+
+Eine lokale Release-Datei ist kein öffentliches GitHub-Release; derzeit hat das
+Repository keinen Remote. Veröffentlichungen erfolgen separat auf Wunsch.
