@@ -50,7 +50,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 REVISION=$(git rev-parse HEAD)
 printf '%s\n' "$REVISION" > "$APP/Contents/Resources/SourceRevision.txt"
-xcrun lipo -verify_arch arm64 x86_64 "$APP/Contents/MacOS/FocusFrame"
+xcrun lipo "$APP/Contents/MacOS/FocusFrame" -verify_arch arm64 x86_64
 xcrun swift-stdlib-tool --copy --scan-executable "$APP/Contents/MacOS/FocusFrame" \
   --platform macosx --destination "$APP/Contents/Frameworks"
 xattr -cr "$APP"
