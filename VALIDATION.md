@@ -37,6 +37,27 @@ inzwischen jedoch wieder.
   Die verbleibende Bewegungsverzögerung wurde nicht quantitativ gemessen und
   hängt weiterhin von den AX-Antwortzeiten der Ziel-App ab.
 
+## Zweite Bewegungsnachbesserung
+
+Der Nutzer bestätigt, dass die erste Optimierung das sichtbare Nachziehen nicht
+beseitigt hat. Der damalige Mausereignispfad las weiterhin synchron über AX und
+konnte damit dieselben verzögerten Positionen übernehmen.
+
+Nun wird bei Mausdruck in der Titelregion ein Anker gespeichert. Nach der ersten
+AXMoved-Bestätigung folgt das Overlay ausschließlich den aktuellen Mauskoordinaten,
+ohne weitere AX-Abfragen auf diesem Bewegungspfad. Größenänderungen, Fokus-/Space-
+Wechsel und Loslassen beenden die Vorhersage. Nach Loslassen gibt es genau einen
+verzögerten Abgleich nach 50 ms, keinen wiederkehrenden Timer.
+
+- `./script/test.sh`: 8 Tests in zwei Suites erfolgreich, einschließlich
+  Bewegung nur nach Bestätigung, Aufholen der aktuellen Mausposition,
+  Richtungswechsel ohne Drift und wiederholter AX-Meldungen ohne Neuverankerung.
+- `./script/build_and_run.sh --verify`: erfolgreicher Build und Start.
+- Im laufenden Prozess ist die Bedienungshilfen-Berechtigung weiter vorhanden.
+- Die automatisierte Finder-Ziehgeste hat die neue Vorhersage im Protokoll nicht
+  nachweisbar aktiviert. Die wahrgenommene Flüssigkeit ist daher noch durch
+  echtes manuelles Ziehen zu bestätigen; keine gemessene Latenzgarantie.
+
 ## Toolchain-Besonderheiten
 
 - Expliziter CoreGraphics-Import und `@preconcurrency import ApplicationServices`

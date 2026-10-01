@@ -5,7 +5,7 @@ import OSLog
 @MainActor
 final class AccessibilityService: NSObject {
     var onChange: (() -> Void)?
-    var onGeometryChange: (() -> Void)?
+    var onGeometryChange: ((Bool) -> Void)?
     private let logger = Logger(subsystem: "de.highbytetech.FocusFrame", category: "Accessibility")
     private var observer: AXObserver?
     private var application: AXUIElement?
@@ -41,7 +41,7 @@ final class AccessibilityService: NSObject {
                 let event = notification as String
                 if (event == kAXMovedNotification || event == kAXResizedNotification),
                    let window = service.window, CFEqual(element, window) {
-                    service.onGeometryChange?()
+                    service.onGeometryChange?(event == kAXMovedNotification)
                 } else {
                     service.onChange?()
                 }

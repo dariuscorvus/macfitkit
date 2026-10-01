@@ -50,8 +50,12 @@ OverlayWindow (nicht aktivierbares, klicktransparentes NSPanel)
 - Fokus, Verschieben, Größe, Minimieren und Schließen werden über AX-Ereignisse
   verfolgt. Fehlende oder ungültige Fensterdaten blenden den Rahmen aus.
 - Bewegungs-/Größenereignisse lesen die Geometrie des bereits beobachteten
-  Fensters direkt in einer AX-Anfrage. Globale Maus-Ziehereignisse ergänzen diese
-  Aktualisierung während einer Ziehgeste, falls eine App AX-Meldungen verzögert.
+  Fensters direkt in einer AX-Anfrage. Ein Mausdruck in der Titel-/Toolbarregion
+  merkt Fenster- und Mausposition. Sobald AXMoved die Bewegung bestätigt, folgt
+  der Rahmen unmittelbar dem Mausweg. Während dieses Ziehens finden keine
+  synchronen AX-Geometrieabfragen statt; verspätete Meldungen setzen den Rahmen
+  nicht auf alte Positionen zurück. Nach Loslassen erfolgt ein einmaliger
+  Abgleich nach 50 ms. Größenänderungen brechen die Vorhersage ab.
   Es gibt weiterhin keinen wiederkehrenden Timer.
 - NSWorkspace meldet App- und Space-Wechsel, Ruhezustand und Aufwachen.
   Displayänderungen kommen von AppKit. Ein Space-Wechsel löst genau eine um
@@ -101,6 +105,13 @@ Darstellung hängt auch vom Verhalten der Ziel-App und macOS ab und muss auf dem
 jeweiligen Mac geprüft werden. Der äußere Rahmen kann an Bildschirmrändern
 abgeschnitten sein. Mission Control und Stage Manager sind noch nicht gesondert
 abgenommen. Kein Autostart, Glow, Animationen, App-Ausnahmen oder Installer.
+
+Die Mausverfolgung beginnt nach der ersten AXMoved-Meldung einer Titel-/Toolbar-
+Ziehgeste (oberste 64 pt, ohne äußere Resize-Kante). Wenn eine App Bewegungen erst
+nach dem Loslassen meldet oder andere Bereiche als Ziehgriff verwendet, bleibt
+die Aktualisierung ereignisbasiert über AX. Bei besonderen Snap-/Begrenzungsregeln
+kann die vorhergesagte Position während des Ziehens abweichen; nach Loslassen
+wird die echte Fenstergeometrie übernommen.
 
 Die App liest nur die AX-Fenstergeometrie und den Fokus. Sie erfasst keine
 Fensterinhalte und hat keine Netzwerkfunktion.
