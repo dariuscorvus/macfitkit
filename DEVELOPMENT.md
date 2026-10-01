@@ -69,3 +69,23 @@ Move/Resize im selben Fenster darf kein neues Fokusereignis erzeugen.
 Vorschau bei Tab Verhalten und bei geschlossenem Fenster ohne Animationen;
 verstecktes Overlay ebenfalls. „Bewegung reduzieren“ in macOS statisch prüfen.
 Nach Tests nur neue Effekte zurücksetzen; Nutzerwerte für Verhalten beibehalten.
+
+## Xcode-Projekt
+
+Xcode 16+ öffnen: `FocusFrame.xcodeproj`. Scheme FocusFrame: Run/Tests/Profile;
+Scheme FocusFrameFixture: Testfenster. Projekt hat keine externen Abhängigkeiten
+und teilt Quellen mit SwiftPM. Neue Dateien müssen in beiden Build-Systemen ihrem
+Target zugeordnet sein; `script/check_xcode_project.py` erkennt fehlende Zuordnung.
+Version/Build zentral in `Config/Version.xcconfig` ändern.
+
+Auf Hosts mit vollständigem Xcode zusätzlich prüfen:
+
+```sh
+xcodebuild -project FocusFrame.xcodeproj -scheme FocusFrame -configuration Debug -destination 'platform=macOS' build
+xcodebuild -project FocusFrame.xcodeproj -scheme FocusFrame -destination 'platform=macOS' test
+./script/build_and_run.sh --xcode
+```
+
+Auf dem derzeitigen Host fehlt vollständiges Xcode. Strukturelle Projektprüfung
+und bestehender SwiftPM-Check sind hier die verfügbaren Nachweise; Xcode-spezifische
+Build-/Signing-/Testausführung ist deshalb noch nicht bestätigt.

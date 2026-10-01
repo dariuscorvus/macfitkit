@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.5.2 – 2. Oktober 2026
+
+- Klassisches Xcode-App-Projekt mit geteilten App-/Fixture-Schemes,
+  statischer Kernbibliothek und Swift-Testing-Target; gemeinsame Quellen mit SwiftPM.
+- Gemeinsame Versionsdatei, optionaler Xcode-Build/Start im vorhandenen Skript.
+- Prüfung von Xcode-Projektstruktur, Quellenzuordnung und Schemes im lokalen Check.
+
 ## 0.5.1 – 2. Oktober 2026
 
 - Fokus-Pulsieren und -Blinken blenden weich zur statischen Deckkraft zurück,

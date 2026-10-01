@@ -3,13 +3,24 @@ set -euo pipefail
 
 MODE="${1:-run}"
 case "$MODE" in
-  run|--build-only|--verify|--debug|--logs|--telemetry|--settings|--diagnostics) ;;
-  *) echo "Usage: $0 [--build-only|--verify|--debug|--logs|--telemetry|--settings|--diagnostics]" >&2; exit 2 ;;
+  run|--build-only|--verify|--debug|--logs|--telemetry|--settings|--diagnostics|--xcode) ;;
+  *) echo "Usage: $0 [--build-only|--verify|--debug|--logs|--telemetry|--settings|--diagnostics|--xcode]" >&2; exit 2 ;;
 esac
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 APP_NAME="FocusFrame"
 BUNDLE_ID="de.highbytetech.FocusFrame"
+APP_VERSION=$(awk '$1 == "MARKETING_VERSION" { print $3 }' Config/Version.xcconfig)
+APP_BUILD=$(awk '$1 == "CURRENT_PROJECT_VERSION" { print $3 }' Config/Version.xcconfig)
+[[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && "$APP_BUILD" =~ ^[0-9]+$ ]] || {
+  echo "Invalid Config/Version.xcconfig" >&2; exit 1;
+}
+if [[ "$MODE" == "--xcode" ]]; then
+  xcodebuild -version >/dev/null || {
+    echo "This mode requires full Xcode. Select its developer directory or set DEVELOPER_DIR." >&2
+    exit 1
+  }
+fi
 # Stage outside synced Documents: file providers can add FinderInfo again after
 # launch, invalidating the bundle signature even after xattr cleanup.
 APP_BUNDLE="$HOME/Library/Caches/FocusFrame/$APP_NAME.app"
@@ -19,8 +30,15 @@ INSTALLED_BUNDLE="$HOME/Applications/$APP_NAME.app"
 if [[ "$MODE" != "--build-only" ]]; then
   pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 fi
-swift build --product "$APP_NAME"
-BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"
+if [[ "$MODE" == "--xcode" ]]; then
+  XCODE_DERIVED="$HOME/Library/Caches/FocusFrame/XcodeDerivedData"
+  xcodebuild -project FocusFrame.xcodeproj -scheme FocusFrame -configuration Debug \
+    -destination 'platform=macOS' -derivedDataPath "$XCODE_DERIVED" build
+  BUILD_BINARY="$XCODE_DERIVED/Build/Products/Debug/FocusFrame.app/Contents/MacOS/FocusFrame"
+else
+  swift build --product "$APP_NAME"
+  BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"
+fi
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
 cp "$BUILD_BINARY" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
@@ -31,8 +49,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.5.1</string>
-  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleShortVersionString</key><string>$APP_VERSION</string>
+  <key>CFBundleVersion</key><string>$APP_BUILD</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>LSUIElement</key><true/>

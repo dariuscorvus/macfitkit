@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller Entwicklungsstand: 0.5.1.
+Aktueller Entwicklungsstand: 0.5.2.
 
 ## Start
 
@@ -25,6 +25,42 @@ Datenschutz & Sicherheit → Bedienungshilfen** erlauben. Falls FocusFrame fehlt
 mit **+** hinzufügen und im Dateidialog mit **⌘⇧G** den obigen App-Pfad öffnen.
 Danach **Berechtigung erneut prüfen** im Menüleistenmenü wählen. Bei Problemen
 nach einem Neubau den Eintrag entfernen und die App erneut hinzufügen.
+
+## Xcode
+
+`FocusFrame.xcodeproj` ist ein klassisches macOS-App-Projekt ohne externe Pakete.
+Es verwendet dieselben Quellen wie `Package.swift`; kein Code wird dupliziert.
+Zum Öffnen/Builden wird vollständiges Xcode mit Swift 6 benötigt (Xcode 16 oder neuer).
+Command Line Tools allein reichen für den bisherigen SwiftPM-Workflow.
+
+1. `FocusFrame.xcodeproj` öffnen und Scheme **FocusFrame** auswählen.
+2. Eine bereits laufende FocusFrame-Instanz über ihr Menü beenden, damit nicht
+   gleichzeitig zwei Rahmen-Apps laufen.
+3. **⌘R** baut und startet die Menüleisten-App; im Debug-Scheme öffnet `--settings`
+   zusätzlich die Einstellungen. **⌘U** führt die Kernprüfungen aus; **⌘I** öffnet
+   Instruments zum Profilieren des Release-Builds.
+4. Scheme **FocusFrameFixture** startet die Testfenster-App.
+
+Die Targets sind App, statische Kernbibliothek, eigenständige Swift-Testing-Suite
+und Testfenster-App. Debug und Release sind konfiguriert; lokal wird ad-hoc signiert.
+Sandbox ist deaktiviert, damit die vorhandene Accessibility-Funktion funktioniert.
+Für spätere Verteilung müssen Developer-ID-Signing/Notarisierung separat eingerichtet
+werden. Ein Start aus Xcode erfolgt aus dessen Build-Verzeichnis; bei Bedarf diese
+App in den Bedienungshilfen freigeben. Anmeldung weiterhin für die fest installierte
+App konfigurieren.
+
+Version und Buildnummer stehen gemeinsam in `Config/Version.xcconfig` und werden
+auch vom SwiftPM-App-Skript verwendet. Optionaler Xcode-Build mit Installation und
+Start über denselben Skript-Einstieg:
+
+```sh
+./script/build_and_run.sh --xcode
+```
+
+Dafür muss das aktive Developer-Verzeichnis auf vollständiges Xcode zeigen;
+`DEVELOPER_DIR` kann alternativ für diesen Aufruf gesetzt werden.
+`script/check_xcode_project.py` prüft Quellenzuordnung, Target-Abhängigkeiten und
+geteilte Schemes ohne Xcode. Das ersetzt keinen Xcode-Build.
 
 ## Einstellungen
 

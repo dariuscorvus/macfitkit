@@ -1,6 +1,6 @@
 # Lokale V1-Prüfung – 1. Oktober 2026
 
-Neuester Stand: 0.5.1; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
+Neuester Stand: 0.5.2; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
 erhalten. Die aktuelle Abnahme steht am Ende dieses Dokuments.
 
 Umgebung: Apple Silicon, Swift 6.4, Command Line Tools, macOS-27-SDK.
@@ -224,3 +224,22 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
 - App neu installiert/gestartet. Nutzereinstellung Pulsieren, 2 s Zyklus,
   40–100 %, Fokusdauer 1.5 s erhalten; Vorschau-Testknopf ausgelöst.
   Die wahrgenommene Glätte beim echten Fokuswechsel bleibt Nutzerabnahme.
+
+## 0.5.2 – klassisches Xcode-Projekt
+
+- `FocusFrame.xcodeproj` hinzugefügt: App, statische Kernbibliothek, eigenständiges
+  Swift-Testing-Target und Fixture-App. Geteilte Schemes FocusFrame und
+  FocusFrameFixture, Debug-/Release-Konfigurationen, keine externen Pakete.
+- Alle bestehenden Swift-Dateien sind dem passenden Target zugeordnet; dieselben
+  Dateien bleiben über Package.swift nutzbar. Version/Build sind zentral in
+  Config/Version.xcconfig; Script-Bundle und Xcode-Projekt verwenden sie gemeinsam.
+- Native Plist-Prüfung und lokale Strukturprüfung (Quellenzuordnung, Core-Link/
+  Target-Abhängigkeiten, Scheme-Verweise) erfolgreich. Diese Prüfung ist kein
+  Xcode-Build und kann Xcode-spezifische Build-/Signingfehler nicht ausschließen.
+- Gemeinsamer Check erfolgreich: 25 Swift-Tests in sechs Suites, SwiftPM-Build,
+  lokale strenge Signaturprüfung und Diff-Prüfung.
+- `xcodebuild -list -project FocusFrame.xcodeproj` und optionaler Script-Modus
+  --xcode sind hier durch fehlendes vollständiges Xcode blockiert. Aktiv ist
+  /Library/Developer/CommandLineTools; /Applications/Xcode.app existiert nicht.
+  Kein Xcode-/Instruments-/Xcode-Test-Erfolg wird behauptet. Keine Installation
+  oder globale Umstellung des Developer-Verzeichnisses durchgeführt.
