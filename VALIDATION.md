@@ -243,3 +243,25 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
   /Library/Developer/CommandLineTools; /Applications/Xcode.app existiert nicht.
   Kein Xcode-/Instruments-/Xcode-Test-Erfolg wird behauptet. Keine Installation
   oder globale Umstellung des Developer-Verzeichnisses durchgeführt.
+
+## 0.5.2 – Release-Datei für Freunde
+
+- Universal-Release-Build für arm64 und x86_64 erfolgreich, optimiert und mit
+  macOS 14.0 Deployment-Metadaten in beiden Executable-Slices.
+- App mit gültiger Developer ID Application (Team 4WF4549NW5), Zeitstempel und
+  Hardened Runtime signiert. App und DMG streng geprüft; DMG-Prüfsumme gültig.
+- App aus finaler HFS+-DMG read-only geprüft, in einen frischen Cache-Ordner
+  kopiert und erneut verifiziert. Diese Release-Kopie lokal gestartet; native
+  Einstellungen sichtbar. Danach vorher installierte Entwicklungs-App gestartet.
+- Separate SHA-256-Datei, Installationsanleitung, Source-Revision und
+  Verification.txt im Release-Ordner. Bestehende Swift-Prüfungen zuletzt 25/25
+  erfolgreich; seitdem keine Funktionsänderung, nur Release-Verpackung.
+- Gatekeeper: rejected / source=Unnotarized Developer ID. Nutzer bestätigt,
+  dass noch kein Notarisierungsprofil eingerichtet ist. Daher ausdrücklich
+  „unnotarized“ im Dateinamen; keine Apple-Notarisierung behauptet. Einzel-App-
+  Freigabe beim ersten Start nach Apples dokumentiertem Ablauf beschrieben.
+- Lokaler Start ist kein Download-/Quarantäne-Test auf einem fremden Mac.
+  Ausführung auf Intel und tatsächlichem macOS 14 bleiben ungetestet; Universal-
+  Architektur und Deployment-Metadaten sind geprüft.
+- Kein Git-Remote vorhanden; keine öffentliche Veröffentlichung und keine
+  Übermittlung an Apple durchgeführt. Lokale DMG kann privat weitergegeben werden.
