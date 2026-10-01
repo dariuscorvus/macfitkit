@@ -13,7 +13,7 @@ public enum WindowGeometry {
                       width: size.width, height: size.height)
     }
 
-    public static func overlayRect(for window: CGRect, width: CGFloat) -> CGRect {
-        window.insetBy(dx: -width, dy: -width)
+    public static func overlayRect(for window: CGRect, width: CGFloat, gap: CGFloat = 0) -> CGRect {
+        window.insetBy(dx: -(width + gap), dy: -(width + gap))
     }
 }

@@ -12,25 +12,25 @@ final class FocusManager: NSObject {
     private var windowFrame: CGRect?
     private let logger = Logger(subsystem: "de.highbytetech.FocusFrame", category: "Movement")
     var enabled = true { didSet { refresh() } }
-    var color: NSColor = .systemOrange { didSet { refresh() } }
-    var width: CGFloat = 3 { didSet { refresh() } }
+    var configuration = Configuration() { didSet { refresh() } }
     var onPermissionChange: ((Bool) -> Void)?
 
     func start() {
         accessibility.onChange = { [weak self] in
-            self?.drag = nil
+            self?.cancelDrag()
             self?.scheduleRefresh()
         }
         accessibility.onGeometryChange = { [weak self] isMove in
             guard let self else { return }
             if isMove, self.drag != nil {
                 if self.drag?.isMoving == false { self.logger.info("Pointer-driven window movement started") }
+                if self.drag?.isMoving == false { Diagnostics.shared.record("Mausverfolgung begonnen") }
                 self.pendingRefresh?.cancel()
                 _ = self.drag?.updatePointer(NSEvent.mouseLocation)
                 if let frame = self.drag?.confirmMove() { self.showFrame(frame) }
             } else {
                 // Resizing/snapping changes geometry rather than translating it.
-                self.drag = nil
+                self.cancelDrag()
                 self.refreshTrackedGeometry()
             }
         }
@@ -60,22 +60,38 @@ final class FocusManager: NSObject {
         NotificationCenter.default.removeObserver(self)
         if let dragMonitor { NSEvent.removeMonitor(dragMonitor) }
         dragMonitor = nil
-        drag = nil
+        cancelDrag()
         accessibility.stop()
         overlay.orderOut(nil)
     }
 
     func refresh() {
-        drag = nil
+        cancelDrag()
         let trusted = accessibility.isTrusted
         onPermissionChange?(trusted)
-        guard enabled, trusted else {
+        let excluded = NSWorkspace.shared.frontmostApplication?.bundleIdentifier.map {
+            configuration.excludedApps.contains($0)
+        } ?? false
+        let policy = VisibilityPolicy.decide(enabled: enabled, trusted: trusted, excluded: excluded)
+        guard policy == .show else {
+            Diagnostics.shared.trackingState = policy
+            windowFrame = nil
             accessibility.stop()
             overlay.orderOut(nil)
             return
         }
         accessibility.observeFrontmostApplication()
-        showGeometry(accessibility.focusedWindowGeometry())
+        let geometry = accessibility.focusedWindowGeometry()
+        let windowPolicy = VisibilityPolicy.decide(enabled: enabled, trusted: trusted,
+            fullScreen: configuration.hideInFullScreen && accessibility.trackedWindowIsFullScreen,
+            hideInFullScreen: configuration.hideInFullScreen, hasWindow: geometry != nil)
+        if windowPolicy != .show {
+            Diagnostics.shared.trackingState = windowPolicy
+            windowFrame = nil
+            overlay.orderOut(nil)
+        } else {
+            showGeometry(geometry)
+        }
     }
 
     private func showGeometry(_ geometry: (CGPoint, CGSize)?) {
@@ -83,6 +99,8 @@ final class FocusManager: NSObject {
               let mainDisplay = NSScreen.screens.first,
               let rect = WindowGeometry.appKitRect(position: position, size: size, mainDisplayTop: mainDisplay.frame.maxY),
               NSScreen.screens.contains(where: { $0.frame.intersects(rect) }) else {
+            Diagnostics.shared.trackingState = .noWindow
+            windowFrame = nil
             overlay.orderOut(nil)
             return
         }
@@ -92,14 +110,15 @@ final class FocusManager: NSObject {
 
     private func showFrame(_ frame: CGRect) {
         guard enabled else { return }
-        overlay.show(around: frame, color: color, width: width)
+        Diagnostics.shared.trackingState = .show
+        overlay.show(around: frame, appearance: configuration.appearance)
     }
 
     private func handleMouse(_ event: NSEvent) {
         guard enabled else { return }
         switch event.type {
         case .leftMouseDown:
-            drag = nil
+            cancelDrag()
             guard let windowFrame, overlay.isVisible, let screen = NSScreen.screens.first,
                   let location = event.cgEvent?.location else { return }
             let point = CGPoint(x: location.x, y: screen.frame.maxY - location.y)
@@ -120,6 +139,7 @@ final class FocusManager: NSObject {
             if let frame = drag?.updatePointer(NSEvent.mouseLocation) { showFrame(frame) }
             drag = nil
             if wasMoving {
+                Diagnostics.shared.record("Mausverfolgung beendet")
                 // One final reconciliation after the target handles mouse-up.
                 scheduleRefresh(delay: 0.05)
             }
@@ -129,7 +149,22 @@ final class FocusManager: NSObject {
 
     private func refreshTrackedGeometry() {
         guard enabled else { return }
+        let policy = VisibilityPolicy.decide(enabled: enabled, trusted: true,
+            fullScreen: configuration.hideInFullScreen && accessibility.trackedWindowIsFullScreen,
+            hideInFullScreen: configuration.hideInFullScreen)
+        if policy != .show {
+            Diagnostics.shared.trackingState = policy
+            windowFrame = nil
+            overlay.orderOut(nil)
+            return
+        }
         showGeometry(accessibility.trackedWindowGeometry())
+    }
+
+    private func cancelDrag() {
+        if drag?.isMoving == true { Diagnostics.shared.record("Mausverfolgung unterbrochen") }
+        drag?.interrupt()
+        drag = nil
     }
 
     private func scheduleRefresh(delay: TimeInterval = 0) {
@@ -140,15 +175,20 @@ final class FocusManager: NSObject {
     }
 
     @objc private func workspaceChanged(_ notification: Notification) {
-        drag = nil
+        Diagnostics.shared.record("App-/Space-/Systemwechsel")
+        cancelDrag()
         overlay.orderOut(nil)
         // A single delayed refresh lets a Space transition settle; no recurring timer.
         scheduleRefresh(delay: notification.name == NSWorkspace.activeSpaceDidChangeNotification ? 0.15 : 0)
     }
 
-    @objc private func displayChanged() { scheduleRefresh() }
+    @objc private func displayChanged() {
+        cancelDrag()
+        overlay.orderOut(nil)
+        scheduleRefresh()
+    }
     @objc private func suspend() {
-        drag = nil
+        cancelDrag()
         pendingRefresh?.cancel()
         overlay.orderOut(nil)
     }

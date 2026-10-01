@@ -7,6 +7,7 @@ public struct WindowDrag {
     private let initialPointer: CGPoint
     private var pointer: CGPoint
     public private(set) var isMoving = false
+    private var isCancelled = false
 
     public init(frame: CGRect, pointer: CGPoint) {
         initialFrame = frame
@@ -20,13 +21,19 @@ public struct WindowDrag {
     }
 
     public mutating func confirmMove() -> CGRect? {
+        guard !isCancelled else { return nil }
         isMoving = true
         return predictedFrame
     }
 
     public var predictedFrame: CGRect? {
-        guard isMoving else { return nil }
+        guard isMoving, !isCancelled else { return nil }
         return initialFrame.offsetBy(dx: pointer.x - initialPointer.x,
                                      dy: pointer.y - initialPointer.y)
+    }
+
+    public mutating func interrupt() {
+        isCancelled = true
+        isMoving = false
     }
 }

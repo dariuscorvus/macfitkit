@@ -25,11 +25,10 @@ final class OverlayWindow: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
-    func show(around rect: CGRect, color: NSColor, width: CGFloat) {
-        let nextFrame = WindowGeometry.overlayRect(for: rect, width: width)
-        let needsRedraw = border.color != color || border.width != width || frame.size != nextFrame.size
-        border.color = color
-        border.width = width
+    func show(around rect: CGRect, appearance: Appearance) {
+        let nextFrame = WindowGeometry.overlayRect(for: rect, width: appearance.width, gap: appearance.gap)
+        let needsRedraw = border.style != appearance || frame.size != nextFrame.size
+        border.style = appearance
         if frame.size == nextFrame.size {
             // Moving an unchanged border needs no layout or redraw.
             if frame.origin != nextFrame.origin { setFrameOrigin(nextFrame.origin) }
@@ -46,17 +45,23 @@ final class OverlayWindow: NSPanel {
 
 @MainActor
 private final class BorderView: NSView {
-    var color: NSColor = .systemOrange
-    var width: CGFloat = 3
+    var style = Appearance()
     override var isOpaque: Bool { false }
 
     override func draw(_ dirtyRect: NSRect) {
-        color.setStroke()
-        // Center the stroke entirely outside the target window.
-        let radius: CGFloat = 10 + width / 2
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: width / 2, dy: width / 2),
-                                xRadius: radius, yRadius: radius)
-        path.lineWidth = width
+        let target = bounds.insetBy(dx: style.width + style.gap, dy: style.width + style.gap)
+        BorderDrawing.draw(around: target, appearance: style)
+    }
+}
+
+@MainActor
+enum BorderDrawing {
+    static func draw(around rect: CGRect, appearance: Appearance) {
+        appearance.color.setStroke()
+        let outset = appearance.gap + appearance.width / 2
+        let radius = appearance.radius > 0 ? appearance.radius + outset : 0
+        let path = NSBezierPath(roundedRect: rect.insetBy(dx: -outset, dy: -outset), xRadius: radius, yRadius: radius)
+        path.lineWidth = appearance.width
         path.stroke()
     }
 }

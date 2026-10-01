@@ -3,8 +3,8 @@ set -euo pipefail
 
 MODE="${1:-run}"
 case "$MODE" in
-  run|--build-only|--verify|--debug|--logs|--telemetry) ;;
-  *) echo "Usage: $0 [--build-only|--verify|--debug|--logs|--telemetry]" >&2; exit 2 ;;
+  run|--build-only|--verify|--debug|--logs|--telemetry|--settings|--diagnostics) ;;
+  *) echo "Usage: $0 [--build-only|--verify|--debug|--logs|--telemetry|--settings|--diagnostics]" >&2; exit 2 ;;
 esac
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -30,7 +30,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1.0</string>
+  <key>CFBundleShortVersionString</key><string>0.3.0</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -57,7 +57,11 @@ fi
 if [[ "$MODE" == "--debug" ]]; then
   exec lldb -- "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 fi
-/usr/bin/open -n "$APP_BUNDLE"
+if [[ "$MODE" == "--settings" || "$MODE" == "--diagnostics" ]]; then
+  /usr/bin/open -n "$APP_BUNDLE" --args "$MODE"
+else
+  /usr/bin/open -n "$APP_BUNDLE"
+fi
 case "$MODE" in
   --verify)
     sleep 2

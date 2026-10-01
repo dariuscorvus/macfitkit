@@ -75,6 +75,8 @@ final class AccessibilityService: NSObject {
     /// Movement events already identify the tracked window: avoid another focus
     /// lookup and read its geometry in one cross-process AX request.
     func trackedWindowGeometry() -> (CGPoint, CGSize)? {
+        let start = ProcessInfo.processInfo.systemUptime
+        defer { Diagnostics.shared.record("AX-Geometrie", milliseconds: (ProcessInfo.processInfo.systemUptime - start) * 1000) }
         guard let window else { return nil }
         let names = [kAXPositionAttribute, kAXSizeAttribute, kAXMinimizedAttribute]
         var values: CFArray?
@@ -97,6 +99,11 @@ final class AccessibilityService: NSObject {
         var size = CGSize.zero
         guard AXValueGetValue(positionAX, .cgPoint, &position), AXValueGetValue(sizeAX, .cgSize, &size) else { return nil }
         return (position, size)
+    }
+
+    var trackedWindowIsFullScreen: Bool {
+        guard let window else { return false }
+        return attribute(window, "AXFullScreen") as? Bool ?? false
     }
 
     func stop() {
