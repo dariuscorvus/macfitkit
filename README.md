@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller Entwicklungsstand: 0.5.0.
+Aktueller Entwicklungsstand: 0.5.1.
 
 ## Start
 

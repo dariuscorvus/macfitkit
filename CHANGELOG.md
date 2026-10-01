@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.5.1 – 2. Oktober 2026
+
+- Fokus-Pulsieren und -Blinken blenden weich zur statischen Deckkraft zurück,
+  statt mitten im Zyklus abzubrechen. Individuelle Maximaldeckkraft und erneute
+  Auslösung werden berücksichtigt; Daueranimation bleibt unverändert.
+- Regressionstests für abgebrochene Zyklen, niedrigere Maximaldeckkraft und
+  erneute Auslösung ab der angezeigten Deckkraft.
+
 ## 0.5.0 – 1. Oktober 2026
 
 - Etappe 0.4: kombinierbare Glow-/Neon-, Schatten- und Zweifarbverlauf-Effekte

@@ -1,6 +1,6 @@
 # Lokale V1-Prüfung – 1. Oktober 2026
 
-Neuester Stand: 0.5.0; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
+Neuester Stand: 0.5.1; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
 erhalten. Die aktuelle Abnahme steht am Ende dieses Dokuments.
 
 Umgebung: Apple Silicon, Swift 6.4, Command Line Tools, macOS-27-SDK.
@@ -204,3 +204,23 @@ Praktische Grenzen:
   manuell abzunehmen. Die vorhandene Zieh-/Vollbildbestätigung des Nutzers
   bezog sich auf den vorherigen Renderer. Automatisierte Kernprüfungen ersetzen
   diese Abnahme nicht.
+
+## 0.5.1 – weicher Abschluss der Fokus-Deckkraftanimation
+
+Ursache: repeatDuration schnitt den 2-s-Puls nach 1.5 s ab. Die angezeigte
+Deckkraft war dann nicht identisch mit der statischen Layer-Deckkraft und
+sprang beim Entfernen der Animation zurück.
+
+Fokus-Puls und -Blinken verwenden nun eine einmal vorbereitete Kurve über die
+exakte Fokusdauer. Ein-/Ausblendung erfolgt mit einer Kosinus-Hüllkurve; der
+letzte Wert ist exakt die normale Deckkraft. Erneute Auslösung übernimmt die
+aktuell angezeigte Deckkraft als Start. Core Animation interpoliert die Werte;
+keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
+
+- 25 Tests in sechs Suites, Build, Signaturprüfung und Diff-Prüfung erfolgreich.
+- Neue Regressionstests: 1.5-s-Fokusdauer bei 2-s-Puls, weicher Endbereich,
+  maximale Pulsdeckkraft unter normaler Deckkraft, kurze Fokusdauer und
+  erneute Auslösung beider Modi ab einem Zwischenwert.
+- App neu installiert/gestartet. Nutzereinstellung Pulsieren, 2 s Zyklus,
+  40–100 %, Fokusdauer 1.5 s erhalten; Vorschau-Testknopf ausgelöst.
+  Die wahrgenommene Glätte beim echten Fokuswechsel bleibt Nutzerabnahme.

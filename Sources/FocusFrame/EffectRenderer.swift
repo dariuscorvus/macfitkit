@@ -101,7 +101,14 @@ final class EffectRenderer {
             let period = o.mode == .pulse ? o.pulsePeriod : o.blinkPeriod
             let minimum = o.mode == .pulse ? o.pulseMinimum : o.blinkMinimum
             let animation = CAKeyframeAnimation(keyPath: "opacity")
-            if o.mode == .pulse {
+            if o.trigger == .focus {
+                let current = Double(root.presentation()?.opacity ?? root.opacity) / a.opacity
+                let timeline = FocusOpacityTimeline(effect: o, startingMultiplier: current)
+                animation.values = timeline.values.map { $0 * a.opacity }
+                animation.keyTimes = timeline.times.map { NSNumber(value: $0) }
+                animation.duration = timeline.duration
+                animation.calculationMode = .linear
+            } else if o.mode == .pulse {
                 animation.values = [o.maximum*a.opacity, minimum*a.opacity, o.maximum*a.opacity]
                 animation.keyTimes = [0,0.5,1]
                 animation.timingFunctions = [.init(name: .easeInEaseOut),.init(name: .easeInEaseOut)]
@@ -109,8 +116,10 @@ final class EffectRenderer {
                 animation.values = [o.maximum*a.opacity,o.maximum*a.opacity,minimum*a.opacity,minimum*a.opacity,o.maximum*a.opacity]
                 animation.keyTimes = [0,0.1,0.2,0.8,1]
             }
-            animation.duration = period
-            animation.repeatDuration = o.trigger == .continuous ? .infinity : o.focusDuration
+            if o.trigger == .continuous {
+                animation.duration = period
+                animation.repeatDuration = .infinity
+            }
             root.add(animation, forKey: "opacityEffect")
         }
         let r = a.rotation
