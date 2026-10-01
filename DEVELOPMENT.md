@@ -89,3 +89,12 @@ xcodebuild -project FocusFrame.xcodeproj -scheme FocusFrame -destination 'platfo
 Auf dem derzeitigen Host fehlt vollständiges Xcode. Strukturelle Projektprüfung
 und bestehender SwiftPM-Check sind hier die verfügbaren Nachweise; Xcode-spezifische
 Build-/Signing-/Testausführung ist deshalb noch nicht bestätigt.
+
+## Overlay-Koordinaten an Bildschirmrändern
+
+`./script/test_overlay_geometry.sh` prüft in einer Desktop-Sitzung das tatsächliche
+Overlay samt Renderer. Gleiche Fenstergrößen bei Fokuswechsel, Resize und maximale
+Effektränder müssen ihre angefragte Position beibehalten, auch oberhalb/links eines
+Displays. Das Overlay darf von AppKit nicht an der Menüleiste begrenzt werden.
+Der Test ist zusätzlich zum Kerncheck auszuführen, wenn die Overlay-Geometrie
+oder dessen AppKit-Fensterverhalten geändert wird.

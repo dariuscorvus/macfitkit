@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.5.3 – 2. Oktober 2026
+
+- Rahmen bleibt beim Fokuswechsel und Positionswechsel nahe der Menüleiste
+  an der Fensterkontur: das transparente Overlay darf mit seinen Effekträndern
+  über Bildschirmgrenzen reichen, ohne von AppKit nach unten verschoben zu werden.
+- Desktop-Regressionstest gegen echtes AppKit-Overlay für gleiche Fenstergrößen,
+  Größenänderungen und maximale Glow-/Neon-/Schattenränder.
+
 ## 0.5.2 – 2. Oktober 2026
 
 - Release-Verpackung: Universal-DMG, Developer-ID-Signatur, Hardened Runtime,

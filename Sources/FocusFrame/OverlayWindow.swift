@@ -19,6 +19,12 @@ final class OverlayWindow: NSPanel {
     }
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        // This panel includes transparent space for effects outside the target.
+        // AppKit's menu-bar clamp during setFrameOrigin would shift the entire
+        // border downward when that padding crosses a display's top edge.
+        frameRect
+    }
     override func orderOut(_ sender: Any?) {
         border.renderer.setVisible(false); super.orderOut(sender)
     }

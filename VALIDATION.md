@@ -265,3 +265,25 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
   Architektur und Deployment-Metadaten sind geprüft.
 - Kein Git-Remote vorhanden; keine öffentliche Veröffentlichung und keine
   Übermittlung an Apple durchgeführt. Lokale DMG kann privat weitergegeben werden.
+
+## 0.5.3 – Rahmenversatz am oberen Bildschirmrand
+
+- Ursache lokal reproduziert: NSPanel.setFrameOrigin begrenzt die Oberkante
+  an der sichtbaren Bildschirmfläche, während die Größensetzung die angefragte
+  Geometrie beibehält. Ein transparenter Effektrand oberhalb der Menüleiste
+  verschiebt dadurch auch die eigentliche Kontur nach unten. Ein gleich großes
+  neu fokussiertes Fenster verwendet ebenfalls den Positionspfad.
+- Gegenprobe mit unverändertem OverlayWindow aus vorherigem Commit scheitert
+  im Desktop-Regressionslauf: angefordert (97, 816, 606, 426), tatsächlich
+  (97, 813, 606, 426). Separater NSPanel-Probe mit größeren Rändern: 40/70 pt Versatz.
+- OverlayWindow überschreibt constrainFrameRect und gibt die berechnete
+  Geometrie unverändert zurück. Fensterlevel, Klickdurchleitung, AX-Ereignisse
+  und Mausnachführung bleiben erhalten; keine zusätzlichen Abfragen oder Timer.
+- script/test_overlay_geometry.sh: 108 Prüfungen am tatsächlichen Overlay/Renderer
+  erfolgreich, inklusive gleich großem Fokusziel, Resize, oberem/linkem Rand,
+  virtuellem Ziel oberhalb des Displays und maximalen Effekten/Versätzen.
+  Probe benötigt eine Desktop-Sitzung, keine AX-Berechtigung. Getestet an einem
+  angeschlossenen Display; keine physische Mehrschirm- oder Intel-Abnahme.
+- Bestehender Check: 25/25 Kernprüfungen, SwiftPM-Build, strenge Signaturprüfung
+  und Xcode-Strukturprüfung erfolgreich. Vollständiges Xcode weiterhin nicht
+  vorhanden. Bestätigung des sporadischen Fokuswechsels beim Nutzer steht aus.
