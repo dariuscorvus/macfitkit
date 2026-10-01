@@ -1,6 +1,6 @@
 # Lokale V1-Prüfung – 1. Oktober 2026
 
-Neuester Stand: 0.3.1; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
+Neuester Stand: 0.3.2; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
 erhalten. Die aktuelle Abnahme steht am Ende dieses Dokuments.
 
 Umgebung: Apple Silicon, Swift 6.4, Command Line Tools, macOS-27-SDK.
@@ -141,3 +141,15 @@ Noch offen:
 - `./script/check.sh`: alle 16 Tests, Build, Signaturprüfung und Diff-Prüfung
   erfolgreich. Installierte App anschließend neu gestartet; Prozess läuft aus
   dem dauerhaften Pfad. Neue Statuszeile im nativen Fenster sichtbar.
+
+## 0.3.2 – Rahmen aktiv sichtbar bedienen
+
+- Laufende App vor Änderung per UI geprüft: sechs empfangene Tastenkürzeleingaben,
+  Rahmenstatus aktiv. Diagnose zeigte anschließend „Rahmen sichtbar“.
+  Damit ist erstmals realer Tastenkürzelempfang in der laufenden App belegt;
+  die zuvor erfolglose Automation war kein Nachweis eines defekten Hotkeys.
+- Neuer Schalter „Rahmen aktiv“ in Verhalten per UI ausgeschaltet: Status pausiert;
+  wieder eingeschaltet: Status aktiv. App bleibt aktiv, Tastenkürzel bleibt wie
+  vom Nutzer eingestellt eingeschaltet.
+- Build, Signaturprüfung, Prozessstart und Diff-Prüfung erfolgreich. Die reine
+  GUI-Verdrahtung ändert keine Kernlogik; deren letzter Lauf bestand mit 16 Tests.

@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.3.2 – 1. Oktober 2026
+
+- „Rahmen aktiv“ direkt in den Verhaltenseinstellungen; synchron mit
+  Menüleistenschalter und Tastenkürzel.
+
 ## 0.3.1 – 1. Oktober 2026
 
 - Start aus dauerhaftem Benutzer-App-Ordner statt Cache; Anmeldestart verwendet

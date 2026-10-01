@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class SettingsWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate {
+    var onToggleFrame: (() -> Void)?
     var onOpenDiagnostics: (() -> Void)?
     private let store: PreferencesStore
     private let preview = PreviewView()
@@ -13,6 +14,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private var values: [NSTextField] = []
     private let login = NSButton(checkboxWithTitle: "Bei Anmeldung starten", target: nil, action: nil)
     private let shortcut = NSButton(checkboxWithTitle: "Rahmen mit ⌃⌥F ein-/ausschalten", target: nil, action: nil)
+    private let frameToggle = NSButton(checkboxWithTitle: "Rahmen aktiv", target: nil, action: nil)
     private let shortcutStatus = NSTextField(wrappingLabelWithString: "")
     private var shortcutRegistered = false
     private var shortcutPresses = 0
@@ -94,6 +96,8 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     }
 
     private func behaviorPage() -> NSView {
+        frameToggle.target = self; frameToggle.action = #selector(toggleFrame)
+        frameToggle.state = frameEnabled ? .on : .off
         login.target = self; login.action = #selector(changeLogin)
         shortcut.target = self; shortcut.action = #selector(changeShortcut)
         fullScreen.target = self; fullScreen.action = #selector(changeFullScreen)
@@ -115,7 +119,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let buttons = NSStackView(views: [add, remove])
         buttons.spacing = 12
         let diagnostics = NSButton(title: "Diagnose …", target: self, action: #selector(openDiagnostics))
-        return page([login, loginStatus, openLogin, shortcut, shortcutStatus, fullScreen, title, scroll, buttons, diagnostics])
+        return page([frameToggle, login, loginStatus, openLogin, shortcut, shortcutStatus, fullScreen, title, scroll, buttons, diagnostics])
     }
 
     private func page(_ views: [NSView]) -> NSView {
@@ -164,6 +168,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     func updateShortcutStatus(registered: Bool, frameEnabled: Bool, receivedPress: Bool = false) {
         shortcutRegistered = registered
         self.frameEnabled = frameEnabled
+        frameToggle.state = frameEnabled ? .on : .off
         if receivedPress { shortcutPresses += 1 }
         syncShortcutStatus()
     }
@@ -177,6 +182,8 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let receipt = shortcutPresses == 0 ? "Noch kein Tastendruck empfangen." : "Tastendruck empfangen (\(shortcutPresses))."
         shortcutStatus.stringValue = "Control + Option + F ist registriert. \(receipt) Rahmen: \(state)."
     }
+
+    @objc private func toggleFrame() { onToggleFrame?() }
 
     @objc private func changeColor() {
         guard let color = colorWell.color.usingColorSpace(.sRGB) else { return }

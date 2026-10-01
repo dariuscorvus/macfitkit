@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller Entwicklungsstand: 0.3.1.
+Aktueller Entwicklungsstand: 0.3.2.
 
 ## Start
 
@@ -33,7 +33,7 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
 - **Darstellung:** freie Rahmenfarbe, Deckkraft 10–100 %, Stärke 1–12 pt,
   Eckenradius 0–40 pt und Abstand 0–20 pt. Die Vorschau verwendet denselben
   Zeichenpfad wie das echte Overlay. Darstellung kann separat zurückgesetzt werden.
-- **Verhalten:** Start bei Anmeldung, optionales globales Tastenkürzel **⌃⌥F**,
+- **Verhalten:** Rahmen aktivieren/pausieren, Start bei Anmeldung, optionales globales Tastenkürzel **⌃⌥F**,
   Ausblenden im Vollbild und eine Liste ausgeschlossener Apps.
 - Die Konfiguration wird lokal gespeichert. Bestehende Farb-/Stärkeeinstellungen
   der ersten Version werden übernommen.

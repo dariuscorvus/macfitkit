@@ -85,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func showSettings() {
         if settings == nil {
             settings = SettingsWindowController(store: store)
+            settings?.onToggleFrame = { [weak self] in self?.toggleEnabled() }
             settings?.onOpenDiagnostics = { [weak self] in self?.showDiagnostics() }
         }
         settings?.updateShortcutStatus(registered: shortcut.isEnabled, frameEnabled: manager.enabled)
