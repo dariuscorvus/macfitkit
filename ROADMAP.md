@@ -86,6 +86,8 @@ Keine Veröffentlichung oder Remote-Erstellung ist Teil dieses Entwurfs.
   Radius/Abstand/Deckkraft und Speicherung nach Neustart praktisch geprüft.
 - Alltag: native Autostart-Registrierung, ⌃⌥F, App-Ausnahmen und Vollbildregel
   implementiert. Registrierung an/aus und Ausschlussstatus praktisch geprüft.
-- Noch manuell: wahrgenommene Ziehflüssigkeit, reale Monitore/Spaces/Vollbild,
-  tatsächlicher Login und physische Eingabe des globalen Tastenkürzels.
+- Nutzer bestätigt: Ziehen deutlich besser; Vollbild in Ordnung.
+- Noch manuell: reale Monitore/Spaces, tatsächlicher Login und physische Eingabe
+  des globalen Tastenkürzels. Anmeldestart und Tastenkürzel wurden vom Nutzer
+  noch nicht erfolgreich geprüft.
 - Später: Glow, Presets, Regeln je App, Verteilung und CI bei vorhandenem Remote.

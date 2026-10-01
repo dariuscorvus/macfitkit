@@ -14,6 +14,7 @@ BUNDLE_ID="de.highbytetech.FocusFrame"
 # launch, invalidating the bundle signature even after xattr cleanup.
 APP_BUNDLE="$HOME/Library/Caches/FocusFrame/$APP_NAME.app"
 PROJECT_BUNDLE="$ROOT_DIR/dist/$APP_NAME.app"
+INSTALLED_BUNDLE="$HOME/Applications/$APP_NAME.app"
 
 if [[ "$MODE" != "--build-only" ]]; then
   pkill -x "$APP_NAME" >/dev/null 2>&1 || true
@@ -30,7 +31,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.3.0</string>
+  <key>CFBundleShortVersionString</key><string>0.3.1</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -54,6 +55,17 @@ if [[ "$MODE" == "--build-only" ]]; then
   echo "Built: $APP_BUNDLE"
   exit 0
 fi
+# Like iQualize, run the registered main app from a permanent Applications path.
+# Keep build-only checks isolated in the staging bundle.
+mkdir -p "$HOME/Applications"
+if [[ -e "$INSTALLED_BUNDLE" ]]; then
+  EXISTING_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INSTALLED_BUNDLE/Contents/Info.plist")
+  [[ "$EXISTING_ID" == "$BUNDLE_ID" ]] || { echo "Another app occupies $INSTALLED_BUNDLE" >&2; exit 1; }
+fi
+/usr/bin/ditto "$APP_BUNDLE" "$INSTALLED_BUNDLE"
+codesign --verify --strict "$INSTALLED_BUNDLE"
+APP_BUNDLE="$INSTALLED_BUNDLE"
+ln -sfn "$APP_BUNDLE" "$PROJECT_BUNDLE"
 if [[ "$MODE" == "--debug" ]]; then
   exec lldb -- "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 fi

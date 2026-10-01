@@ -38,7 +38,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         manager.onPermissionChange = { [weak self] trusted in
             self?.permissionItem.title = trusted ? "Bedienungshilfen: erlaubt" : "Bedienungshilfen: fehlen"
         }
-        shortcut.onPress = { [weak self] in self?.toggleEnabled() }
+        shortcut.onPress = { [weak self] in
+            guard let self else { return }
+            self.toggleEnabled()
+            self.settings?.updateShortcutStatus(registered: self.shortcut.isEnabled,
+                frameEnabled: self.manager.enabled, receivedPress: true)
+            Diagnostics.shared.record("Tastenkürzel empfangen")
+        }
         store.onChange = { [weak self] in self?.applyConfiguration() }
         applyConfiguration()
         manager.start()
@@ -51,7 +57,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func applyConfiguration() {
         manager.configuration = store.value.normalized
-        do { try shortcut.setEnabled(store.value.shortcutEnabled) }
+        do {
+            try shortcut.setEnabled(store.value.shortcutEnabled)
+            settings?.updateShortcutStatus(registered: shortcut.isEnabled, frameEnabled: manager.enabled)
+        }
         catch {
             store.value.shortcutEnabled = false
             let alert = NSAlert()
@@ -71,12 +80,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleEnabled() {
         manager.enabled.toggle()
         enabledItem.state = manager.enabled ? .on : .off
+        settings?.updateShortcutStatus(registered: shortcut.isEnabled, frameEnabled: manager.enabled)
     }
     @objc private func showSettings() {
         if settings == nil {
             settings = SettingsWindowController(store: store)
             settings?.onOpenDiagnostics = { [weak self] in self?.showDiagnostics() }
         }
+        settings?.updateShortcutStatus(registered: shortcut.isEnabled, frameEnabled: manager.enabled)
         settings?.present()
     }
     @objc private func showDiagnostics() {

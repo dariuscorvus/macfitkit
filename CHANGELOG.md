@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.3.1 – 1. Oktober 2026
+
+- Start aus dauerhaftem Benutzer-App-Ordner statt Cache; Anmeldestart verwendet
+  wie iQualize `SMAppService.mainApp` für die installierte App.
+- Anmeldestatus wird nach Rückkehr aus Systemeinstellungen neu geprüft;
+  ausstehende Freigabe erscheint als Zwischenzustand.
+- Tastenkürzel zeigt Registrierung, empfangene Tastendrücke und Rahmenzustand
+  direkt in den Einstellungen.
+- Nutzer bestätigt deutlich verbesserte Ziehbewegung und funktionierendes Vollbild.
+
 ## 0.3.0 – 1. Oktober 2026
 
 - Native Einstellungen mit gemeinsamer Rahmenvorschau: freie Farbe, Deckkraft,

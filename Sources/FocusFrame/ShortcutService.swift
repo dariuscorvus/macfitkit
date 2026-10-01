@@ -4,6 +4,7 @@ import Carbon
 @MainActor
 final class ShortcutService {
     var onPress: (() -> Void)?
+    var isEnabled: Bool { hotKey != nil }
     private var hotKey: EventHotKeyRef?
     private var handler: EventHandlerRef?
     private let signature: OSType = 0x4646524D // FFRM

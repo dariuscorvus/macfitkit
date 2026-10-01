@@ -1,6 +1,6 @@
 # Lokale V1-Prüfung – 1. Oktober 2026
 
-Neuester Stand: 0.3.0; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
+Neuester Stand: 0.3.1; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
 erhalten. Die aktuelle Abnahme steht am Ende dieses Dokuments.
 
 Umgebung: Apple Silicon, Swift 6.4, Command Line Tools, macOS-27-SDK.
@@ -117,3 +117,27 @@ Noch offen:
   Die Signatur wird im Skript jetzt zusätzlich streng geprüft.
 - Der Linker meldet fehlende zusätzliche Suchpfade innerhalb der Command Line
   Tools. Build, Linken und Start sind trotzdem erfolgreich.
+
+## 0.3.1 – Nutzerfeedback und Anmeldung
+
+- Nutzer bestätigt: Ziehen „viel viel besser“ und Vollbild „in Ordnung“.
+  Dies bestätigt die manuelle Nutzung, keine gemessene Latenz oder Abnahme
+  sämtlicher Display-/Space-Anordnungen.
+- iQualize-Quellcode verglichen: ebenfalls `SMAppService.mainApp.register()` /
+  `.unregister()`, Systemstatus als Quelle. iQualize wird unter Applications
+  installiert; FocusFrame startet nun dauerhaft aus `~/Applications/FocusFrame.app`.
+- Anmeldung am neuen App-Pfad per UI registriert: macOS meldet „aktiv“.
+- Tastenkürzel per UI registriert. Neue Statuszeile bestätigt die Registrierung
+  und meldet empfangene Tastendrücke und Rahmenstatus. Automatisierte
+  `ctrl+alt+f`-Eingabe lieferte keine Empfangsbestätigung; ein tatsächlicher
+  physischer globaler Tastendruck bleibt unbestätigt. Kein behobener
+  Tastenkürzelfehler wird daraus abgeleitet.
+- Tatsächlicher Logout/Login bleibt offen; die Benutzersitzung wird dafür
+  nicht unterbrochen.
+- System-Anmeldeobjekt per `sfltool dumpbtm` am Benutzer-Applications-Pfad
+  mit Status enabled/allowed gefunden. Nach App-Neustart zeigen Anmeldung und
+  Tastenkürzel weiterhin ihren registrierten Status. Beide Optionen danach per
+  UI wieder auf den bisherigen Zustand „aus“ gesetzt.
+- `./script/check.sh`: alle 16 Tests, Build, Signaturprüfung und Diff-Prüfung
+  erfolgreich. Installierte App anschließend neu gestartet; Prozess läuft aus
+  dem dauerhaften Pfad. Neue Statuszeile im nativen Fenster sichtbar.

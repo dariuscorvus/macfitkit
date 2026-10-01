@@ -13,6 +13,10 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private var values: [NSTextField] = []
     private let login = NSButton(checkboxWithTitle: "Bei Anmeldung starten", target: nil, action: nil)
     private let shortcut = NSButton(checkboxWithTitle: "Rahmen mit ⌃⌥F ein-/ausschalten", target: nil, action: nil)
+    private let shortcutStatus = NSTextField(wrappingLabelWithString: "")
+    private var shortcutRegistered = false
+    private var shortcutPresses = 0
+    private var frameEnabled = true
     private let fullScreen = NSButton(checkboxWithTitle: "Rahmen im Vollbild ausblenden", target: nil, action: nil)
     private let loginStatus = NSTextField(wrappingLabelWithString: "")
     private let table = NSTableView()
@@ -43,7 +47,10 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         ])
         sync()
         window.center()
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshLogin),
+            name: NSApplication.didBecomeActiveNotification, object: nil)
     }
+    @objc private func refreshLogin() { syncLogin() }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
     func present() {
@@ -108,7 +115,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let buttons = NSStackView(views: [add, remove])
         buttons.spacing = 12
         let diagnostics = NSButton(title: "Diagnose …", target: self, action: #selector(openDiagnostics))
-        return page([login, loginStatus, openLogin, shortcut, fullScreen, title, scroll, buttons, diagnostics])
+        return page([login, loginStatus, openLogin, shortcut, shortcutStatus, fullScreen, title, scroll, buttons, diagnostics])
     }
 
     private func page(_ views: [NSView]) -> NSView {
@@ -125,7 +132,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),
             stack.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor, constant: -20)
         ])
-        for view in views where view === preview || view is NSScrollView || view === loginStatus {
+        for view in views where view === preview || view is NSScrollView || view === loginStatus || view === shortcutStatus {
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
         return container
@@ -143,14 +150,32 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         shortcut.state = store.value.shortcutEnabled ? .on : .off
         fullScreen.state = store.value.hideInFullScreen ? .on : .off
         syncLogin()
+        syncShortcutStatus()
         table.reloadData()
     }
 
     private func syncLogin() {
         let status = SMAppService.mainApp.status
-        login.state = status == .enabled || status == .requiresApproval ? .on : .off
+        login.state = status == .enabled ? .on : (status == .requiresApproval ? .mixed : .off)
         loginStatus.stringValue = status == .requiresApproval ? "Bitte in den macOS-Anmeldeobjekten bestätigen." :
             (status == .enabled ? "Start bei Anmeldung ist aktiv." : "Start bei Anmeldung ist ausgeschaltet.")
+    }
+
+    func updateShortcutStatus(registered: Bool, frameEnabled: Bool, receivedPress: Bool = false) {
+        shortcutRegistered = registered
+        self.frameEnabled = frameEnabled
+        if receivedPress { shortcutPresses += 1 }
+        syncShortcutStatus()
+    }
+
+    private func syncShortcutStatus() {
+        guard shortcutRegistered else {
+            shortcutStatus.stringValue = "Tastenkürzel ist ausgeschaltet. Zum Testen oben aktivieren."
+            return
+        }
+        let state = frameEnabled ? "aktiv" : "pausiert"
+        let receipt = shortcutPresses == 0 ? "Noch kein Tastendruck empfangen." : "Tastendruck empfangen (\(shortcutPresses))."
+        shortcutStatus.stringValue = "Control + Option + F ist registriert. \(receipt) Rahmen: \(state)."
     }
 
     @objc private func changeColor() {

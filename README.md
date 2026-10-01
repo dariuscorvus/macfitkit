@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller Entwicklungsstand: 0.3.0.
+Aktueller Entwicklungsstand: 0.3.1.
 
 ## Start
 
@@ -13,11 +13,12 @@ Bedienungshilfen für FocusFrame.
 ./script/build_and_run.sh
 ```
 
-Das Skript baut und signiert lokal die App unter
-`~/Library/Caches/FocusFrame/FocusFrame.app`. `dist/FocusFrame.app` ist ein Link
-dorthin; das verhindert Signaturprobleme durch synchronisierte Dokumentenordner.
-Der Codex-Run-Button verwendet dasselbe Skript. Dies ist ein Entwicklungsbundle:
-Der Cache-Pfad ist noch kein dauerhafter Installationspfad für die Verteilung.
+Das Skript baut und signiert lokal und installiert zum Starten nach
+`~/Applications/FocusFrame.app`. Der feste Benutzer-App-Ordner bleibt auch nach
+Cache-Bereinigung bestehen. `dist/FocusFrame.app` verlinkt die zuletzt gebaute
+bzw. gestartete App. Reine `--build-only`-Prüfungen verwenden weiterhin das
+Staging-Bundle unter `~/Library/Caches/FocusFrame/FocusFrame.app` und ändern
+keine installierte App. Der Codex-Run-Button verwendet dasselbe Skript.
 
 Beim ersten Start den Bedienungshilfen-Zugriff unter **Systemeinstellungen →
 Datenschutz & Sicherheit → Bedienungshilfen** erlauben. Falls FocusFrame fehlt,
@@ -40,6 +41,10 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
   macOS; erforderliche Bestätigung und Fehler werden sichtbar angezeigt.
 - Ein belegtes Tastenkürzel wird mit einer Fehlermeldung abgelehnt. Es liest
   keine Tastatureingaben mit, sondern registriert ausschließlich diese Kombination.
+  Unter **Verhalten** zuerst aktivieren und **Control + Option + F** drücken
+  (Control, nicht Command). Die Statuszeile zeigt Registrierung, empfangene
+  Tastendrücke und „Rahmen: aktiv/pausiert“ unmittelbar. Zum globalen Test ein
+  anderes App-Fenster aktivieren, drücken und anschließend den Status ansehen.
 
 Die App bleibt ohne Dock-Symbol in der Menüleiste. **Rahmen aktiv** pausiert die
 Markierung. Einstellungen und Diagnose können geschlossen werden, ohne die App
@@ -113,6 +118,6 @@ Teile des äußeren Rahmens abschneiden.
 Reale Mehrschirm-, Spaces-, Vollbild-, Mission-Control- und Stage-Manager-Szenarien
 sind noch nicht vollständig praktisch abgenommen. Vollbild nutzt öffentliche
 AppKit-Optionen und AXFullScreen, sofern die Ziel-App dieses Attribut bereitstellt.
-Ein tatsächlicher Anmeldestart und die wahrgenommene Ziehflüssigkeit benötigen
+Ein tatsächlicher Anmeldestart und physische Tastenkürzeleingabe benötigen
 manuelle Prüfung. Lokale Ad-hoc-Signatur, noch keine Notarisierung/Verteilung.
 Kein Glow, Preset-System, Installer oder Update-Dienst. Keine Netzwerkfunktion.
