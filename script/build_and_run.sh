@@ -10,7 +10,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 APP_NAME="FocusFrame"
 BUNDLE_ID="de.highbytetech.FocusFrame"
-APP_BUNDLE="$ROOT_DIR/dist/$APP_NAME.app"
+# Stage outside synced Documents: file providers can add FinderInfo again after
+# launch, invalidating the bundle signature even after xattr cleanup.
+APP_BUNDLE="$HOME/Library/Caches/FocusFrame/$APP_NAME.app"
+PROJECT_BUNDLE="$ROOT_DIR/dist/$APP_NAME.app"
 
 if [[ "$MODE" != "--build-only" ]]; then
   pkill -x "$APP_NAME" >/dev/null 2>&1 || true
@@ -40,6 +43,12 @@ PLIST
 xattr -cr "$APP_BUNDLE"
 codesign --force --sign - --identifier "$BUNDLE_ID" \
   --requirements "=designated => identifier \"$BUNDLE_ID\"" "$APP_BUNDLE"
+codesign --verify --strict "$APP_BUNDLE"
+mkdir -p "$ROOT_DIR/dist"
+if [[ -d "$PROJECT_BUNDLE" && ! -L "$PROJECT_BUNDLE" ]]; then
+  rm -rf "$PROJECT_BUNDLE"
+fi
+ln -sfn "$APP_BUNDLE" "$PROJECT_BUNDLE"
 
 if [[ "$MODE" == "--build-only" ]]; then
   echo "Built: $APP_BUNDLE"

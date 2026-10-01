@@ -30,8 +30,10 @@ erreichbar (Timeout). Die manuelle Prüfliste steht in der README.
 - Swift Testing statt des hier nicht vorhandenen XCTest-Frameworks.
 - Das Testskript übergibt den installierten Testing-Makro-Pfad explizit und baut
   in einem temporären Ordner außerhalb der Dateisynchronisation.
-- Das App-Buildskript entfernt erweiterte Attribute ausschließlich vom erzeugten
-  App-Bundle vor der Signierung. FinderInfo aus der Dateisynchronisation hatte
-  die Signierung verhindert.
+- Das App-Buildskript erstellt das App-Bundle außerhalb der synchronisierten
+  Dokumente unter `~/Library/Caches/FocusFrame/FocusFrame.app`. Der lokale
+  `dist/FocusFrame.app`-Pfad ist ein Link dorthin. FinderInfo aus der
+  Dateisynchronisation hatte auch nach erfolgreichem Start die Signatur verändert.
+  Die Signatur wird im Skript jetzt zusätzlich streng geprüft.
 - Der Linker meldet fehlende zusätzliche Suchpfade innerhalb der Command Line
   Tools. Build, Linken und Start sind trotzdem erfolgreich.

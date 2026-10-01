@@ -13,13 +13,17 @@ klicktransparenten Rahmen hervorhebt. Swift 6 / AppKit, ohne externe Abhängigke
 ./script/build_and_run.sh
 ```
 
-Das Skript baut mit SwiftPM, erstellt und signiert lokal `dist/FocusFrame.app`
-und startet die App. Auch der Codex-Run-Button verwendet dieses Skript.
+Das Skript baut mit SwiftPM, erstellt und signiert lokal die App unter
+`~/Library/Caches/FocusFrame/FocusFrame.app` und stellt sie auch über den Link
+`dist/FocusFrame.app` bereit. Der Cache-Pfad verhindert, dass die
+Dokumentensynchronisation die Bundle-Signatur nach dem Start verändert.
+Auch der Codex-Run-Button verwendet dieses Skript.
 FocusFrame erscheint als Rahmen-Symbol in der Menüleiste, ohne Dock-Symbol.
 
 Beim ersten Start fordert macOS die Bedienungshilfen-Berechtigung an. Unter
 **Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen** FocusFrame
-aktivieren. Falls nötig `dist/FocusFrame.app` mit dem Plus-Button hinzufügen.
+aktivieren. Falls nötig `~/Library/Caches/FocusFrame/FocusFrame.app` mit dem
+Plus-Button hinzufügen (im Dateidialog `⌘⇧G` drücken und den Pfad einfügen).
 Anschließend im FocusFrame-Menü **Berechtigung erneut prüfen** wählen oder zu
 einer anderen App wechseln. Die App prüft Berechtigungen bei Ereignissen und
 auf Anforderung, ohne wiederkehrenden Timer. Falls macOS nach einem Neubau den
