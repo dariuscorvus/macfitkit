@@ -9,7 +9,32 @@ public struct Appearance: Codable, Equatable, Sendable {
     public var radius: Double = 10
     public var gap: Double = 0
 
+    public var light = LightEffect()
+    public var shadow = ShadowEffect()
+    public var gradient = GradientEffect()
+    public var opacityAnimation = OpacityEffect()
+    public var rotation = RotationEffect()
+
     public init() {}
+    private enum CodingKeys: String, CodingKey {
+        case red, green, blue, opacity, width, radius, gap, light, shadow, gradient, opacityAnimation, rotation
+    }
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        red = try c.decodeIfPresent(Double.self, forKey: .red) ?? red
+        green = try c.decodeIfPresent(Double.self, forKey: .green) ?? green
+        blue = try c.decodeIfPresent(Double.self, forKey: .blue) ?? blue
+        opacity = try c.decodeIfPresent(Double.self, forKey: .opacity) ?? opacity
+        width = try c.decodeIfPresent(Double.self, forKey: .width) ?? width
+        radius = try c.decodeIfPresent(Double.self, forKey: .radius) ?? radius
+        gap = try c.decodeIfPresent(Double.self, forKey: .gap) ?? gap
+        light = try c.decodeIfPresent(LightEffect.self, forKey: .light) ?? light
+        shadow = try c.decodeIfPresent(ShadowEffect.self, forKey: .shadow) ?? shadow
+        gradient = try c.decodeIfPresent(GradientEffect.self, forKey: .gradient) ?? gradient
+        opacityAnimation = try c.decodeIfPresent(OpacityEffect.self, forKey: .opacityAnimation) ?? opacityAnimation
+        rotation = try c.decodeIfPresent(RotationEffect.self, forKey: .rotation) ?? rotation
+    }
 
     public var normalized: Self {
         var result = self
@@ -23,6 +48,9 @@ public struct Appearance: Codable, Equatable, Sendable {
         result.width = clamp(width, 1...12, fallback: 3)
         result.radius = clamp(radius, 0...40, fallback: 10)
         result.gap = clamp(gap, 0...20, fallback: 0)
+        result.light = light.normalized; result.shadow = shadow.normalized
+        result.gradient = gradient.normalized; result.opacityAnimation = opacityAnimation.normalized
+        result.rotation = rotation.normalized
         return result
     }
 }
