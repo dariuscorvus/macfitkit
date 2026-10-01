@@ -1,117 +1,118 @@
 # FocusFrame
 
-Eine kleine native macOS-App, die das aktuell fokussierte Fenster mit einem
-klicktransparenten Rahmen hervorhebt. Swift 6 / AppKit, ohne externe Abhängigkeiten.
+Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
+klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
+Aktueller Entwicklungsstand: 0.3.0.
 
-## Voraussetzungen und Start
+## Start
 
-- macOS 14 oder neuer.
-- Swift 6 oder neuer, beispielsweise über Xcode Command Line Tools.
-- Bedienungshilfen-Zugriff für **FocusFrame**.
+Voraussetzungen: macOS 14 oder neuer, Swift 6 oder neuer und erlaubte
+Bedienungshilfen für FocusFrame.
 
 ```sh
 ./script/build_and_run.sh
 ```
 
-Das Skript baut mit SwiftPM, erstellt und signiert lokal die App unter
-`~/Library/Caches/FocusFrame/FocusFrame.app` und stellt sie auch über den Link
-`dist/FocusFrame.app` bereit. Der Cache-Pfad verhindert, dass die
-Dokumentensynchronisation die Bundle-Signatur nach dem Start verändert.
-Auch der Codex-Run-Button verwendet dieses Skript.
-FocusFrame erscheint als Rahmen-Symbol in der Menüleiste, ohne Dock-Symbol.
+Das Skript baut und signiert lokal die App unter
+`~/Library/Caches/FocusFrame/FocusFrame.app`. `dist/FocusFrame.app` ist ein Link
+dorthin; das verhindert Signaturprobleme durch synchronisierte Dokumentenordner.
+Der Codex-Run-Button verwendet dasselbe Skript. Dies ist ein Entwicklungsbundle:
+Der Cache-Pfad ist noch kein dauerhafter Installationspfad für die Verteilung.
 
-Beim ersten Start fordert macOS die Bedienungshilfen-Berechtigung an. Unter
-**Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen** FocusFrame
-aktivieren. Falls nötig `~/Library/Caches/FocusFrame/FocusFrame.app` mit dem
-Plus-Button hinzufügen (im Dateidialog `⌘⇧G` drücken und den Pfad einfügen).
-Anschließend im FocusFrame-Menü **Berechtigung erneut prüfen** wählen oder zu
-einer anderen App wechseln. Die App prüft Berechtigungen bei Ereignissen und
-auf Anforderung, ohne wiederkehrenden Timer. Falls macOS nach einem Neubau den
-Eintrag nicht erkennt, FocusFrame aus der Berechtigungsliste entfernen und erneut
-hinzufügen. Die lokale Signatur ist keine Developer-ID-Signatur.
+Beim ersten Start den Bedienungshilfen-Zugriff unter **Systemeinstellungen →
+Datenschutz & Sicherheit → Bedienungshilfen** erlauben. Falls FocusFrame fehlt,
+mit **+** hinzufügen und im Dateidialog mit **⌘⇧G** den obigen App-Pfad öffnen.
+Danach **Berechtigung erneut prüfen** im Menüleistenmenü wählen. Bei Problemen
+nach einem Neubau den Eintrag entfernen und die App erneut hinzufügen.
 
-Im Menü lassen sich der Rahmen ein-/ausschalten, vier Farben und Stärken von
-2, 3, 4 oder 6 Punkten wählen. Farbe und Stärke werden lokal gespeichert.
+## Einstellungen
+
+Im Menüleistenmenü **Einstellungen …** öffnen:
+
+- **Darstellung:** freie Rahmenfarbe, Deckkraft 10–100 %, Stärke 1–12 pt,
+  Eckenradius 0–40 pt und Abstand 0–20 pt. Die Vorschau verwendet denselben
+  Zeichenpfad wie das echte Overlay. Darstellung kann separat zurückgesetzt werden.
+- **Verhalten:** Start bei Anmeldung, optionales globales Tastenkürzel **⌃⌥F**,
+  Ausblenden im Vollbild und eine Liste ausgeschlossener Apps.
+- Die Konfiguration wird lokal gespeichert. Bestehende Farb-/Stärkeeinstellungen
+  der ersten Version werden übernommen.
+- Autostart verwendet den nativen macOS-Service. Angezeigter Status kommt von
+  macOS; erforderliche Bestätigung und Fehler werden sichtbar angezeigt.
+- Ein belegtes Tastenkürzel wird mit einer Fehlermeldung abgelehnt. Es liest
+  keine Tastatureingaben mit, sondern registriert ausschließlich diese Kombination.
+
+Die App bleibt ohne Dock-Symbol in der Menüleiste. **Rahmen aktiv** pausiert die
+Markierung. Einstellungen und Diagnose können geschlossen werden, ohne die App
+zu beenden. Autostart und Tastenkürzel sind anfangs ausgeschaltet.
+
+## Diagnose
+
+**Diagnose …** öffnet die optionale Erfassung. Maximal 300 Ereignisse bleiben
+im Arbeitsspeicher: Zustandswechsel, Beginn/Ende einer Ziehgeste und Dauer von
+AX-Geometrieabfragen. Keine Fensterinhalte, Titel oder App-Kennungen. Mit
+**Aktualisieren** wird eine Momentaufnahme angezeigt; es gibt keinen
+wiederkehrenden Diagnosetimer. Ausschalten löscht die Einträge. Ein Neustart
+startet mit deaktivierter Erfassung. Abfragezeit ist keine Messung sichtbarer Latenz.
 
 ## Architektur
 
 ```text
-NSWorkspace (App-/Space-/Sleep-Ereignisse)
+NSWorkspace + AXObserver + Mausereignisse
     ↓
-AccessibilityService (AXUIElement / AXObserver)
-    ↓
-FocusManager (Fokus, Ereignisse bündeln, Koordinaten)
-    ↓
-OverlayWindow (nicht aktivierbares, klicktransparentes NSPanel)
+AccessibilityService → FocusManager → OverlayWindow
+                            ↑
+                     PreferencesStore
 ```
 
-- Der AccessibilityService beobachtet ausschließlich die aktive App und deren
-  fokussiertes Fenster. Beim App-/Fensterwechsel entfernt er alte Beobachtungen.
-- Fokus, Verschieben, Größe, Minimieren und Schließen werden über AX-Ereignisse
-  verfolgt. Fehlende oder ungültige Fensterdaten blenden den Rahmen aus.
-- Bewegungs-/Größenereignisse lesen die Geometrie des bereits beobachteten
-  Fensters direkt in einer AX-Anfrage. Ein Mausdruck in der Titel-/Toolbarregion
-  merkt Fenster- und Mausposition. Sobald AXMoved die Bewegung bestätigt, folgt
-  der Rahmen unmittelbar dem Mausweg. Während dieses Ziehens finden keine
-  synchronen AX-Geometrieabfragen statt; verspätete Meldungen setzen den Rahmen
-  nicht auf alte Positionen zurück. Nach Loslassen erfolgt ein einmaliger
-  Abgleich nach 50 ms. Größenänderungen brechen die Vorhersage ab.
-  Es gibt weiterhin keinen wiederkehrenden Timer.
-- NSWorkspace meldet App- und Space-Wechsel, Ruhezustand und Aufwachen.
-  Displayänderungen kommen von AppKit. Ein Space-Wechsel löst genau eine um
-  150 ms verzögerte Aktualisierung aus; es gibt kein Polling.
-- AX-Koordinaten werden anhand der Oberkante des Hauptdisplays nach AppKit
-  umgerechnet, einschließlich negativer Koordinaten für weitere Monitore.
-- Der Rahmen liegt außerhalb des Fensters, nimmt weder Fokus noch Mausklicks
-  an und zeichnet keine gefüllte Fläche über den Inhalt. Seine Ecken sind
-  abgerundet (10 pt Innenradius); beim Verschieben wird er ohne Neuzeichnen
-  versetzt. macOS stellt keinen universellen AX-Wert für den Fensterradius bereit,
-  daher ist dies eine feste Annäherung an native Fenster.
+`FocusFrameCore` enthält testbare Geometrie, Konfiguration, Sichtbarkeitsregeln
+und den Zustand einer Ziehgeste. Die GUI bleibt AppKit; Vorschau und Overlay
+teilen ihren Zeichenpfad.
 
-## Build und Tests
+Fokus/Minimieren/Schließen laufen über AX-Ereignisse. Bewegungs-/Größenereignisse
+lesen die bekannte Fenstergeometrie gebündelt. Bei Mausdruck in der Titelregion
+werden Maus- und Fensterposition verankert. Nach AXMoved-Bestätigung folgt der
+Rahmen dem Mausweg ohne weitere AX-Abfragen während dieses Ziehens. Resize,
+Fokus-/Displaywechsel und Berechtigungsverlust unterbrechen die Verfolgung.
+Nach Loslassen erfolgt ein einmaliger Abgleich nach 50 ms. Ein Space-Wechsel
+verwendet einen einmaligen Abgleich nach 150 ms. Kein periodisches Polling.
+
+AX-Koordinaten werden an der Hauptdisplay-Oberkante umgerechnet, einschließlich
+negativer Koordinaten bei weiteren Displays. Das Overlay kann weder Key- noch
+Main-Window werden und nimmt keine Mausklicks an.
+
+## Entwicklung und Prüfungen
 
 ```sh
-./script/test.sh
-./script/build_and_run.sh --build-only
-./script/build_and_run.sh --verify
+./script/check.sh                     # Tests, Build, Signatur, Whitespace
+./script/build_and_run.sh --settings  # Einstellungsfenster direkt öffnen
+./script/build_and_run.sh --diagnostics
+./script/fixture.sh                   # Zwei reproduzierbare Testfenster
 ```
 
-`--verify` bestätigt den laufenden Prozess, nicht die sichtbare Rahmenfunktion.
-`--debug`, `--logs` und `--telemetry` starten Debugger bzw. lokale Logs.
-Das Testskript verwendet Swift Testing und einen temporären Buildordner außerhalb
-von synchronisierten Dokumentenordnern. Es übergibt den vorhandenen
-Testing-Makro-Pfad explizit, um einen Fehler des Swift-6.4-Buildsystems zu umgehen.
-Mit einer vollständigen Xcode-Installation kann auch `swift test` verwendet werden.
-Die Unit-Tests prüfen Koordinaten auf verschieden angeordneten Displays,
-ungültige Geometrie und den äußeren Rahmenabstand.
+Weitere Buildmodi: `--build-only`, `--verify`, `--debug`, `--logs`, `--telemetry`.
+`--verify` bestätigt einen laufenden Prozess, keine korrekte sichtbare Darstellung.
+Das Testskript verwendet Swift Testing, einen temporären Buildordner außerhalb
+synchronisierter Dokumente und den expliziten Testing-Makro-Pfad als Umgehung
+für die lokale Swift-6.4-Toolchain. `FocusFrameFixture` ist ausschließlich ein
+Entwicklungswerkzeug und wird nicht in FocusFrame eingebaut.
 
-Manuelle Abnahme mit erlaubten Bedienungshilfen:
+[Entwicklungsablauf](DEVELOPMENT.md), [Prüfnachweise](VALIDATION.md),
+[Roadmap](ROADMAP.md) und [Änderungen](CHANGELOG.md).
 
-1. Zwischen Finder, Browser und Editor sowie zwei Fenstern derselben App wechseln.
-2. Das fokussierte Fenster verschieben und skalieren; der Rahmen folgt.
-3. Minimieren, schließen und eine App ohne Fenster aktivieren; kein alter Rahmen bleibt.
-4. Durch Rahmen und Fenster klicken; FocusFrame übernimmt keinen Fokus.
-5. Farbe und Stärke ändern, neu starten und gespeicherte Einstellungen prüfen.
-6. Fenster auf Monitore links/oberhalb/unterhalb verschieben und Displays neu verbinden.
-7. Spaces und Vollbild wechseln, Ruhezustand/Aufwachen sowie Berechtigungsentzug prüfen.
+## Grenzen
 
-## Grenzen der V1
+Apps unterstützen AX-Attribute und Ereignisse unterschiedlich. Titel-Ziehgesten
+werden in den obersten 64 pt ohne Resize-Kante erkannt und erst nach AXMoved
+vorhergesagt. Apps, die erst nach Loslassen melden oder andere Bereiche als
+Ziehgriff verwenden, können weiterhin verzögert aktualisiert werden. Besondere
+Snap-/Begrenzungsregeln können während der Vorhersage abweichen; nach Loslassen
+wird die echte Geometrie übernommen. Der Eckenradius ist eine manuelle Annäherung,
+keine automatische Erkennung fremder Fensterformen. Bildschirmränder können
+Teile des äußeren Rahmens abschneiden.
 
-Apps können einzelne AX-Ereignisse oder Fensterattribute nicht unterstützen.
-In solchen Apps ist die Aktualisierung bis zum nächsten unterstützten Ereignis
-eingeschränkt; es gibt bewusst keinen Polling-Fallback. Vollbild/Spaces verwenden
-öffentliche AppKit-Optionen (`canJoinAllSpaces`, `fullScreenAuxiliary`); ihre
-Darstellung hängt auch vom Verhalten der Ziel-App und macOS ab und muss auf dem
-jeweiligen Mac geprüft werden. Der äußere Rahmen kann an Bildschirmrändern
-abgeschnitten sein. Mission Control und Stage Manager sind noch nicht gesondert
-abgenommen. Kein Autostart, Glow, Animationen, App-Ausnahmen oder Installer.
-
-Die Mausverfolgung beginnt nach der ersten AXMoved-Meldung einer Titel-/Toolbar-
-Ziehgeste (oberste 64 pt, ohne äußere Resize-Kante). Wenn eine App Bewegungen erst
-nach dem Loslassen meldet oder andere Bereiche als Ziehgriff verwendet, bleibt
-die Aktualisierung ereignisbasiert über AX. Bei besonderen Snap-/Begrenzungsregeln
-kann die vorhergesagte Position während des Ziehens abweichen; nach Loslassen
-wird die echte Fenstergeometrie übernommen.
-
-Die App liest nur die AX-Fenstergeometrie und den Fokus. Sie erfasst keine
-Fensterinhalte und hat keine Netzwerkfunktion.
+Reale Mehrschirm-, Spaces-, Vollbild-, Mission-Control- und Stage-Manager-Szenarien
+sind noch nicht vollständig praktisch abgenommen. Vollbild nutzt öffentliche
+AppKit-Optionen und AXFullScreen, sofern die Ziel-App dieses Attribut bereitstellt.
+Ein tatsächlicher Anmeldestart und die wahrgenommene Ziehflüssigkeit benötigen
+manuelle Prüfung. Lokale Ad-hoc-Signatur, noch keine Notarisierung/Verteilung.
+Kein Glow, Preset-System, Installer oder Update-Dienst. Keine Netzwerkfunktion.

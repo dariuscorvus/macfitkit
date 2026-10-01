@@ -1,7 +1,8 @@
 # FocusFrame – nächste Entwicklungsschritte
 
-Planungsentwurf, 1. Oktober 2026. Die Reihenfolge ist ein Vorschlag;
-weitere Features sind damit noch nicht als Umsetzung beschlossen.
+Am 1. Oktober 2026 vom Nutzer freigegeben. Entwicklungsbasis, Darstellung und
+Alltagsoptionen sind im Entwicklungsstand 0.3.0 implementiert. Praktische
+Abnahmegrenzen stehen in VALIDATION.md; optionale spätere Features bleiben offen.
 
 ## Produktziel
 
@@ -77,4 +78,14 @@ Verteilung, Developer-ID-Signierung, Notarisierung, Installer und Updates bilden
 eine eigene spätere Etappe, falls die App auch für andere gedacht ist.
 Keine Veröffentlichung oder Remote-Erstellung ist Teil dieses Entwurfs.
 
-Offene Priorisierung: Stabilität/Entwicklungsablauf, Darstellung oder Alltagskomfort.
+## Umsetzungsstand
+
+- Entwicklungsbasis: gemeinsamer Prüfaufruf, Testfenster, optionale Diagnose,
+  Sichtbarkeitsregeln und Regressionstests vorhanden.
+- Darstellung: native Einstellungen und gemeinsame Vorschau implementiert;
+  Radius/Abstand/Deckkraft und Speicherung nach Neustart praktisch geprüft.
+- Alltag: native Autostart-Registrierung, ⌃⌥F, App-Ausnahmen und Vollbildregel
+  implementiert. Registrierung an/aus und Ausschlussstatus praktisch geprüft.
+- Noch manuell: wahrgenommene Ziehflüssigkeit, reale Monitore/Spaces/Vollbild,
+  tatsächlicher Login und physische Eingabe des globalen Tastenkürzels.
+- Später: Glow, Presets, Regeln je App, Verteilung und CI bei vorhandenem Remote.

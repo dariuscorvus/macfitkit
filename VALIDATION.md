@@ -1,5 +1,8 @@
 # Lokale V1-Prüfung – 1. Oktober 2026
 
+Neuester Stand: 0.3.0; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
+erhalten. Die aktuelle Abnahme steht am Ende dieses Dokuments.
+
 Umgebung: Apple Silicon, Swift 6.4, Command Line Tools, macOS-27-SDK.
 Deployment Target: macOS 14. Keine externen Paketabhängigkeiten.
 
@@ -57,6 +60,47 @@ verzögerten Abgleich nach 50 ms, keinen wiederkehrenden Timer.
 - Die automatisierte Finder-Ziehgeste hat die neue Vorhersage im Protokoll nicht
   nachweisbar aktiviert. Die wahrgenommene Flüssigkeit ist daher noch durch
   echtes manuelles Ziehen zu bestätigen; keine gemessene Latenzgarantie.
+
+## 0.3.0 – freigegebene Roadmap
+
+Implementiert: native Darstellungseinstellungen und gemeinsame Rahmenvorschau,
+freie Farbe/Deckkraft/Stärke/Radius/Abstand, persistierte Konfiguration mit
+Übernahme alter Werte, optionale Autostart-Registrierung, globales ⌃⌥F,
+App-Ausnahmen, Vollbildregel, Diagnose im Arbeitsspeicher, lokale Test-App und
+gemeinsamer Prüfaufruf.
+
+Bestätigt:
+
+- `./script/check.sh`: 16 Tests in vier Suites, Build und strenge Signaturprüfung
+  erfolgreich. Tests umfassen Geometrie, Ziehgesten, Konfigurationsgrenzen,
+  Persistenzformat und Sichtbarkeitsregeln. Nach kleineren GUI-/Zustandsanpassungen
+  wurde die App nochmals gebaut und gestartet.
+- Native Vorschau sichtbar. Radius 16 pt, Abstand 4 pt und Deckkraft 80 % per UI
+  eingestellt; dieselben Werte nach Neustart wieder angezeigt. Danach ursprüngliche
+  Darstellung mit 3 pt Stärke, 10 pt Radius, 0 pt Abstand und 100 % Deckkraft wiederhergestellt.
+- Optionales Tastenkürzel registrierbar; Checkbox und Vollbildregel bleiben nach
+  Neustart erhalten. Physische globale Tasteneingabe wurde nicht bestätigt.
+- Native ServiceManagement-Registrierung für Anmeldung einmal eingeschaltet:
+  OS-Status „aktiv“. Wieder ausgeschaltet: OS-Status „ausgeschaltet“. Kein tatsächlicher
+  Logout/Login während der Abnahme.
+- Test-App in Ausnahmeliste hinzugefügt, bei Fokus als „App ausgeschlossen“ in der
+  Diagnose erfasst und anschließend aus der Liste entfernt.
+- Testfenster programmatisch um +90/+40 pt verschoben und um +50/+20 pt vergrößert;
+  die Anzeige bestätigt diese Änderungen. Die Test-App aktiviert sich für die Prüfung.
+- Optionale Diagnose sichtbar, Zustandsereignisse und AX-Abfragezeiten erfasst
+  (einzelne beobachtete Werte 0.12–0.47 ms; keine Latenzgarantie oder Bildschirmmessung).
+- Test-App nach der Abnahme beendet. Autostart, Tastenkürzel, Vollbildregel und
+  Diagnose sind im zurückgestellten Testzustand ausgeschaltet; keine App-Ausnahme bleibt.
+
+Noch offen:
+
+- Wahrgenommene Flüssigkeit echter Ziehgesten und sichtbarer Versatz des Overlays.
+- Vollbild/Spaces: UI-Test wegen ScreenCaptureKit-Aufnahmefehler der Automation
+  abgebrochen. Regel und persistierte Einstellung sind geprüft, echte Darstellung
+  auf allen Spaces damit nicht bestätigt.
+- Reale Mehrschirm-/Stage-Manager-/Mission-Control- und Anmeldeszenarien.
+- Das App-Bundle bleibt am Entwicklungs-Cache-Pfad. Dauerhafter Installationspfad
+  und Developer-ID-Verteilung sind eine spätere Etappe.
 
 ## Toolchain-Besonderheiten
 
