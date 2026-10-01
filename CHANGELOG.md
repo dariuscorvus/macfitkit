@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.5.0 – 1. Oktober 2026
+
+- Etappe 0.4: kombinierbare Glow-/Neon-, Schatten- und Zweifarbverlauf-Effekte
+  mit normalisierter, abwärtskompatibler Speicherung und separatem Zurücksetzen.
+- Etappe 0.5: Pulsieren, Blinken und unabhängige Verlaufsrotation mit Fokus- oder
+  Dauerauslöser; dynamische Unterstützung für „Bewegung reduzieren“.
+- Gemeinsamer Core-Animation-Renderer für Vorschau und Overlay; zusätzlicher
+  Platz für äußere Effekte, weiterhin reine Positionsänderung beim Ziehen.
+- Vier native Einstellungsbereiche, scrollbar, gemeinsame skalierbare Vorschau
+  und Testknopf für Fokusanimationen.
+- Sechs zusätzliche Prüfungen für Migration, Persistenz, Grenzen und Animationen.
+
 ## 0.3.2 – 1. Oktober 2026
 
 - „Rahmen aktiv“ direkt in den Verhaltenseinstellungen; synchron mit

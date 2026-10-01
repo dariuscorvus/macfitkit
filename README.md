@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller Entwicklungsstand: 0.3.2.
+Aktueller Entwicklungsstand: 0.5.0.
 
 ## Start
 
@@ -33,6 +33,24 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
 - **Darstellung:** freie Rahmenfarbe, Deckkraft 10–100 %, Stärke 1–12 pt,
   Eckenradius 0–40 pt und Abstand 0–20 pt. Die Vorschau verwendet denselben
   Zeichenpfad wie das echte Overlay. Darstellung kann separat zurückgesetzt werden.
+- **Effekte:** Glow/Neon mit Intensität, Leuchtweite, eigener oder übernommener
+  Rahmenfarbe und Neon-Kern; Schatten mit Farbe, Deckkraft, Weichheit, Ausbreitung
+  und X-/Y-Versatz; linearer oder umlaufender Zweifarbenverlauf mit Winkel.
+- **Animation:** Pulsieren oder Blinken mit Zyklusdauer und Deckkraftgrenzen;
+  unabhängige Verlaufsrotation mit Richtung und Umlaufdauer. Für beide separat
+  „nur beim Fokuswechsel“ oder „dauerhaft“, mit einstellbarer Fokusdauer.
+- Vorschau in Darstellung/Effekte/Animation nutzt denselben Renderer wie der echte
+  Rahmen. „Fokuswechsel testen“ spielt gewählte Fokusanimationen ab. Bei großen
+  Effekten skaliert die Vorschau die gesamte Szene; Angaben bleiben echte Punkte.
+- Jeder Effekt ist separat zurücksetzbar. Grunddarstellung zurücksetzen verändert
+  keine Effekte. Neue Effekte sind zunächst ausgeschaltet; alte Einstellungen
+  bleiben erhalten. Lange Seiten sind scrollbar.
+- Glow und Neon sind Alternativen; Schatten, Verlauf und Animation sind frei
+  kombinierbar. Übernommene Leuchtfarbe verwendet bei Verlauf dessen erste Farbe.
+  Positiver vertikaler Schattenversatz bedeutet nach unten.
+- Animationen laufen über Core Animation, ohne Zeichentimer oder weitere
+  AX-Abfragen. Verborgene Rahmen stoppen die Animationen. macOS „Bewegung
+  reduzieren“ schaltet Animationen zur Laufzeit aus, ohne die Auswahl zu löschen.
 - **Verhalten:** Rahmen aktivieren/pausieren, Start bei Anmeldung, optionales globales Tastenkürzel **⌃⌥F**,
   Ausblenden im Vollbild und eine Liste ausgeschlossener Apps.
 - Die Konfiguration wird lokal gespeichert. Bestehende Farb-/Stärkeeinstellungen
@@ -67,6 +85,8 @@ NSWorkspace + AXObserver + Mausereignisse
 AccessibilityService → FocusManager → OverlayWindow
                             ↑
                      PreferencesStore
+                            ↓
+                     EffectRenderer (Overlay + Vorschau)
 ```
 
 `FocusFrameCore` enthält testbare Geometrie, Konfiguration, Sichtbarkeitsregeln

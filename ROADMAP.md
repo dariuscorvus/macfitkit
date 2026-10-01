@@ -91,3 +91,11 @@ Keine Veröffentlichung oder Remote-Erstellung ist Teil dieses Entwurfs.
   des globalen Tastenkürzels. Anmeldestart und Tastenkürzel wurden vom Nutzer
   noch nicht erfolgreich geprüft.
 - Später: Glow, Presets, Regeln je App, Verteilung und CI bei vorhandenem Remote.
+
+## Effekte – 0.5.0
+
+Die Etappen 0.4 (statische Effekte) und 0.5 (Animation) sind implementiert:
+Glow/Neon, Schatten, lineare/umlaufende Verläufe, Pulsieren/Blinken, unabhängige
+Rotation, gemeinsame Vorschau, kompatible Speicherung und Bewegung-reduzieren-Regel.
+Aktuelle lokale Prüfergebnisse und noch nötige reale Abnahme stehen in VALIDATION.md.
+Presets, Darstellung je App und Veröffentlichung bleiben außerhalb dieses Auftrags.

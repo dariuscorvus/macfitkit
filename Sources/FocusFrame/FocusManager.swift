@@ -9,6 +9,8 @@ final class FocusManager: NSObject {
     private var pendingRefresh: DispatchWorkItem?
     private var dragMonitor: Any?
     private var drag: WindowDrag?
+    private var lastFocusGeneration: UInt64 = 0
+    private var pendingFocusAnimation = false
     private var windowFrame: CGRect?
     private let logger = Logger(subsystem: "de.highbytetech.FocusFrame", category: "Movement")
     var enabled = true { didSet { refresh() } }
@@ -82,6 +84,11 @@ final class FocusManager: NSObject {
         }
         accessibility.observeFrontmostApplication()
         let geometry = accessibility.focusedWindowGeometry()
+        if accessibility.focusGeneration != lastFocusGeneration {
+            lastFocusGeneration = accessibility.focusGeneration
+            pendingFocusAnimation = true
+            Diagnostics.shared.record("Fokussiertes Fenster gewechselt")
+        }
         let windowPolicy = VisibilityPolicy.decide(enabled: enabled, trusted: trusted,
             fullScreen: configuration.hideInFullScreen && accessibility.trackedWindowIsFullScreen,
             hideInFullScreen: configuration.hideInFullScreen, hasWindow: geometry != nil)
@@ -111,7 +118,8 @@ final class FocusManager: NSObject {
     private func showFrame(_ frame: CGRect) {
         guard enabled else { return }
         Diagnostics.shared.trackingState = .show
-        overlay.show(around: frame, appearance: configuration.appearance)
+        overlay.show(around: frame, appearance: configuration.appearance, focusChanged: pendingFocusAnimation)
+        pendingFocusAnimation = false
     }
 
     private func handleMouse(_ event: NSEvent) {

@@ -57,3 +57,15 @@ Bundle-Signaturen nicht verändern. Änderungen an diesem Workflow gezielt prüf
 Ein künftiger macOS-CI-Lauf kann denselben Prüfaufruf nutzen, ersetzt jedoch
 keine Desktop-Sitzung mit erlaubten Bedienungshilfen. Ein Remote und eine CI
 werden erst bei entsprechender Projektentscheidung eingerichtet.
+
+## Effekte prüfen
+
+In Effekte Neon + Schatten + Verlauf kombinieren, danach in Animation Pulsieren
+und Rotation aktivieren. Jeweils Fokus-/Dauerbetrieb prüfen. Schatten/Glow mit
+maximaler Weite und positiven/negativen Versätzen: weder Abschneiden noch
+Verschieben der Fensterkontur. Reine Bewegung darf keine Effektpfade neu bauen.
+Diagnose „Fokussiertes Fenster gewechselt“ genau einmal pro tatsächlichem Wechsel;
+Move/Resize im selben Fenster darf kein neues Fokusereignis erzeugen.
+Vorschau bei Tab Verhalten und bei geschlossenem Fenster ohne Animationen;
+verstecktes Overlay ebenfalls. „Bewegung reduzieren“ in macOS statisch prüfen.
+Nach Tests nur neue Effekte zurücksetzen; Nutzerwerte für Verhalten beibehalten.

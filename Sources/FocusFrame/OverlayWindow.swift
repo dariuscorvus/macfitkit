@@ -3,65 +3,42 @@ import FocusFrameCore
 
 @MainActor
 final class OverlayWindow: NSPanel {
-    private let border = BorderView()
+    private let border = EffectCanvas(frame: .zero)
+    private var style: Appearance?
+    private var targetSize = CGSize.zero
+    private var scale: CGFloat = 0
 
     init() {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        isOpaque = false
-        backgroundColor = .clear
-        hasShadow = false
-        ignoresMouseEvents = true
-        hidesOnDeactivate = false
-        isFloatingPanel = true
+        isOpaque = false; backgroundColor = .clear; hasShadow = false
+        ignoresMouseEvents = true; hidesOnDeactivate = false; isFloatingPanel = true
         level = .floating
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        isReleasedWhenClosed = false
-        isExcludedFromWindowsMenu = true
-        animationBehavior = .none
-        contentView = border
-        setAccessibilityHidden(true)
+        isReleasedWhenClosed = false; isExcludedFromWindowsMenu = true; animationBehavior = .none
+        contentView = border; setAccessibilityHidden(true)
     }
-
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
-
-    func show(around rect: CGRect, appearance: Appearance) {
-        let nextFrame = WindowGeometry.overlayRect(for: rect, width: appearance.width, gap: appearance.gap)
-        let needsRedraw = border.style != appearance || frame.size != nextFrame.size
-        border.style = appearance
-        if frame.size == nextFrame.size {
-            // Moving an unchanged border needs no layout or redraw.
-            if frame.origin != nextFrame.origin { setFrameOrigin(nextFrame.origin) }
-        } else {
-            setFrame(nextFrame, display: false, animate: false)
-        }
-        if needsRedraw {
-            border.needsDisplay = true
-            border.displayIfNeeded()
-        }
-        if !isVisible { orderFrontRegardless() }
+    override func orderOut(_ sender: Any?) {
+        border.renderer.setVisible(false); super.orderOut(sender)
     }
-}
-
-@MainActor
-private final class BorderView: NSView {
-    var style = Appearance()
-    override var isOpaque: Bool { false }
-
-    override func draw(_ dirtyRect: NSRect) {
-        let target = bounds.insetBy(dx: style.width + style.gap, dy: style.width + style.gap)
-        BorderDrawing.draw(around: target, appearance: style)
-    }
-}
-
-@MainActor
-enum BorderDrawing {
-    static func draw(around rect: CGRect, appearance: Appearance) {
-        appearance.color.setStroke()
-        let outset = appearance.gap + appearance.width / 2
-        let radius = appearance.radius > 0 ? appearance.radius + outset : 0
-        let path = NSBezierPath(roundedRect: rect.insetBy(dx: -outset, dy: -outset), xRadius: radius, yRadius: radius)
-        path.lineWidth = appearance.width
-        path.stroke()
+    func show(around rect: CGRect, appearance: Appearance, focusChanged: Bool = false) {
+        let a = appearance.normalized
+        let next = EffectGeometry.overlayRect(for: rect, appearance: a)
+        let wasVisible = isVisible
+        let newScale = NSScreen.screens.first(where: { $0.frame.contains(CGPoint(x: rect.midX,y: rect.midY)) })?.backingScaleFactor ?? backingScaleFactor
+        let rebuild = style != a || targetSize != rect.size || scale != newScale
+        if frame.size == next.size {
+            if frame.origin != next.origin { setFrameOrigin(next.origin) }
+        } else { setFrame(next, display: false, animate: false) }
+        if rebuild {
+            style = a; targetSize = rect.size; scale = newScale
+            let target = rect.offsetBy(dx: -next.minX, dy: -next.minY)
+            border.renderer.update(bounds: CGRect(origin: .zero,size: next.size), target: target, style: a, scale: scale)
+        }
+        if !wasVisible { orderFrontRegardless() }
+        if rebuild || !wasVisible || focusChanged {
+            border.renderer.setVisible(true, focusChanged: focusChanged || !wasVisible)
+        }
     }
 }

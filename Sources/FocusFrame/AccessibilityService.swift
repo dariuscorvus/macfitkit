@@ -11,6 +11,7 @@ final class AccessibilityService: NSObject {
     private var application: AXUIElement?
     private var window: AXUIElement?
     private var registrations: [(AXUIElement, String)] = []
+    private(set) var focusGeneration: UInt64 = 0
     private var pid: pid_t?
 
     var isTrusted: Bool { AXIsProcessTrusted() }
@@ -125,6 +126,7 @@ final class AccessibilityService: NSObject {
             for (element, event) in windowRegistrations { AXObserverRemoveNotification(observer, element, event as CFString) }
             registrations.removeAll { CFEqual($0.0, window) }
         }
+        if next != nil { focusGeneration &+= 1 }
         window = next
         guard let next else { return }
         for event in [kAXMovedNotification, kAXResizedNotification, kAXWindowMiniaturizedNotification,

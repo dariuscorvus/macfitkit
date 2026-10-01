@@ -1,6 +1,6 @@
 # Lokale V1-Prüfung – 1. Oktober 2026
 
-Neuester Stand: 0.3.2; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
+Neuester Stand: 0.5.0; die folgenden frühen V1-Ergebnisse bleiben als Verlauf
 erhalten. Die aktuelle Abnahme steht am Ende dieses Dokuments.
 
 Umgebung: Apple Silicon, Swift 6.4, Command Line Tools, macOS-27-SDK.
@@ -153,3 +153,54 @@ Noch offen:
   vom Nutzer eingestellt eingeschaltet.
 - Build, Signaturprüfung, Prozessstart und Diff-Prüfung erfolgreich. Die reine
   GUI-Verdrahtung ändert keine Kernlogik; deren letzter Lauf bestand mit 16 Tests.
+
+## 0.5.0 – Effekte und Animationen
+
+Implementiert: getrennte kompatible Effektmodelle, zusätzliche Overlay-Ränder,
+Core-Animation-Renderer für Overlay und Vorschau, vier scrollbar bedienbare
+Einstellungsbereiche, Glow/Neon, Schatten, lineare/umlaufende Zweifarbverläufe,
+Pulsieren/Blinken, getrennte Fokus-/Dauerauslöser und Verlaufsrotation.
+„Bewegung reduzieren“ wird dynamisch beobachtet; verborgene/geschlossene
+Vorschau und ausgeblendetes Overlay stoppen Animationen. Positionsänderungen
+allein ändern weiterhin nur den Overlay-Ursprung.
+
+Bestätigt:
+
+- `./script/check.sh`: 22 Tests in fünf Suites erfolgreich, Build, strenge
+  Signaturprüfung und Diff-Prüfung bestanden. Sechs neue Tests prüfen alte
+  Konfigurationen ohne Effektfelder, komplette Effekt-Persistenz, ungültige
+  Werte, Deckkraftgrenzen, unveränderte Geometrie bei ausgeschalteten Effekten,
+  maximale Ausdehnung mit beiden Versatzrichtungen und Animationsauslöser.
+- Native Oberfläche: alle vier Bereiche vorhanden, lange Seiten scrollbar,
+  Leuchten/Schatten/Verlauf kombinierbar; Neon, linearer und umlaufender Verlauf
+  sichtbar. Rotierender Verlauf zwischen zeitlich getrennten Screenshots verändert.
+  Puls- und Blinkmodus auswählbar; Fokus-Testknopf vorhanden und betätigt.
+- Neon, Schatten mit -20 pt X-Versatz, umlaufender Verlauf, Puls-Dauerbetrieb
+  und Rotations-Dauerbetrieb nach Neustart identisch in den Einstellungen.
+- Maximale Leuchtweite/Weichheit 40 pt, Ausbreitung 20 pt und Versatz +/-40 pt
+  per UI eingestellt. Gefundener Skalierungsfehler der Vorschau behoben:
+  Layer-Transformation vor neuer Geometrie zurücksetzen; Szene danach korrekt
+  innerhalb der Vorschau. Einseitiger Versatz bleibt in der Vorschau erhalten.
+- Fixture-Move und -Resize per AppKit erfolgreich. Diagnose erfasst beim
+  erstmaligen Aktivieren genau ein Fokusereignis, bei folgenden Move/Resize
+  kein weiteres; Wechsel von Fenster B zu A erzeugt genau ein neues Ereignis.
+  Einzelne AX-Abfragen dabei 0.11–0.14 ms; keine Bildschirm-Latenzmessung.
+- Kurze Prozess-CPU-Stichprobe über jeweils 3 Sekunden: mit aktivierter
+  Puls-/Rotationskonfiguration 0.02 s zusätzliche Prozess-CPU; mit statischem
+  Rahmen keine Änderung bei 0.01-s-Anzeigeauflösung. Keine Aussage über GPU,
+  WindowServer, Langzeitlast oder allgemeine Leistungsgarantie.
+- Nach kleinen Renderer-/Vorschaukorrekturen nochmals gebaut, streng signiert
+  und lokal gestartet. Alle neuen Effekte nach UI-Prüfung separat zurückgesetzt;
+  ursprüngliche Rahmenwerte, Tastenkürzel und Vollbildregel bleiben erhalten.
+
+Praktische Grenzen:
+
+- Die Automation liefert zugeschnittene Screenshots der Ziel-App; äußere
+  Overlay-Effekte werden darin nicht vollständig mit aufgenommen. Sichtbare
+  Übereinstimmung zwischen Vorschau und fremdem Fensterrahmen ist daher noch
+  mit echter Nutzung zu bestätigen.
+- Echtes manuelles Ziehen, maximale Effekte in Vollbild/Spaces und Wechsel
+  realer Displays sowie Änderungen der macOS-Bewegungseinstellung sind noch
+  manuell abzunehmen. Die vorhandene Zieh-/Vollbildbestätigung des Nutzers
+  bezog sich auf den vorherigen Renderer. Automatisierte Kernprüfungen ersetzen
+  diese Abnahme nicht.
