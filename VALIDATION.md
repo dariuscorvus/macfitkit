@@ -287,3 +287,6 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
 - Bestehender Check: 25/25 Kernprüfungen, SwiftPM-Build, strenge Signaturprüfung
   und Xcode-Strukturprüfung erfolgreich. Vollständiges Xcode weiterhin nicht
   vorhanden. Bestätigung des sporadischen Fokuswechsels beim Nutzer steht aus.
+- 0.5.3 lokal installiert und Prozessstart bestätigt. Universal-Release-DMG
+  für Intel/Apple Silicon erstellt; App-/DMG-Signaturen, Architektur, macOS-
+  Mindestversion und DMG-Prüfsumme erneut bestanden. Weiterhin nicht notarisiert.
