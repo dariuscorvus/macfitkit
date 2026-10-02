@@ -2,7 +2,8 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktuelle Version: 0.6.0. Release als signierte Universal-DMG, noch nicht notarisiert.
+Aktueller lokaler Entwicklungsstand: 0.7.0. Letzter Release: 0.6.0 als signierte
+Universal-DMG, noch nicht notarisiert.
 
 ## Start
 
@@ -240,3 +241,25 @@ Prozentwerte, Winkel und Animationsdauern behalten ihre bisherigen Grenzen.
 
 Standard-Eckenradius: 18,5 pt bei neuen Einstellungen und beim Zurücksetzen.
 Bereits gespeicherte Radiuswerte bleiben erhalten.
+
+### Rahmenposition und Metalloberflächen (0.7.0 lokal)
+
+Unter **Darstellung** wählst du Außen, Mittig oder Innen. Bei Abstand 0 liegt der
+Rahmen vollständig außerhalb, zur Hälfte auf der Fensterkante oder vollständig
+innerhalb. Ein positiver Abstand verschiebt Innenrahmen nach innen und die beiden
+anderen Positionen nach außen. Die Rundungen folgen den inneren und äußeren
+Konturen. Bei sehr kleinen Fenstern werden Innenabstand und -stärke für die
+Darstellung begrenzt; gespeicherte Wunschwerte bleiben bestehen.
+
+Unter **Oberfläche** stehen Farbe / Farbverlauf, Gold und Chrom zur Verfügung.
+Metalloberflächen haben einen einstellbaren Glanz (0–100 %) und Lichtwinkel
+(0–360°). Rahmenfarbe und Farbverläufe bleiben beim Wechsel gespeichert; die
+Verlaufsrotation läuft nur bei der Oberfläche Farbe / Farbverlauf. Glow/Neon,
+Schatten und Deckkraftanimationen lassen sich weiter kombinieren.
+
+Unter **Animationen → Metall-Lichtreflex** gibt es einen optionalen wandernden
+Reflex: Stärke 0–100 %, Breite 5–60 %, nur beim Fokuswechsel (0,5–5 s) oder
+dauerhaft (Zyklus 2–30 s). Die Fokusvariante führt einen Durchlauf mit weichem
+Ein-/Ausblenden aus. Pausieren, Ausblenden und Bewegung reduzieren stoppen ihn.
+Jeder Zahlenwert hat einen Regler und eine direkte Eingabe; Oberfläche und
+Lichtreflex besitzen eigene Zurücksetzen-Schaltflächen. Neue Effekte sind aus.

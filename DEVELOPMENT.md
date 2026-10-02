@@ -109,3 +109,23 @@ aufnahme-Berechtigung für eine read-only Konturanalyse. Kein Bild wird gespeich
 oder übertragen. Pro App wird nur ein sichtbares normales Fenster erfasst; die
 App selbst bekommt dadurch keine Aufnahmefunktion. docs/CORNER-DETECTION.md
 beschreibt Aussagekraft, gemessene Werte und noch offene Fälle.
+
+## Rahmenposition und Metalloberflächen
+
+BorderPlacement/BorderContour und MaterialEffect liegen als kleine Codable-
+Werttypen im Kern. Alte Konfigurationen verwenden Außen und Standardmaterial.
+EffectGeometry trennt Kontur, logische Effektränder und AppKit-kompatible,
+ganzzahlige Overlay-Geometrie. Ein zusätzlicher transparenter Punkt hält deren
+Größe bei Subpixel-Bewegung konstant. OverlayWindow kompensiert den Rest mit
+einer translations-only Layer-Transformation, ohne Pfade neu zu erzeugen.
+
+Gold/Chrom verwenden axiale Mehrfarbenverläufe auf derselben Ringmaske. Der
+Reflex hat eine separate Ringmaske und kombiniert Positions- und Deckkraft-
+animationen. Seine Modell-Deckkraft bleibt 0, daher endet ein Fokusdurchlauf
+ohne Sprung auf dem statischen Metall. Schattenpfade besitzen entgegengesetzte
+Konturorientierungen, um das zentrale Loch zu bewahren.
+
+`script/test_overlay_geometry.sh --snapshot-dir work/renderer-check` prüft
+zusätzlich tatsächliche Renderer-Pixel und speichert optional synthetische
+Renderbilder (keine Screenshots fremder Fenster). Die Geometrieprobe prüft
+auch Maskenposition und Layer-Identität bei Subpixel-Bewegungen.

@@ -336,3 +336,39 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
   keine Übermittlung an Apple und keine öffentliche Veröffentlichung.
   Intel-Ausführung, fremde Download-Quarantäne und vollständiges Xcode
   bleiben ungetestet. Installationshinweise auf neue Menüstruktur aktualisiert.
+
+## 0.7.0 / Build 6 – Rahmenposition und Gold/Chrom (lokal)
+
+- Fehlende Position/Oberfläche ergeben Außen und Standard. Bestehende Farben,
+  Verläufe, Radius, App-Ausnahmen und Verhalten bleiben erhalten. Metall- und
+  Reflexwerte überleben Speichern/Laden.
+- 31 Kernprüfungen in sechs Suites bestanden: Position, konzentrische Radien,
+  Abstandrichtung, kleine Fenster, Effektränder, Subpixel-Geometrie, Metallfarben,
+  Wertebegrenzung und bestehende Fokus-/Drag-Policies.
+- 792 echte AppKit-Overlay-Prüfungen erfolgreich: drei Positionen, gleich großer
+  Fokuswechsel, Resize, Viertelpunkt-Bewegung, oberer/linker Rand und Maximalwerte
+  inklusive Gold/Chrom mit Glow und Schatten. Die gezeichnete Maskenkontur stimmt
+  mit dem Ziel überein; Bewegung erhält die Masken-Layer. Ein physisches Display,
+  virtuelle Koordinaten oberhalb/links; keine neue Mehrschirm-/Intel-Abnahme.
+- 9 Pixelprüfungen des echten Renderers bestanden: Standard/Gold/Chrom mit jeder
+  Position, transparente Mitte, Konturbegrenzung und Metallfarben. Gold-/Chrom-
+  Bitmaps zusätzlich angesehen.
+- Native Einstellungen mit isoliertem Preferences-Speicher bestanden: sieben
+  Seiten ohne Größenänderung, Zahlenfelder, Validierung, Live-Frame, Position,
+  Metall/Reflex, Persistenz, Pause/Fortsetzen, Move/Resize, Transparenz und Stopp.
+  Fokusreflex startet nicht durch Darstellungsänderung, läuft einmal für die
+  Fokusdauer und behält beim Move seinen Startzeitpunkt. Verbergen stoppt alle
+  Animationen; Bewegungseinstellungs-Änderung startet verborgenen Renderer nicht
+  neu. Reduce-Motion-Policy im Kern geprüft; Systemeinstellung nicht umgeschaltet.
+- Zwei Abschlussläufe erreichten zunächst die Active/Key-Vorbedingung nicht;
+  anschließend ungestörter Lauf einschließlich Reflexprüfung erfolgreich. Ein
+  Lauf ohne diese Fokus-Vorbedingung wurde nicht als Funktionsprüfung gezählt.
+- Direkte UI-Prüfung: Position/Oberfläche sichtbar; Gold zeigt Glanz/Winkel,
+  Reflex zeigt Stärke/Breite/Fokusdauer mit Zahlenfeldern. Testauswahl auf vorherige
+  Standardoberfläche und ausgeschalteten Reflex zurückgestellt; persönliche
+  Stärke 4 pt und Radius 18,5 pt erhalten.
+- SwiftPM-Build und lokale Signaturprüfung erfolgreich; Xcode-Struktur gültig.
+  Vollständiges Xcode fehlt. Keine zusätzlichen AX-Abfragen, Zeichentimer oder
+  Abhängigkeiten. Physisches Ziehen/Vollbild mit den neuen Metallkombinationen
+  bleibt eine praktische Nutzerabnahme.
+- Neuer lokaler Stand; keine DMG, kein Tag, kein Rollout. Feuer bleibt später.

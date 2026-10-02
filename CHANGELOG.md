@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.7.0 – 2. Oktober 2026 (lokale Entwicklung)
+
+- Rahmenposition Außen / Mittig / Innen, konzentrische Konturen und sichere
+  Darstellung sehr breiter Innenrahmen auf kleinen Fenstern.
+- Gold und Chrom mit einstellbarem Glanz und Lichtwinkel; bestehende Farben
+  und Verläufe bleiben gespeichert.
+- Optionaler Metall-Lichtreflex mit Stärke, Breite, Fokus-/Dauerbetrieb und
+  konfigurierbarer Dauer. Core Animation, kein Zeichentimer.
+- Ganzzahlige Overlay-Fenstergeometrie mit separater Korrektur für Subpixel-
+  Positionen. Fensterbewegung erhält dieselben Kontur-Layer und laufende Reflexe.
+- Kein neuer Release in dieser Etappe; Feuer noch nicht implementiert.
+
 ## 0.6.0 – 2. Oktober 2026
 
 - Direkte Zahleneingaben neben allen Reglern; Dezimalwerte, Validierung und
