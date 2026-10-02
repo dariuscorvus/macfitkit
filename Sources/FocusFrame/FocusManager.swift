@@ -12,6 +12,8 @@ final class FocusManager: NSObject {
     private var lastFocusGeneration: UInt64 = 0
     private var pendingFocusAnimation = false
     private var windowFrame: CGRect?
+    weak var settingsWindow: NSWindow? { didSet { refresh() } }
+    private var tracksSettings = false
     private let logger = Logger(subsystem: "de.highbytetech.FocusFrame", category: "Movement")
     var enabled = true { didSet { refresh() } }
     var configuration = Configuration() { didSet { refresh() } }
@@ -52,6 +54,14 @@ final class FocusManager: NSObject {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(displayChanged),
             name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification,
+                     NSWindow.didMiniaturizeNotification, NSWindow.didDeminiaturizeNotification,
+                     NSWindow.willCloseNotification] {
+            NotificationCenter.default.addObserver(self, selector: #selector(localFocusChanged), name: name, object: nil)
+        }
+        for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
+            NotificationCenter.default.addObserver(self, selector: #selector(localGeometryChanged(_:)), name: name, object: nil)
+        }
         refresh()
     }
 
@@ -71,6 +81,7 @@ final class FocusManager: NSObject {
         cancelDrag()
         let trusted = accessibility.isTrusted
         onPermissionChange?(trusted)
+        if refreshSettingsTarget() { return }
         let excluded = NSWorkspace.shared.frontmostApplication?.bundleIdentifier.map {
             configuration.excludedApps.contains($0)
         } ?? false
@@ -99,6 +110,49 @@ final class FocusManager: NSObject {
         } else {
             showGeometry(geometry)
         }
+    }
+
+    /// Our own settings use AppKit notifications and geometry. They need no AX
+    /// lookup and share the same overlay and effects as every external window.
+    private func refreshSettingsTarget() -> Bool {
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier else {
+            tracksSettings = false
+            return false
+        }
+        accessibility.stop()
+        windowFrame = nil
+        let key = NSApp.keyWindow
+        let hasTarget = settingsWindow.map {
+            $0.isVisible && !$0.isMiniaturized &&
+            (key === $0 || key?.sheetParent === $0 || key is NSColorPanel)
+        } ?? false
+        let policy = VisibilityPolicy.decide(enabled: enabled, trusted: true,
+            excluded: configuration.excludedApps.contains(Bundle.main.bundleIdentifier ?? ""),
+            fullScreen: settingsWindow?.styleMask.contains(.fullScreen) == true,
+            hideInFullScreen: configuration.hideInFullScreen, hasWindow: hasTarget)
+        guard policy == .show, let settingsWindow else {
+            tracksSettings = false
+            Diagnostics.shared.trackingState = policy
+            overlay.orderOut(nil)
+            return true
+        }
+        if !tracksSettings { pendingFocusAnimation = true }
+        tracksSettings = true
+        showFrame(settingsWindow.frame)
+        return true
+    }
+
+    func testSettingsFocusAnimation() {
+        guard tracksSettings, enabled, let settingsWindow else { return }
+        pendingFocusAnimation = true
+        showFrame(settingsWindow.frame)
+    }
+
+    @objc private func localFocusChanged() { scheduleRefresh() }
+    @objc private func localGeometryChanged(_ notification: Notification) {
+        guard tracksSettings, let window = notification.object as? NSWindow,
+              window === settingsWindow else { return }
+        showFrame(window.frame)
     }
 
     private func showGeometry(_ geometry: (CGPoint, CGSize)?) {

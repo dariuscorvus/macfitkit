@@ -30,9 +30,19 @@ struct EffectTests {
         a.rotation.period = -2
         let n = a.normalized
         #expect(n.light.extent == 12 && n.light.coreWidth == 0.1)
-        #expect(n.shadow.offsetX == -40 && n.shadow.blur == 12 && n.gradient.angle == 360)
+        #expect(n.shadow.offsetX == -200 && n.shadow.blur == 12 && n.gradient.angle == 360)
         #expect(n.opacityAnimation.pulseMinimum == 0.1 && n.opacityAnimation.blinkMinimum == 0.1)
         #expect(n.rotation.period == 2)
+    }
+    @Test func expandedGeometryValuesSurviveNormalizationAndPersistence() throws {
+        var c = Configuration()
+        c.appearance.width = 100; c.appearance.gap = 200; c.appearance.radius = 300
+        c.appearance.light.extent = 200; c.appearance.shadow.blur = 200
+        c.appearance.shadow.spread = 200; c.appearance.shadow.offsetX = -200; c.appearance.shadow.offsetY = 200
+        #expect(c.normalized == c)
+        #expect(try JSONDecoder().decode(Configuration.self, from: JSONEncoder().encode(c)).normalized == c)
+        c.appearance.width = 1000; c.appearance.gap = 1000; c.appearance.radius = 1000
+        #expect(c.normalized.appearance.width == 100 && c.normalized.appearance.gap == 200 && c.normalized.appearance.radius == 300)
     }
     @Test func disabledEffectsKeepOriginalGeometry() {
         let rect = CGRect(x: -900,y: 1200,width: 800,height: 600)

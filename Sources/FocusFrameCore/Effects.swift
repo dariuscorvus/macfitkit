@@ -28,7 +28,7 @@ public struct LightEffect: Codable, Equatable, Sendable {
     public init() {}
     public var normalized: Self {
         var s = self
-        s.intensity = bounded(intensity, 0...1, 0.5); s.extent = bounded(extent, 0...40, 12)
+        s.intensity = bounded(intensity, 0...1, 0.5); s.extent = bounded(extent, 0...200, 12)
         s.coreWidth = bounded(coreWidth, 0.1...1, 0.35); s.whitening = bounded(whitening, 0...1, 0.75)
         s.color = color.normalized; return s
     }
@@ -44,9 +44,9 @@ public struct ShadowEffect: Codable, Equatable, Sendable {
     public init() {}
     public var normalized: Self {
         var s = self; s.color = color.normalized
-        s.opacity = bounded(opacity, 0...1, 0.35); s.blur = bounded(blur, 0...40, 12)
-        s.spread = bounded(spread, 0...20, 0)
-        s.offsetX = bounded(offsetX, -40...40, 0); s.offsetY = bounded(offsetY, -40...40, 4)
+        s.opacity = bounded(opacity, 0...1, 0.35); s.blur = bounded(blur, 0...200, 12)
+        s.spread = bounded(spread, 0...200, 0)
+        s.offsetX = bounded(offsetX, -200...200, 0); s.offsetY = bounded(offsetY, -200...200, 4)
         return s
     }
 }

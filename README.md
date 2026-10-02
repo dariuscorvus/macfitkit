@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller Entwicklungsstand: 0.5.2.
+Aktueller lokaler Entwicklungsstand: 0.6.0 (noch kein neuer Release).
 
 ## Start
 
@@ -23,7 +23,7 @@ keine installierte App. Der Codex-Run-Button verwendet dasselbe Skript.
 Beim ersten Start den Bedienungshilfen-Zugriff unter **Systemeinstellungen →
 Datenschutz & Sicherheit → Bedienungshilfen** erlauben. Falls FocusFrame fehlt,
 mit **+** hinzufügen und im Dateidialog mit **⌘⇧G** den obigen App-Pfad öffnen.
-Danach **Berechtigung erneut prüfen** im Menüleistenmenü wählen. Bei Problemen
+Danach zu FocusFrame zurückwechseln; die Berechtigung wird erneut geprüft. Bei Problemen
 nach einem Neubau den Eintrag entfernen und die App erneut hinzufügen.
 
 ## Xcode
@@ -66,18 +66,24 @@ geteilte Schemes ohne Xcode. Das ersetzt keinen Xcode-Build.
 
 Im Menüleistenmenü **Einstellungen …** öffnen:
 
+- Native Seitenleiste mit **Darstellung**, **Leuchten**, **Schatten**,
+  **Farbverlauf**, **Animationen**, **Verhalten** und **App-Ausnahmen**.
 - **Darstellung:** freie Rahmenfarbe, Deckkraft 10–100 %, Stärke 1–12 pt,
-  Eckenradius 0–40 pt und Abstand 0–20 pt. Die Vorschau verwendet denselben
-  Zeichenpfad wie das echte Overlay. Darstellung kann separat zurückgesetzt werden.
-- **Effekte:** Glow/Neon mit Intensität, Leuchtweite, eigener oder übernommener
-  Rahmenfarbe und Neon-Kern; Schatten mit Farbe, Deckkraft, Weichheit, Ausbreitung
-  und X-/Y-Versatz; linearer oder umlaufender Zweifarbenverlauf mit Winkel.
-- **Animation:** Pulsieren oder Blinken mit Zyklusdauer und Deckkraftgrenzen;
+  Eckenradius 0–40 pt und Abstand 0–20 pt. Die Darstellung kann separat
+  zurückgesetzt werden.
+- **Leuchten:** Glow/Neon mit Intensität, Leuchtweite, eigener oder übernommener
+  Rahmenfarbe und Neon-Kern. **Schatten:** Farbe, Deckkraft, Weichheit, Ausbreitung
+  und X-/Y-Versatz. **Farbverlauf:** linearer oder umlaufender Zweifarbenverlauf.
+- **Animationen:** Pulsieren oder Blinken mit Zyklusdauer und Deckkraftgrenzen;
   unabhängige Verlaufsrotation mit Richtung und Umlaufdauer. Für beide separat
   „nur beim Fokuswechsel“ oder „dauerhaft“, mit einstellbarer Fokusdauer.
-- Vorschau in Darstellung/Effekte/Animation nutzt denselben Renderer wie der echte
-  Rahmen. „Fokuswechsel testen“ spielt gewählte Fokusanimationen ab. Bei großen
-  Effekten skaliert die Vorschau die gesamte Szene; Angaben bleiben echte Punkte.
+- Der echte Rahmen um das aktive Einstellungsfenster ersetzt die separate
+  Vorschau. „Fokuswechsel testen“ spielt die Fokusanimationen dort ab.
+  Verschieben und Resize folgen lokalen AppKit-Ereignissen ohne AX-Abfragen.
+  Farbpalette und Einstellungs-Sheets behalten das Einstellungsfenster als Ziel;
+  beim Wechsel zu einer fremden App folgt der Rahmen wieder deren Fenster.
+- Zusätzliche Regler erscheinen nur für eingeschaltete Effekte und den gewählten
+  Modus. Ausblenden bewahrt die gespeicherten Werte; lange Bereiche sind scrollbar.
 - Jeder Effekt ist separat zurücksetzbar. Grunddarstellung zurücksetzen verändert
   keine Effekte. Neue Effekte sind zunächst ausgeschaltet; alte Einstellungen
   bleiben erhalten. Lange Seiten sind scrollbar.
@@ -88,7 +94,7 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
   AX-Abfragen. Verborgene Rahmen stoppen die Animationen. macOS „Bewegung
   reduzieren“ schaltet Animationen zur Laufzeit aus, ohne die Auswahl zu löschen.
 - **Verhalten:** Rahmen aktivieren/pausieren, Start bei Anmeldung, optionales globales Tastenkürzel **⌃⌥F**,
-  Ausblenden im Vollbild und eine Liste ausgeschlossener Apps.
+  Ausblenden im Vollbild. **App-Ausnahmen** hat eine eigene Seite.
 - Die Konfiguration wird lokal gespeichert. Bestehende Farb-/Stärkeeinstellungen
   der ersten Version werden übernommen.
 - Autostart verwendet den nativen macOS-Service. Angezeigter Status kommt von
@@ -100,6 +106,8 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
   Tastendrücke und „Rahmen: aktiv/pausiert“ unmittelbar. Zum globalen Test ein
   anderes App-Fenster aktivieren, drücken und anschließend den Status ansehen.
 
+Das Menüleistenmenü enthält Rahmen an/aus, Einstellungen, Diagnose und Beenden.
+Bei fehlendem AX-Zugriff kommt „Bedienungshilfen erlauben …“ hinzu.
 Die App bleibt ohne Dock-Symbol in der Menüleiste. **Rahmen aktiv** pausiert die
 Markierung. Einstellungen und Diagnose können geschlossen werden, ohne die App
 zu beenden. Autostart und Tastenkürzel sind anfangs ausgeschaltet.
@@ -207,3 +215,25 @@ Signatur kann über FOCUSFRAME_SIGN_IDENTITY explizit gewählt werden.
 
 Eine lokale Release-Datei ist kein öffentliches GitHub-Release; derzeit hat das
 Repository keinen Remote. Veröffentlichungen erfolgen separat auf Wunsch.
+
+## Automatische Rundung – Machbarkeitstest
+
+Die automatische Fensterrundung ist noch kein App-Modus.
+`./script/probe_window_corners.sh` führt einen separaten lokalen Versuch mit
+ScreenCaptureKit aus: eine transparente Aufnahme pro sichtbarem Fenster von
+Finder, Chrome, Systemeinstellungen und FocusFrame; nur Eck-Alpha wird analysiert.
+Bilder werden nicht gespeichert. Keine kontinuierliche Aufnahme, keine
+Änderung der Konfiguration und keine automatische Berechtigungsanforderung.
+Bestehende Bildschirmaufnahme-Berechtigung ist Voraussetzung. Details und
+Ergebnisse stehen in docs/CORNER-DETECTION.md.
+
+### Direkte Zahlenwerte
+
+Jeder Zahlenregler hat ein editierbares Feld mit separater Einheit. Enter oder
+Verlassen des Feldes übernimmt und speichert die Eingabe. Dezimalkomma und
+Dezimalpunkt werden akzeptiert; ungültiger Text wird auf den gespeicherten Wert
+zurückgesetzt, Werte außerhalb des Bereichs werden begrenzt.
+
+Stärke: 1–100 pt; Eckenradius: 0–300 pt; Abstand: 0–200 pt. Leuchtweite,
+Schattenweichheit und Ausbreitung: 0–200 pt; Schattenversatz: −200 bis +200 pt.
+Prozentwerte, Winkel und Animationsdauern behalten ihre bisherigen Grenzen.

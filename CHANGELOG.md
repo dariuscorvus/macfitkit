@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.6.0 – 2. Oktober 2026 (lokale Entwicklung)
+
+- Direkte Zahleneingaben neben allen Reglern; Dezimalwerte, Validierung und
+  Speicherung bei Enter/Fokusverlust. Größere Grenzen für Stärke, Radius,
+  Abstand, Leuchten und Schatten.
+
+- Native Einstellungs-Seitenleiste mit sieben Bereichen, gruppierten Optionen
+  und kontextabhängigen Effekt-/Animationsreglern. Menüleistenmenü vereinfacht.
+- Separate Vorschau entfernt: Änderungen und Fokus-Test erscheinen direkt am
+  echten Rahmen des aktiven Einstellungsfensters. Lokale AppKit-Ereignisse
+  verfolgen Fokus, Move, Resize und Minimieren ohne AX-Abfragen.
+- Separater Machbarkeitstest für automatische Rundung aus transparenten
+  ScreenCaptureKit-Einzelaufnahmen; noch kein automatischer Radius-Modus.
+- Kein neuer Rollout, keine DMG, keine Veröffentlichung.
+
 ## 0.5.3 – 2. Oktober 2026
 
 - Rahmen bleibt beim Fokuswechsel und Positionswechsel nahe der Menüleiste

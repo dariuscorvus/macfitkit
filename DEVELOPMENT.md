@@ -42,10 +42,13 @@ Abfragezeiten aus der Diagnose nicht als Bildschirm-Latenz ausgeben.
 
 ## Einstellungen prüfen
 
-Farbe, Deckkraft, Stärke, Radius und Abstand ändern. Vorschau und tatsächlichen
-Rahmen vergleichen. App neu starten und dieselben Werte erwarten. Ausnahmen
+Farbe, Deckkraft, Stärke, Radius und Abstand ändern. Den echten Rahmen um das fokussierte Einstellungsfenster prüfen. App neu starten und dieselben Werte erwarten. Ausnahmen
 hinzufügen/entfernen. Autostart ein-/ausschalten und den OS-Status prüfen; eine
-Registrierung ist noch kein tatsächlich getesteter Login. Tests hinterlassen
+Registrierung ist noch kein tatsächlich getesteter Login. `./script/test_settings_window.sh` prüft den echten Einstellungsrahmen in einer
+Desktop-Sitzung mit isolierten Test-Einstellungen (Seitenwahl, Darstellung,
+Animation, Pause/Fortsetzen, Move/Resize und Stop).
+
+Tests hinterlassen
 keine ausgeschlossene Test-App, eingeschaltete Diagnose oder temporär aktivierte
 Alltagsoptionen.
 
@@ -98,3 +101,11 @@ Effektränder müssen ihre angefragte Position beibehalten, auch oberhalb/links 
 Displays. Das Overlay darf von AppKit nicht an der Menüleiste begrenzt werden.
 Der Test ist zusätzlich zum Kerncheck auszuführen, wenn die Overlay-Geometrie
 oder dessen AppKit-Fensterverhalten geändert wird.
+
+## Rundungsexperiment
+
+`./script/probe_window_corners.sh [BUNDLE_ID ...]` nutzt vorhandene Bildschirm-
+aufnahme-Berechtigung für eine read-only Konturanalyse. Kein Bild wird gespeichert
+oder übertragen. Pro App wird nur ein sichtbares normales Fenster erfasst; die
+App selbst bekommt dadurch keine Aufnahmefunktion. docs/CORNER-DETECTION.md
+beschreibt Aussagekraft, gemessene Werte und noch offene Fälle.

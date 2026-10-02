@@ -24,7 +24,20 @@ struct OverlayGeometryTests {
         negativeShadow.shadow.offsetY = 40
         var combined = shadow
         combined.light = neon.light
-        let styles = [Appearance(), glow, neon, shadow, negativeShadow, combined]
+        var wideFrame = Appearance()
+        wideFrame.width = 12
+        wideFrame.gap = 20
+        wideFrame.radius = 26.6
+        var wideCombined = combined
+        wideCombined.width = wideFrame.width
+        wideCombined.gap = wideFrame.gap
+        wideCombined.radius = wideFrame.radius
+        var expandedLimits = wideCombined
+        expandedLimits.width = 100; expandedLimits.gap = 200; expandedLimits.radius = 300
+        expandedLimits.light.extent = 200
+        expandedLimits.shadow.blur = 200; expandedLimits.shadow.spread = 200
+        expandedLimits.shadow.offsetX = -200; expandedLimits.shadow.offsetY = 200
+        let styles = [Appearance(), glow, neon, shadow, negativeShadow, combined, wideFrame, wideCombined, expandedLimits]
         var checks = 0
         for screen in NSScreen.screens {
             for style in styles {

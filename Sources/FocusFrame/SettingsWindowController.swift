@@ -4,18 +4,17 @@ import ServiceManagement
 import UniformTypeIdentifiers
 
 @MainActor
-final class SettingsWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate, NSTabViewDelegate, NSWindowDelegate {
+final class SettingsWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate, NSTextFieldDelegate {
     var onToggleFrame: (() -> Void)?
     var onOpenDiagnostics: (() -> Void)?
+    var onTestFocus: (() -> Void)?
     private let store: PreferencesStore
-    private let preview = PreviewView(frame: .zero)
     private var effectActions: [Int: () -> Void] = [:]
     private var effectSync: [() -> Void] = []
-    private let tabs = NSTabView()
-    private var previewHeight: NSLayoutConstraint!
+    private let sidebar = NSTableView()
+    private let detail = NSViewController()
+    private var sections: [(title: String, symbol: String, summary: String, content: NSView)] = []
     private let colorWell = NSColorWell()
-    private var sliders: [NSSlider] = []
-    private var values: [NSTextField] = []
     private let login = NSButton(checkboxWithTitle: "Bei Anmeldung starten", target: nil, action: nil)
     private let shortcut = NSButton(checkboxWithTitle: "Rahmen mit ⌃⌥F ein-/ausschalten", target: nil, action: nil)
     private let frameToggle = NSButton(checkboxWithTitle: "Rahmen aktiv", target: nil, action: nil)
@@ -29,41 +28,36 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
 
     init(store: PreferencesStore) {
         self.store = store
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 740),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 680),
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.title = "FocusFrame – Einstellungen"
         window.isReleasedWhenClosed = false
         super.init(window: window)
         window.delegate = self
-        window.minSize = NSSize(width: 620, height: 560)
-        tabs.delegate = self
-        let appearance = NSTabViewItem(identifier: "appearance")
-        appearance.label = "Darstellung"
-        appearance.view = scrollPage(appearancePage())
-        tabs.addTabViewItem(appearance)
-        for (id, title, page) in [("effects", "Effekte", effectsPage()), ("animation", "Animation", animationPage())] {
-            let item = NSTabViewItem(identifier: id); item.label = title; item.view = scrollPage(page)
-            tabs.addTabViewItem(item)
-        }
-        let behavior = NSTabViewItem(identifier: "behavior")
-        behavior.label = "Verhalten"
-        behavior.view = scrollPage(behaviorPage())
-        tabs.addTabViewItem(behavior)
-        window.contentView?.addSubview(preview)
-        preview.translatesAutoresizingMaskIntoConstraints = false
-        previewHeight = preview.heightAnchor.constraint(equalToConstant: 190)
-        window.contentView?.addSubview(tabs)
-        tabs.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            tabs.leadingAnchor.constraint(equalTo: window.contentView!.leadingAnchor, constant: 16),
-            tabs.trailingAnchor.constraint(equalTo: window.contentView!.trailingAnchor, constant: -16),
-            preview.leadingAnchor.constraint(equalTo: window.contentView!.leadingAnchor, constant: 16),
-            preview.trailingAnchor.constraint(equalTo: window.contentView!.trailingAnchor, constant: -16),
-            preview.topAnchor.constraint(equalTo: window.contentView!.topAnchor, constant: 16),
-            previewHeight,
-            tabs.topAnchor.constraint(equalTo: preview.bottomAnchor, constant: 12),
-            tabs.bottomAnchor.constraint(equalTo: window.contentView!.bottomAnchor, constant: -16)
-        ])
+        window.minSize = NSSize(width: 860, height: 540)
+        sections = [
+            ("Darstellung", "viewfinder", "Änderungen erscheinen direkt am Rahmen dieses Fensters.", appearancePage()),
+            ("Leuchten", "lightbulb", "Ein weicher Glow oder ein heller Neon-Kern hebt den Rahmen hervor.", lightPage()),
+            ("Schatten", "square.on.square", "Ein Schatten entlang der Kontur gibt dem Rahmen mehr Tiefe.", shadowPage()),
+            ("Farbverlauf", "paintpalette", "Zwei Farben als linearer oder umlaufender Verlauf.", gradientPage()),
+            ("Animationen", "waveform.path", "Bewegung beim Fokuswechsel oder dauerhaft. Änderungen sind direkt sichtbar.", animationPage()),
+            ("Verhalten", "switch.2", "Steuere den Rahmen, Tastenkürzel und den Start bei Anmeldung.", behaviorPage()),
+            ("App-Ausnahmen", "app.badge", "Für ausgewählte Apps bleibt der Rahmen ausgeblendet.", exclusionsPage())
+        ]
+        let split = NSSplitViewController()
+        let navigation = NSViewController()
+        navigation.view = navigationView()
+        let navigationItem = NSSplitViewItem(sidebarWithViewController: navigation)
+        navigationItem.minimumThickness = 210
+        navigationItem.maximumThickness = 250
+        navigationItem.canCollapse = false
+        split.addSplitViewItem(navigationItem)
+        detail.view = NSView()
+        split.addSplitViewItem(NSSplitViewItem(viewController: detail))
+        window.contentViewController = split
+        window.setContentSize(NSSize(width: 960, height: 680))
+        sidebar.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+        selectSection(0)
         sync()
         window.center()
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLogin),
@@ -75,7 +69,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     func present() {
         sync()
         showWindow(nil)
-        updatePreviewVisibility()
+        window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -88,39 +82,74 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let colorRow = NSStackView(views: [colorLabel, colorWell])
         colorRow.spacing = 12
         var views: [NSView] = [colorRow]
-        let specifications: [(String, Double, Double)] = [
-            ("Deckkraft", 10, 100), ("Stärke", 1, 12), ("Eckenradius", 0, 40), ("Abstand", 0, 20)
+        views += [
+            effectSlider("Deckkraft", \.opacity, 10...100, percent: true),
+            effectSlider("Stärke", \.width, 1...100),
+            effectSlider("Eckenradius", \.radius, 0...300),
+            effectSlider("Abstand", \.gap, 0...200)
         ]
-        for (index, specification) in specifications.enumerated() {
-            let label = NSTextField(labelWithString: specification.0)
-            label.widthAnchor.constraint(equalToConstant: 120).isActive = true
-            let slider = NSSlider(value: 0, minValue: specification.1, maxValue: specification.2,
-                                  target: self, action: #selector(changeSlider(_:)))
-            slider.tag = index
-            slider.isContinuous = true
-            slider.setAccessibilityLabel(specification.0)
-            slider.widthAnchor.constraint(equalToConstant: 240).isActive = true
-            let value = NSTextField(labelWithString: "")
-            value.widthAnchor.constraint(equalToConstant: 60).isActive = true
-            sliders.append(slider)
-            values.append(value)
-            let row = NSStackView(views: [label, slider, value])
-            row.spacing = 12
-            views.append(row)
-        }
         views.append(NSButton(title: "Darstellung zurücksetzen", target: self, action: #selector(resetAppearance)))
-        return page(views)
+        return section("Rahmen", views)
     }
 
-    func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) { updatePreviewVisibility() }
-    func windowWillClose(_ notification: Notification) { preview.setActive(false) }
-    func windowDidChangeOcclusionState(_ notification: Notification) { updatePreviewVisibility() }
-    private func updatePreviewVisibility() {
-        let visible = (tabs.selectedTabViewItem?.identifier as? String) != "behavior"
-        preview.isHidden = !visible
-        previewHeight?.constant = visible ? 190 : 0
-        preview.setActive(visible && window?.isVisible == true && window?.occlusionState.contains(.visible) == true)
+    private func navigationView() -> NSView {
+        let background = NSVisualEffectView()
+        background.material = .sidebar
+        background.blendingMode = .behindWindow
+        let title = NSTextField(labelWithString: "FocusFrame")
+        title.font = .systemFont(ofSize: 21, weight: .semibold)
+        let scroll = NSScrollView()
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("section"))
+        column.width = 190
+        sidebar.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        sidebar.addTableColumn(column)
+        sidebar.headerView = nil
+        sidebar.backgroundColor = .clear
+        sidebar.style = .sourceList
+        sidebar.rowHeight = 38
+        sidebar.intercellSpacing = NSSize(width: 0, height: 4)
+        sidebar.dataSource = self
+        sidebar.delegate = self
+        sidebar.setAccessibilityLabel("Einstellungsbereiche")
+        scroll.documentView = sidebar
+        for view in [title, scroll] { background.addSubview(view); view.translatesAutoresizingMaskIntoConstraints = false }
+        NSLayoutConstraint.activate([
+            title.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: 20),
+            title.topAnchor.constraint(equalTo: background.topAnchor, constant: 22),
+            scroll.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: 10),
+            scroll.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -10),
+            scroll.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 20),
+            scroll.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -12)
+        ])
+        return background
     }
+
+    private func selectSection(_ index: Int) {
+        guard sections.indices.contains(index) else { return }
+        let section = sections[index]
+        let title = NSTextField(labelWithString: section.title)
+        title.font = .systemFont(ofSize: 24, weight: .semibold)
+        let description = NSTextField(wrappingLabelWithString: section.summary)
+        description.textColor = .secondaryLabelColor
+        detail.view.subviews.forEach { $0.removeFromSuperview() }
+        let scroll = scrollPage(page([title, description, section.content]))
+        detail.view.addSubview(scroll)
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            scroll.leadingAnchor.constraint(equalTo: detail.view.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: detail.view.trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: detail.view.topAnchor),
+            scroll.bottomAnchor.constraint(equalTo: detail.view.bottomAnchor)
+        ])
+        sync()
+    }
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        if notification.object as? NSTableView === sidebar { selectSection(sidebar.selectedRow) }
+    }
+
     private func scrollPage(_ page: NSView) -> NSView {
         let scroll = NSScrollView(); scroll.hasVerticalScroller = true
         scroll.documentView = page
@@ -144,20 +173,55 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let slider = NSSlider(value: 0, minValue: range.lowerBound, maxValue: range.upperBound,
                               target: self, action: #selector(changeEffect(_:)))
         slider.isContinuous = true; slider.setAccessibilityLabel(title)
-        slider.widthAnchor.constraint(equalToConstant: 240).isActive = true
-        let value = NSTextField(labelWithString: "")
-        value.widthAnchor.constraint(equalToConstant: 74).isActive = true
+        slider.widthAnchor.constraint(greaterThanOrEqualToConstant: 140).isActive = true
+        let preferredWidth = slider.widthAnchor.constraint(equalToConstant: 210)
+        preferredWidth.priority = .defaultHigh
+        preferredWidth.isActive = true
+        let value = NSTextField(string: "")
+        value.widthAnchor.constraint(equalToConstant: 70).isActive = true
+        value.identifier = NSUserInterfaceItemIdentifier(title)
+        value.alignment = .right
+        value.delegate = self
+        value.target = self
+        value.action = #selector(changeEffect(_:))
+        value.setAccessibilityLabel("\(title) – Zahlenwert")
+        let unitLabel = NSTextField(labelWithString: percent ? "%" : unit)
+        unitLabel.widthAnchor.constraint(equalToConstant: 20).isActive = true
         slider.tag = effectAction { [weak self, weak slider] in
             guard let self, let slider else { return }
             self.mutate { $0[keyPath: key] = slider.doubleValue / (percent ? 100 : 1) }
         }
+        value.tag = effectAction { [weak self, weak value] in
+            guard let self, let value else { return }
+            let text = value.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Accept both decimal comma and decimal point; reject incomplete/nonfinite values.
+            guard let number = Double(text.replacingOccurrences(of: ",", with: ".")), number.isFinite else { return }
+            let bounded = min(range.upperBound, max(range.lowerBound, number))
+            self.mutate { $0[keyPath: key] = bounded / (percent ? 100 : 1) }
+        }
         effectSync.append { [weak self, weak slider, weak value] in
             guard let self else { return }; let n = self.store.value.appearance[keyPath: key] * (percent ? 100 : 1)
             slider?.doubleValue = n
-            value?.stringValue = String(format: percent ? "%.0f %%" : "%.1f \(unit)", n)
+            if value?.currentEditor() == nil {
+                value?.stringValue = Self.numberString(n)
+            }
         }
-        let label = NSTextField(labelWithString: title); label.widthAnchor.constraint(equalToConstant: 180).isActive = true
-        let row = NSStackView(views: [label, slider, value]); row.spacing = 8; return row
+        let label = NSTextField(labelWithString: title); label.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        let row = NSStackView(views: [label, slider, value, unitLabel]); row.spacing = 8; return row
+    }
+    private static func numberString(_ number: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = .current
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.maximumFractionDigits = 3
+        return formatter.string(from: NSNumber(value: number)) ?? String(number)
+    }
+    func controlTextDidEndEditing(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField else { return }
+        changeEffect(field)
+        // Restore the accepted value even for invalid text or an out-of-range input.
+        sync()
     }
     private func effectCheck(_ title: String, _ key: WritableKeyPath<Appearance, Bool>) -> NSView {
         let button = NSButton(checkboxWithTitle: title, target: self, action: #selector(changeEffect(_:)))
@@ -184,7 +248,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             guard let self else { return }
             popup?.selectItem(at: choices.firstIndex { $0.1 == self.store.value.appearance[keyPath: key] } ?? 0)
         }
-        let label = NSTextField(labelWithString: title); label.widthAnchor.constraint(equalToConstant: 180).isActive = true
+        let label = NSTextField(labelWithString: title); label.widthAnchor.constraint(equalToConstant: 150).isActive = true
         return NSStackView(views: [label,popup])
     }
     private func effectColor(_ title: String, _ key: WritableKeyPath<Appearance, EffectColor>) -> NSView {
@@ -195,7 +259,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             self?.mutate { $0[keyPath: key] = EffectColor(c.redComponent,c.greenComponent,c.blueComponent) }
         }
         effectSync.append { [weak self, weak well] in well?.color = self?.store.value.appearance[keyPath: key].nsColor ?? .black }
-        let label = NSTextField(labelWithString: title); label.widthAnchor.constraint(equalToConstant: 180).isActive = true
+        let label = NSTextField(labelWithString: title); label.widthAnchor.constraint(equalToConstant: 150).isActive = true
         return NSStackView(views: [label,well])
     }
     private func resetEffect(_ title: String, _ change: @escaping (inout Appearance) -> Void) -> NSView {
@@ -205,56 +269,120 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private func heading(_ title: String) -> NSView {
         let label = NSTextField(labelWithString: title); label.font = .boldSystemFont(ofSize: 14); return label
     }
-    private func effectsPage() -> NSView {
-        page([
-            heading("Leuchten"),
+    private func conditional(_ views: [NSView], when visible: @escaping (Appearance) -> Bool) -> NSView {
+        let stack = NSStackView(views: views)
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 14
+        stack.detachesHiddenViews = true
+        for view in views where !(view is NSButton) { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        effectSync.append { [weak self, weak stack] in
+            guard let self else { return }
+            stack?.isHidden = !visible(self.store.value.appearance)
+        }
+        return stack
+    }
+    private func section(_ title: String, _ views: [NSView]) -> NSView {
+        let box = NSBox()
+        box.boxType = .custom
+        box.borderColor = .separatorColor
+        box.borderWidth = 0.5
+        box.cornerRadius = 10
+        box.fillColor = .controlBackgroundColor
+        box.titlePosition = .noTitle
+        box.contentViewMargins = .zero
+        let body = page([heading(title)] + views)
+        box.addSubview(body)
+        body.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            body.leadingAnchor.constraint(equalTo: box.leadingAnchor),
+            body.trailingAnchor.constraint(equalTo: box.trailingAnchor),
+            body.topAnchor.constraint(equalTo: box.topAnchor),
+            body.bottomAnchor.constraint(equalTo: box.bottomAnchor)
+        ])
+        return box
+    }
+    private func lightPage() -> NSView {
+        section("Leuchtmodus", [
             effectChoice("Leuchtmodus", \.light.mode, [("Aus",.off),("Glow",.glow),("Neon",.neon)]),
-            effectSlider("Intensität", \.light.intensity, 0...100, percent: true),
-            effectSlider("Leuchtweite", \.light.extent, 0...40),
-            effectCheck("Rahmenfarbe übernehmen", \.light.followsFrame),
-            effectColor("Eigene Leuchtfarbe", \.light.color),
-            effectSlider("Neon-Kernstärke", \.light.coreWidth, 10...100, percent: true),
-            effectSlider("Neon-Aufhellung", \.light.whitening, 0...100, percent: true),
-            resetEffect("Leuchten zurücksetzen") { $0.light = LightEffect() },
-            heading("Schatten"), effectCheck("Schatten anzeigen", \.shadow.enabled),
-            effectColor("Schattenfarbe", \.shadow.color),
-            effectSlider("Schatten-Deckkraft", \.shadow.opacity, 0...100, percent: true),
-            effectSlider("Weichheit", \.shadow.blur, 0...40),
-            effectSlider("Ausbreitung", \.shadow.spread, 0...20),
-            effectSlider("Versatz horizontal", \.shadow.offsetX, -40...40),
-            effectSlider("Versatz vertikal", \.shadow.offsetY, -40...40),
-            resetEffect("Schatten zurücksetzen") { $0.shadow = ShadowEffect() },
-            heading("Farbverlauf"),
+            conditional([
+                effectSlider("Intensität", \.light.intensity, 0...100, percent: true),
+                effectSlider("Leuchtweite", \.light.extent, 0...200),
+                effectCheck("Rahmenfarbe übernehmen", \.light.followsFrame),
+                conditional([effectColor("Eigene Leuchtfarbe", \.light.color)]) { !$0.light.followsFrame },
+                conditional([
+                    effectSlider("Kernstärke", \.light.coreWidth, 10...100, percent: true),
+                    effectSlider("Aufhellung", \.light.whitening, 0...100, percent: true)
+                ]) { $0.light.mode == .neon }
+            ]) { $0.light.mode != .off },
+            resetEffect("Leuchten zurücksetzen") { $0.light = LightEffect() }
+        ])
+    }
+    private func shadowPage() -> NSView {
+        section("Fensterschatten", [
+            effectCheck("Schatten anzeigen", \.shadow.enabled),
+            conditional([
+                effectColor("Farbe", \.shadow.color),
+                effectSlider("Deckkraft", \.shadow.opacity, 0...100, percent: true),
+                effectSlider("Weichheit", \.shadow.blur, 0...200),
+                effectSlider("Ausbreitung", \.shadow.spread, 0...200),
+                effectSlider("Versatz horizontal", \.shadow.offsetX, -200...200),
+                effectSlider("Versatz vertikal", \.shadow.offsetY, -200...200)
+            ]) { $0.shadow.enabled },
+            resetEffect("Schatten zurücksetzen") { $0.shadow = ShadowEffect() }
+        ])
+    }
+    private func gradientPage() -> NSView {
+        section("Farben und Richtung", [
             effectChoice("Farbverlauf", \.gradient.mode, [("Aus",.off),("Linear",.linear),("Umlaufend",.conic)]),
-            effectColor("Erste Farbe", \.gradient.first), effectColor("Zweite Farbe", \.gradient.second),
-            effectSlider("Winkel / Startwinkel", \.gradient.angle, 0...360, unit: "°"),
+            conditional([
+                effectColor("Erste Farbe", \.gradient.first),
+                effectColor("Zweite Farbe", \.gradient.second),
+                effectSlider("Winkel / Startwinkel", \.gradient.angle, 0...360, unit: "°")
+            ]) { $0.gradient.mode != .off },
             resetEffect("Farbverlauf zurücksetzen") { $0.gradient = GradientEffect() }
         ])
     }
     private func animationPage() -> NSView {
         let trigger: [(String,AnimationTrigger)] = [("Nur beim Fokuswechsel",.focus),("Dauerhaft",.continuous)]
         return page([
-            heading("Deckkraftanimation"),
-            effectChoice("Animation", \.opacityAnimation.mode, [("Aus",.off),("Pulsieren",.pulse),("Blinken",.blink)]),
-            effectSlider("Puls-Zyklusdauer", \.opacityAnimation.pulsePeriod, 0.5...10, unit: "s"),
-            effectSlider("Puls-Minimum", \.opacityAnimation.pulseMinimum, 0...100, percent: true),
-            effectSlider("Blink-Zyklusdauer", \.opacityAnimation.blinkPeriod, 0.5...5, unit: "s"),
-            effectSlider("Blink-Minimum", \.opacityAnimation.blinkMinimum, 0...100, percent: true),
-            effectSlider("Maximale Deckkraft", \.opacityAnimation.maximum, 0...100, percent: true),
-            effectChoice("Deckkraft-Auslöser", \.opacityAnimation.trigger, trigger),
-            effectSlider("Deckkraft-Fokusdauer", \.opacityAnimation.focusDuration, 0.5...5, unit: "s"),
-            resetEffect("Deckkraftanimation zurücksetzen") { $0.opacityAnimation = OpacityEffect() },
-            heading("Verlaufsrotation"), effectCheck("Farbverlauf rotieren", \.rotation.enabled),
-            effectSlider("Umlaufdauer", \.rotation.period, 2...30, unit: "s"),
-            effectCheck("Im Uhrzeigersinn", \.rotation.clockwise),
-            effectChoice("Rotations-Auslöser", \.rotation.trigger, trigger),
-            effectSlider("Rotations-Fokusdauer", \.rotation.focusDuration, 0.5...5, unit: "s"),
-            resetEffect("Verlaufsrotation zurücksetzen") { $0.rotation = RotationEffect() },
+            section("Deckkraft", [
+                effectChoice("Animation", \.opacityAnimation.mode, [("Aus",.off),("Pulsieren",.pulse),("Blinken",.blink)]),
+                conditional([
+                    conditional([
+                        effectSlider("Zyklusdauer", \.opacityAnimation.pulsePeriod, 0.5...10, unit: "s"),
+                        effectSlider("Minimum", \.opacityAnimation.pulseMinimum, 0...100, percent: true)
+                    ]) { $0.opacityAnimation.mode == .pulse },
+                    conditional([
+                        effectSlider("Zyklusdauer", \.opacityAnimation.blinkPeriod, 0.5...5, unit: "s"),
+                        effectSlider("Minimum", \.opacityAnimation.blinkMinimum, 0...100, percent: true)
+                    ]) { $0.opacityAnimation.mode == .blink },
+                    effectSlider("Maximum", \.opacityAnimation.maximum, 0...100, percent: true),
+                    effectChoice("Auslöser", \.opacityAnimation.trigger, trigger),
+                    conditional([effectSlider("Fokusdauer", \.opacityAnimation.focusDuration, 0.5...5, unit: "s")]) {
+                        $0.opacityAnimation.trigger == .focus
+                    }
+                ]) { $0.opacityAnimation.mode != .off },
+                resetEffect("Deckkraftanimation zurücksetzen") { $0.opacityAnimation = OpacityEffect() }
+            ]),
+            section("Verlaufsrotation", [
+                effectCheck("Farbverlauf rotieren", \.rotation.enabled),
+                conditional([
+                    effectSlider("Umlaufdauer", \.rotation.period, 2...30, unit: "s"),
+                    effectCheck("Im Uhrzeigersinn", \.rotation.clockwise),
+                    effectChoice("Auslöser", \.rotation.trigger, trigger),
+                    conditional([effectSlider("Fokusdauer", \.rotation.focusDuration, 0.5...5, unit: "s")]) {
+                        $0.rotation.trigger == .focus
+                    },
+                    NSTextField(wrappingLabelWithString: "Rotation benötigt einen eingeschalteten Farbverlauf.")
+                ]) { $0.rotation.enabled },
+                resetEffect("Verlaufsrotation zurücksetzen") { $0.rotation = RotationEffect() }
+            ]),
             NSButton(title: "Fokuswechsel testen", target: self, action: #selector(testFocus)),
-            NSTextField(wrappingLabelWithString: "Bei macOS ‘Bewegung reduzieren’ bleiben Effekte statisch. Rotation benötigt einen eingeschalteten Farbverlauf.")
-        ])
+            NSTextField(wrappingLabelWithString: "Bei macOS ‘Bewegung reduzieren’ bleiben Effekte statisch.")
+        ], inset: 0)
     }
-    @objc private func testFocus() { preview.renderer.animate(focusChanged: true) }
+    @objc private func testFocus() { onTestFocus?() }
 
     private func behaviorPage() -> NSView {
         frameToggle.target = self; frameToggle.action = #selector(toggleFrame)
@@ -263,7 +391,15 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         shortcut.target = self; shortcut.action = #selector(changeShortcut)
         fullScreen.target = self; fullScreen.action = #selector(changeFullScreen)
         let openLogin = NSButton(title: "Anmeldeobjekte öffnen …", target: self, action: #selector(openLoginSettings))
-        let title = NSTextField(labelWithString: "Für diese Apps keinen Rahmen anzeigen:")
+        return page([
+            section("Rahmen", [frameToggle, fullScreen]),
+            section("Tastenkürzel", [shortcut, shortcutStatus]),
+            section("Anmeldestart", [login, loginStatus, openLogin]),
+            NSButton(title: "Diagnose …", target: self, action: #selector(openDiagnostics))
+        ], inset: 0)
+    }
+
+    private func exclusionsPage() -> NSView {
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("app"))
         column.width = 460
         table.addTableColumn(column)
@@ -279,12 +415,11 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let remove = NSButton(title: "Entfernen", target: self, action: #selector(removeExcludedApp))
         let buttons = NSStackView(views: [add, remove])
         buttons.spacing = 12
-        let diagnostics = NSButton(title: "Diagnose …", target: self, action: #selector(openDiagnostics))
-        return page([frameToggle, login, loginStatus, openLogin, shortcut, shortcutStatus, fullScreen, title, scroll, buttons, diagnostics])
+        return section("Ausgeschlossene Apps", [scroll, buttons])
     }
 
-    private func page(_ views: [NSView]) -> NSView {
-        let container = NSView()
+    private func page(_ views: [NSView], inset: CGFloat = 20) -> NSView {
+        let container = SettingsDocumentView()
         let stack = NSStackView(views: views)
         stack.orientation = .vertical
         stack.alignment = .leading
@@ -292,12 +427,12 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         container.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -20)
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: inset),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -inset),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: inset),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -inset)
         ])
-        for view in views where view === preview || view is NSScrollView || view === loginStatus || view === shortcutStatus {
+        for view in views where !(view is NSButton) {
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
         return container
@@ -306,12 +441,6 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     func sync() {
         let appearance = store.value.appearance.normalized
         colorWell.color = NSColor(srgbRed: appearance.red, green: appearance.green, blue: appearance.blue, alpha: 1)
-        let numbers = [appearance.opacity * 100, appearance.width, appearance.radius, appearance.gap]
-        for (index, slider) in sliders.enumerated() {
-            slider.doubleValue = numbers[index]
-            values[index].stringValue = String(format: index == 0 ? "%.0f %%" : "%.1f pt", numbers[index])
-        }
-        preview.style = appearance
         effectSync.forEach { $0() }
         shortcut.state = store.value.shortcutEnabled ? .on : .off
         fullScreen.state = store.value.hideInFullScreen ? .on : .off
@@ -356,16 +485,6 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         store.value.appearance = style
         sync()
     }
-    @objc private func changeSlider(_ sender: NSSlider) {
-        switch sender.tag {
-        case 0: store.value.appearance.opacity = sender.doubleValue / 100
-        case 1: store.value.appearance.width = sender.doubleValue
-        case 2: store.value.appearance.radius = sender.doubleValue
-        case 3: store.value.appearance.gap = sender.doubleValue
-        default: return
-        }
-        sync()
-    }
     @objc private func resetAppearance() {
         mutate { a in let d = Appearance(); a.red=d.red; a.green=d.green; a.blue=d.blue
             a.opacity=d.opacity; a.width=d.width; a.radius=d.radius; a.gap=d.gap }
@@ -383,8 +502,29 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     @objc private func openLoginSettings() { SMAppService.openSystemSettingsLoginItems() }
     @objc private func openDiagnostics() { onOpenDiagnostics?() }
 
-    func numberOfRows(in tableView: NSTableView) -> Int { store.value.excludedApps.count }
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        tableView === sidebar ? sections.count : store.value.excludedApps.count
+    }
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        if tableView === sidebar {
+            let section = sections[row]
+            let image = NSImageView()
+            image.image = NSImage(systemSymbolName: section.symbol, accessibilityDescription: nil)
+            image.contentTintColor = .controlAccentColor
+            image.widthAnchor.constraint(equalToConstant: 22).isActive = true
+            image.heightAnchor.constraint(equalToConstant: 22).isActive = true
+            let label = NSTextField(labelWithString: section.title)
+            let cell = NSTableCellView()
+            let row = NSStackView(views: [image, label]); row.spacing = 10
+            cell.addSubview(row); row.translatesAutoresizingMaskIntoConstraints = false
+            cell.textField = label; cell.imageView = image
+            NSLayoutConstraint.activate([
+                row.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8),
+                row.trailingAnchor.constraint(lessThanOrEqualTo: cell.trailingAnchor, constant: -8),
+                row.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
+            ])
+            return cell
+        }
         let identifier = store.value.excludedApps[row]
         let name = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier).map {
             FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "")
@@ -423,40 +563,6 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     }
 }
 
-@MainActor
-private final class PreviewView: EffectCanvas {
-    var style = Appearance() { didSet { rebuild() } }
-    private var active = false
-    private var labelCenter = CGPoint.zero
-    private var previewScale: CGFloat = 1
-    func setActive(_ value: Bool) {
-        active = value; renderer.setVisible(value)
-    }
-    override func layout() { super.layout(); rebuild() }
-    private func rebuild() {
-        guard bounds.width > 0, bounds.height > 0 else { return }
-        let target = CGRect(x: 0,y: 0,width: 260,height: 70)
-        let extent = EffectGeometry.overlayRect(for: target, appearance: style)
-        let factor = min(1, min((bounds.width-20)/extent.width,(bounds.height-20)/extent.height))
-        previewScale = factor
-        let localTarget = target.offsetBy(dx: -extent.minX,dy: -extent.minY)
-        labelCenter = CGPoint(x: bounds.midX + (localTarget.midX - extent.width/2) * factor,
-                              y: bounds.midY + (localTarget.midY - extent.height/2) * factor)
-        renderer.update(bounds: CGRect(origin: .zero,size: extent.size), target: localTarget,
-                        style: style, scale: window?.backingScaleFactor ?? 2)
-        CATransaction.begin(); CATransaction.setDisableActions(true)
-        renderer.root.anchorPoint = CGPoint(x: 0.5,y: 0.5)
-        renderer.root.position = CGPoint(x: bounds.midX,y: bounds.midY)
-        renderer.root.setAffineTransform(CGAffineTransform(scaleX: factor,y: factor))
-        layer?.masksToBounds = true
-        CATransaction.commit()
-        renderer.setVisible(active)
-        needsDisplay = true
-    }
-    override func draw(_ dirtyRect: NSRect) {
-        NSColor.windowBackgroundColor.setFill(); bounds.fill()
-        let attributes: [NSAttributedString.Key: Any] = [.font:NSFont.systemFont(ofSize:max(8,14*previewScale)),.foregroundColor:NSColor.labelColor]
-        let text = "Vorschau" as NSString; let size = text.size(withAttributes: attributes)
-        text.draw(at: CGPoint(x: labelCenter.x-size.width/2,y:labelCenter.y-size.height/2),withAttributes:attributes)
-    }
+private final class SettingsDocumentView: NSView {
+    override var isFlipped: Bool { true }
 }

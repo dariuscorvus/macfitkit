@@ -45,9 +45,9 @@ public struct Appearance: Codable, Equatable, Sendable {
         result.green = clamp(green, 0...1, fallback: 0.58)
         result.blue = clamp(blue, 0...1, fallback: 0.15)
         result.opacity = clamp(opacity, 0.1...1, fallback: 1)
-        result.width = clamp(width, 1...12, fallback: 3)
-        result.radius = clamp(radius, 0...40, fallback: 10)
-        result.gap = clamp(gap, 0...20, fallback: 0)
+        result.width = clamp(width, 1...100, fallback: 3)
+        result.radius = clamp(radius, 0...300, fallback: 10)
+        result.gap = clamp(gap, 0...200, fallback: 0)
         result.light = light.normalized; result.shadow = shadow.normalized
         result.gradient = gradient.normalized; result.opacityAnimation = opacityAnimation.normalized
         result.rotation = rotation.normalized

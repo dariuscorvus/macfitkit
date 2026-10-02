@@ -18,25 +18,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.image = NSImage(systemSymbolName: "viewfinder", accessibilityDescription: "FocusFrame")
         item.button?.toolTip = "FocusFrame – aktives Fenster markieren"
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "FocusFrame", action: nil, keyEquivalent: ""))
-        menu.addItem(permissionItem)
-        menu.addItem(.separator())
         enabledItem.target = self
         enabledItem.state = .on
         menu.addItem(enabledItem)
         for (title, action) in [("Einstellungen …", #selector(showSettings)),
-                                ("Diagnose …", #selector(showDiagnostics)),
-                                ("Bedienungshilfen erlauben …", #selector(requestPermission)),
-                                ("Berechtigung erneut prüfen", #selector(checkPermission)),
-                                ("Beenden", #selector(quit))] {
+                                ("Diagnose …", #selector(showDiagnostics))] {
             let entry = NSMenuItem(title: title, action: action, keyEquivalent: "")
             entry.target = self
             menu.addItem(entry)
         }
+        menu.addItem(.separator())
+        permissionItem.title = "Bedienungshilfen erlauben …"
+        permissionItem.target = self
+        permissionItem.action = #selector(requestPermission)
+        menu.addItem(permissionItem)
+        let quitItem = NSMenuItem(title: "Beenden", action: #selector(quit), keyEquivalent: "")
+        quitItem.target = self
+        menu.addItem(quitItem)
         item.menu = menu
         statusItem = item
         manager.onPermissionChange = { [weak self] trusted in
-            self?.permissionItem.title = trusted ? "Bedienungshilfen: erlaubt" : "Bedienungshilfen: fehlen"
+            self?.permissionItem.isHidden = trusted
         }
         shortcut.onPress = { [weak self] in
             guard let self else { return }
@@ -87,6 +89,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settings = SettingsWindowController(store: store)
             settings?.onToggleFrame = { [weak self] in self?.toggleEnabled() }
             settings?.onOpenDiagnostics = { [weak self] in self?.showDiagnostics() }
+            settings?.onTestFocus = { [weak self] in self?.manager.testSettingsFocusAnimation() }
+            manager.settingsWindow = settings?.window
         }
         settings?.updateShortcutStatus(registered: shortcut.isEnabled, frameEnabled: manager.enabled)
         settings?.present()
@@ -104,6 +108,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.open(url)
         }
     }
-    @objc private func checkPermission() { manager.refresh() }
     @objc private func quit() { NSApplication.shared.terminate(nil) }
 }

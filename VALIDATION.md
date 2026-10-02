@@ -290,3 +290,30 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
 - 0.5.3 lokal installiert und Prozessstart bestätigt. Universal-Release-DMG
   für Intel/Apple Silicon erstellt; App-/DMG-Signaturen, Architektur, macOS-
   Mindestversion und DMG-Prüfsumme erneut bestanden. Weiterhin nicht notarisiert.
+
+## 0.6.0 – lokale Einstellungen und Zahlenwerte (2026-10-02)
+
+- Sieben native Seiten mit Sidebar, gruppierten und bedingt sichtbaren Reglern.
+  Separate Vorschau entfernt; der echte Rahmen folgt dem eigenen Einstellungsfenster
+  über AppKit-Ereignisse. Kein zusätzlicher AX-Abfragetimer. Menü vereinfacht.
+- Native Integration mit isoliertem Preferences-Speicher bestanden: alle sieben
+  Seiten ohne Fenstergrößenänderung; Eingabefeld je Zahlenregler; Dezimalkomma/
+  Punkt, ungültiger Text, Begrenzung und erneutes Laden; echter Rahmen,
+  Darstellungsänderung, Animation, Pause/Fortsetzen, Move, Resize, Klickdurchleitung
+  und Stopp. Keine persönlichen Einstellungen durch diesen Test verändert.
+- 162 tatsächliche AppKit-Overlay-Geometrieprüfungen bestanden, einschließlich
+  der alten Screenshot-Werte und neuer Maximalwerte (100 pt Stärke, 200 pt Abstand/
+  Effekte, 300 pt Radius, Schattenversatz ±200 pt), oberer/linker Rand und
+  gleich großer Fensterwechsel. Ein physisches Display; kein Intel-/Mehrschirmtest.
+- Radius-Machbarkeit separat untersucht: transparente Einzel-Fensteraufnahme
+  mit bereits vorhandener Aufnahmeberechtigung; kreisförmige Näherung rund
+  17 pt bei Finder, Systemeinstellungen und FocusFrame, ca. 51–130 ms je Aufnahme.
+  Chrome nicht verfügbar. Keine Bilder/Titel gespeichert, kein automatischer
+  Radiusmodus und keine neue Berechtigungsanforderung in der produktiven App.
+- Vollständiges Xcode weiterhin nicht installiert: Strukturprüfung ersetzt keinen
+  Xcode-Build. Kein neuer Release, keine DMG und kein Rollout in dieser Etappe.
+- Gemeinsamer Check bestanden: 26 Kernprüfungen in sechs Suites, SwiftPM-Build,
+  strenge Signaturprüfung und Xcode-Projektstruktur. Lokale 0.6.0/Build 4
+  installiert und mit Einstellungen gestartet. Direkte UI-Gegenprobe: 24,5 pt
+  per Enter übernommen, Regler synchronisiert, anschließend ursprüngliche
+  Stärke 3 pt wiederhergestellt.
