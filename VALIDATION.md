@@ -317,3 +317,22 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
   installiert und mit Einstellungen gestartet. Direkte UI-Gegenprobe: 24,5 pt
   per Enter übernommen, Regler synchronisiert, anschließend ursprüngliche
   Stärke 3 pt wiederhergestellt.
+
+## 0.6.0 / Build 5 – Release mit Standardradius 18,5 pt
+
+- Standard- und ungültiger Radius-Fallback auf 18,5 pt gesetzt. Vorhandene
+  Radiuswerte bleiben unverändert; Zurücksetzen verwendet den neuen Standard.
+- 26 Kernprüfungen, SwiftPM-Build, strenge lokale Signaturprüfung und
+  Xcode-Strukturprüfung erfolgreich. Vorherige native UI-/Overlay-Prüfungen
+  gelten für dieselbe Implementierung; nur Standardradius geändert.
+- Universal-Release für arm64/x86_64, macOS-Mindestversion 14.0 in beiden
+  Executable-Slices, Developer-ID-Signatur mit Zeitstempel und Hardened Runtime.
+  Signaturen von DMG und tatsächlich enthaltener App streng geprüft; DMG-
+  Integrität und separate SHA-256-Prüfsumme bestanden. Source: e565e08.
+- App aus der finalen DMG in frischen Cache-Pfad kopiert, erneut signaturgeprüft
+  und gestartet; native Einstellungen mit 18,5 pt sichtbar. Danach aktuellen
+  Entwicklungsstand wieder lokal installiert und gestartet.
+- Gatekeeper bestätigt Unnotarized Developer ID. Kein Profil vorhanden,
+  keine Übermittlung an Apple und keine öffentliche Veröffentlichung.
+  Intel-Ausführung, fremde Download-Quarantäne und vollständiges Xcode
+  bleiben ungetestet. Installationshinweise auf neue Menüstruktur aktualisiert.
