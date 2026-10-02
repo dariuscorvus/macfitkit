@@ -8,6 +8,8 @@ public struct Appearance: Codable, Equatable, Sendable {
     public var width: Double = 3
     public var radius: Double = 18.5
     public var gap: Double = 0
+    public var placement = BorderPlacement.outside
+    public var material = MaterialEffect()
 
     public var light = LightEffect()
     public var shadow = ShadowEffect()
@@ -17,7 +19,7 @@ public struct Appearance: Codable, Equatable, Sendable {
 
     public init() {}
     private enum CodingKeys: String, CodingKey {
-        case red, green, blue, opacity, width, radius, gap, light, shadow, gradient, opacityAnimation, rotation
+        case red, green, blue, opacity, width, radius, gap, placement, material, light, shadow, gradient, opacityAnimation, rotation
     }
     public init(from decoder: Decoder) throws {
         self.init()
@@ -29,6 +31,8 @@ public struct Appearance: Codable, Equatable, Sendable {
         width = try c.decodeIfPresent(Double.self, forKey: .width) ?? width
         radius = try c.decodeIfPresent(Double.self, forKey: .radius) ?? radius
         gap = try c.decodeIfPresent(Double.self, forKey: .gap) ?? gap
+        placement = try c.decodeIfPresent(BorderPlacement.self, forKey: .placement) ?? placement
+        material = try c.decodeIfPresent(MaterialEffect.self, forKey: .material) ?? material
         light = try c.decodeIfPresent(LightEffect.self, forKey: .light) ?? light
         shadow = try c.decodeIfPresent(ShadowEffect.self, forKey: .shadow) ?? shadow
         gradient = try c.decodeIfPresent(GradientEffect.self, forKey: .gradient) ?? gradient
@@ -48,6 +52,7 @@ public struct Appearance: Codable, Equatable, Sendable {
         result.width = clamp(width, 1...100, fallback: 3)
         result.radius = clamp(radius, 0...300, fallback: 18.5)
         result.gap = clamp(gap, 0...200, fallback: 0)
+        result.material = material.normalized
         result.light = light.normalized; result.shadow = shadow.normalized
         result.gradient = gradient.normalized; result.opacityAnimation = opacityAnimation.normalized
         result.rotation = rotation.normalized

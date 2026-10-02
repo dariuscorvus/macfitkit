@@ -7,6 +7,7 @@ final class OverlayWindow: NSPanel {
     private var style: Appearance?
     private var targetSize = CGSize.zero
     private var scale: CGFloat = 0
+    private var renderedTargetOrigin = CGPoint.zero
 
     init() {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -30,7 +31,7 @@ final class OverlayWindow: NSPanel {
     }
     func show(around rect: CGRect, appearance: Appearance, focusChanged: Bool = false) {
         let a = appearance.normalized
-        let next = EffectGeometry.overlayRect(for: rect, appearance: a)
+        let next = EffectGeometry.alignedOverlayRect(for: rect, appearance: a)
         let wasVisible = isVisible
         let newScale = NSScreen.screens.first(where: { $0.frame.contains(CGPoint(x: rect.midX,y: rect.midY)) })?.backingScaleFactor ?? backingScaleFactor
         let rebuild = style != a || targetSize != rect.size || scale != newScale
@@ -40,7 +41,17 @@ final class OverlayWindow: NSPanel {
         if rebuild {
             style = a; targetSize = rect.size; scale = newScale
             let target = rect.offsetBy(dx: -next.minX, dy: -next.minY)
+            renderedTargetOrigin = target.origin
             border.renderer.update(bounds: CGRect(origin: .zero,size: next.size), target: target, style: a, scale: scale)
+        }
+        // Compensate for fractional target movement without rebuilding paths.
+        let localOrigin = CGPoint(x: rect.minX-next.minX, y: rect.minY-next.minY)
+        let translation = CATransform3DMakeTranslation(localOrigin.x-renderedTargetOrigin.x,
+                                                      localOrigin.y-renderedTargetOrigin.y, 0)
+        if !CATransform3DEqualToTransform(border.renderer.root.transform, translation) {
+            CATransaction.begin(); CATransaction.setDisableActions(true)
+            border.renderer.root.transform = translation
+            CATransaction.commit()
         }
         if !wasVisible { orderFrontRegardless() }
         if rebuild || !wasVisible || focusChanged {

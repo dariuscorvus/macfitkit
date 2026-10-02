@@ -15,4 +15,4 @@ swiftc -target "$TARGET" -parse-as-library -I "$PROBE_DIR" -L "$PROBE_DIR" \
   -lFocusFrameCore -Xlinker -rpath -Xlinker "$PROBE_DIR" \
   Sources/FocusFrame/EffectRenderer.swift Sources/FocusFrame/OverlayWindow.swift \
   script/tests/OverlayGeometryTests.swift -o "$PROBE_DIR/OverlayGeometryTests"
-"$PROBE_DIR/OverlayGeometryTests"
+"$PROBE_DIR/OverlayGeometryTests" "$@"

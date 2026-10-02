@@ -81,7 +81,11 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         colorLabel.widthAnchor.constraint(equalToConstant: 120).isActive = true
         let colorRow = NSStackView(views: [colorLabel, colorWell])
         colorRow.spacing = 12
-        var views: [NSView] = [colorRow]
+        var views: [NSView] = [
+            effectChoice("Rahmenposition", \.placement, [("Außen",.outside),("Mittig",.centered),("Innen",.inside)]),
+            NSTextField(wrappingLabelWithString: "Bei Innen liegt der Abstand innerhalb des Fensters, sonst außerhalb. Sehr breite Innenrahmen werden bei kleinen Fenstern passend begrenzt."),
+            conditional([colorRow]) { $0.material.mode == .standard }
+        ]
         views += [
             effectSlider("Deckkraft", \.opacity, 10...100, percent: true),
             effectSlider("Stärke", \.width, 1...100),
@@ -89,7 +93,18 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             effectSlider("Abstand", \.gap, 0...200)
         ]
         views.append(NSButton(title: "Darstellung zurücksetzen", target: self, action: #selector(resetAppearance)))
-        return section("Rahmen", views)
+        return page([
+            section("Rahmen", views),
+            section("Oberfläche", [
+                effectChoice("Oberfläche", \.material.mode, [("Farbe / Farbverlauf",.standard),("Gold",.gold),("Chrom",.chrome)]),
+                conditional([
+                    effectSlider("Glanz", \.material.gloss, 0...100, percent: true),
+                    effectSlider("Lichtwinkel", \.material.angle, 0...360, unit: "°"),
+                    NSTextField(wrappingLabelWithString: "Gold und Chrom verwenden eigene Metallfarben. Deine Rahmenfarbe und Farbverläufe bleiben gespeichert. Den wandernden Lichtreflex findest du unter Animationen.")
+                ]) { $0.material.mode != .standard },
+                resetEffect("Oberfläche zurücksetzen") { $0.material = MaterialEffect() }
+            ])
+        ], inset: 0)
     }
 
     private func navigationView() -> NSView {
@@ -334,6 +349,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     }
     private func gradientPage() -> NSView {
         section("Farben und Richtung", [
+            conditional([NSTextField(wrappingLabelWithString: "Aktuell wird Gold oder Chrom angezeigt. Wähle unter Darstellung die Oberfläche ‘Farbe / Farbverlauf’, um diese Farben wieder zu sehen.")]) { $0.material.mode != .standard },
             effectChoice("Farbverlauf", \.gradient.mode, [("Aus",.off),("Linear",.linear),("Umlaufend",.conic)]),
             conditional([
                 effectColor("Erste Farbe", \.gradient.first),
@@ -374,9 +390,28 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
                     conditional([effectSlider("Fokusdauer", \.rotation.focusDuration, 0.5...5, unit: "s")]) {
                         $0.rotation.trigger == .focus
                     },
-                    NSTextField(wrappingLabelWithString: "Rotation benötigt einen eingeschalteten Farbverlauf.")
+                    NSTextField(wrappingLabelWithString: "Rotation benötigt einen eingeschalteten Farbverlauf und die Oberfläche ‘Farbe / Farbverlauf’.")
                 ]) { $0.rotation.enabled },
                 resetEffect("Verlaufsrotation zurücksetzen") { $0.rotation = RotationEffect() }
+            ]),
+            section("Metall-Lichtreflex", [
+                conditional([NSTextField(wrappingLabelWithString: "Für den Lichtreflex Gold oder Chrom unter Darstellung wählen.")]) { $0.material.mode == .standard },
+                conditional([
+                    effectCheck("Lichtreflex bewegen", \.material.reflectionEnabled),
+                    conditional([
+                        effectSlider("Reflexstärke", \.material.reflectionStrength, 0...100, percent: true),
+                        effectSlider("Reflexbreite", \.material.reflectionWidth, 5...60, percent: true),
+                        effectChoice("Auslöser", \.material.trigger, trigger),
+                        conditional([effectSlider("Zyklusdauer", \.material.period, 2...30, unit: "s")]) { $0.material.trigger == .continuous },
+                        conditional([effectSlider("Fokusdauer", \.material.focusDuration, 0.5...5, unit: "s")]) { $0.material.trigger == .focus }
+                    ]) { $0.material.reflectionEnabled }
+                ]) { $0.material.mode != .standard },
+                resetEffect("Lichtreflex zurücksetzen") { a in
+                    let d = MaterialEffect()
+                    a.material.reflectionEnabled = d.reflectionEnabled
+                    a.material.reflectionStrength = d.reflectionStrength; a.material.reflectionWidth = d.reflectionWidth
+                    a.material.period = d.period; a.material.trigger = d.trigger; a.material.focusDuration = d.focusDuration
+                }
             ]),
             NSButton(title: "Fokuswechsel testen", target: self, action: #selector(testFocus)),
             NSTextField(wrappingLabelWithString: "Bei macOS ‘Bewegung reduzieren’ bleiben Effekte statisch.")
@@ -487,7 +522,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     }
     @objc private func resetAppearance() {
         mutate { a in let d = Appearance(); a.red=d.red; a.green=d.green; a.blue=d.blue
-            a.opacity=d.opacity; a.width=d.width; a.radius=d.radius; a.gap=d.gap }
+            a.opacity=d.opacity; a.width=d.width; a.radius=d.radius; a.gap=d.gap; a.placement=d.placement }
         sync()
     }
     @objc private func changeShortcut() { store.value.shortcutEnabled = shortcut.state == .on; sync() }

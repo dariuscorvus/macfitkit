@@ -20,7 +20,7 @@ struct SettingsWindowTests {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             let result: String
             if !app.isActive || app.keyWindow !== settings.window {
-                result = "FAIL: Test settings did not become active/key."
+                result = "FAIL: Test settings did not become active/key. Active=\(app.isActive), key=\(app.keyWindow?.title ?? "nil"), foreground=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "nil")."
             } else if let overlay = app.windows.first(where: { $0 is OverlayWindow }) as? OverlayWindow,
                       let window = settings.window {
                 var failures: [String] = []
@@ -62,10 +62,10 @@ struct SettingsWindowTests {
                     } else { failures.append("Width input missing") }
                 } else { failures.append("Seven-section sidebar missing") }
                 check(overlay.isVisible, "No live settings frame")
-                check(overlay.frame == EffectGeometry.overlayRect(for: window.frame, appearance: store.value.appearance), "Initial frame mismatch")
+                check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Initial frame mismatch")
                 store.value.appearance.width = 8
                 store.value.appearance.gap = 5
-                check(overlay.frame == EffectGeometry.overlayRect(for: window.frame, appearance: store.value.appearance), "Appearance did not update live")
+                check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Appearance did not update live")
                 store.value.appearance.opacityAnimation.mode = .pulse
                 store.value.appearance.opacityAnimation.trigger = .continuous
                 let canvas = overlay.contentView as! EffectCanvas
@@ -74,21 +74,54 @@ struct SettingsWindowTests {
                 } else {
                     check(!(canvas.renderer.root.animationKeys() ?? []).isEmpty, "Settings animation not running")
                 }
+                // Material and placement changes use the same live renderer.
+                store.value.appearance.opacityAnimation.mode = .off
+                store.value.appearance.material.mode = .gold
+                store.value.appearance.material.reflectionEnabled = true
+                store.value.appearance.material.trigger = .continuous
+                func animationKeys(in layer: CALayer) -> [String] {
+                    (layer.animationKeys() ?? []) + (layer.sublayers ?? []).flatMap { animationKeys(in: $0) }
+                }
+                let metalKeys = animationKeys(in: canvas.renderer.root)
+                check(metalKeys.contains("metalReflection") != NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, "Metal reflection motion policy incorrect")
+                for placement in BorderPlacement.allCases {
+                    store.value.appearance.placement = placement
+                    check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Placement update did not follow window")
+                }
+                store.value.appearance.material.mode = .chrome
+                check(PreferencesStore(defaults: defaults).value.appearance == store.value.appearance, "Metal/placement values not persisted")
+                store.value.appearance.material.trigger = .focus
+                check(!animationKeys(in: canvas.renderer.root).contains("metalReflection"), "Focus reflection started on a settings update")
+                manager.testSettingsFocusAnimation()
+                func reflection(in layer: CALayer) -> CAAnimation? {
+                    layer.animation(forKey: "metalReflection") ?? (layer.sublayers ?? []).compactMap { reflection(in: $0) }.first
+                }
+                if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                    let before = reflection(in: canvas.renderer.root)!
+                    check(before.duration == store.value.appearance.material.focusDuration && before.repeatCount == 0,
+                          "Focus reflection did not use one bounded sweep")
+                    window.setFrameOrigin(window.frame.origin.applying(CGAffineTransform(translationX: 10,y: -10)))
+                    check(reflection(in: canvas.renderer.root)?.beginTime == before.beginTime, "Move restarted focus reflection")
+                }
                 manager.enabled = false
                 check(!overlay.isVisible, "Paused settings frame remained visible")
-                check((canvas.renderer.root.animationKeys() ?? []).isEmpty, "Paused settings animation remained active")
+                check(animationKeys(in: canvas.renderer.root).isEmpty, "Paused settings animation remained active")
                 manager.enabled = true
                 check(overlay.isVisible, "Settings frame did not resume")
                 // Own NSWindow changes synchronously deliver local geometry notifications.
                 let moved = window.frame.offsetBy(dx: 40, dy: -25)
                 window.setFrameOrigin(moved.origin)
-                check(overlay.frame == EffectGeometry.overlayRect(for: window.frame, appearance: store.value.appearance), "Move did not follow local window")
+                check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Move did not follow local window")
                 window.setFrame(NSRect(origin: window.frame.origin, size: NSSize(width: 980, height: 730)), display: true)
-                check(overlay.frame == EffectGeometry.overlayRect(for: window.frame, appearance: store.value.appearance), "Resize did not follow local window")
+                check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Resize did not follow local window")
                 check(overlay.ignoresMouseEvents && !overlay.canBecomeKey, "Overlay intercepted input/focus")
+                canvas.renderer.setVisible(false)
+                check(animationKeys(in: canvas.renderer.root).isEmpty, "Hidden metal reflection remained active")
+                canvas.renderer.motionPreferenceChanged()
+                check(animationKeys(in: canvas.renderer.root).isEmpty, "Hidden renderer restarted on motion preference change")
                 manager.stop()
-                check(!overlay.isVisible && (canvas.renderer.root.animationKeys() ?? []).isEmpty, "Stopped settings frame/animation remained active")
-                result = failures.isEmpty ? "PASS: Seven sidebar sections, numeric inputs, persistence, validation, live settings frame, appearance, animation, pause/resume, move, resize, input transparency and stop." : "FAIL: " + failures.joined(separator: "; ")
+                check(!overlay.isVisible && animationKeys(in: canvas.renderer.root).isEmpty, "Stopped settings frame/animation remained active")
+                result = failures.isEmpty ? "PASS: Seven sidebar sections, numeric inputs, persistence, validation, live settings frame, appearance, metals, focus sweep without movement restart, animation, pause/resume, move, resize, input transparency and stop." : "FAIL: " + failures.joined(separator: "; ")
             } else { result = "FAIL: Overlay or settings window missing." }
             defaults.removePersistentDomain(forName: suite)
             try! result.write(toFile: CommandLine.arguments[1], atomically: true, encoding: .utf8)

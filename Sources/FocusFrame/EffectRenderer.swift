@@ -6,6 +6,7 @@ import FocusFrameCore
 final class EffectRenderer {
     let root = CALayer()
     private var gradients: [CAGradientLayer] = []
+    private var reflections: [(layer: CAGradientLayer, travel: CGSize)] = []
     private var style = Appearance()
     private var visible = false
 
@@ -16,52 +17,75 @@ final class EffectRenderer {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         root.transform = CATransform3DIdentity
         root.frame = bounds; root.contentsScale = scale; root.opacity = Float(a.opacity)
-        root.sublayers?.forEach { $0.removeFromSuperlayer() }; gradients.removeAll()
-        let outset = a.gap + a.width / 2
-        let contour = CGPath(roundedRect: target.insetBy(dx: -outset, dy: -outset),
-            cornerWidth: a.radius == 0 ? 0 : a.radius + outset,
-            cornerHeight: a.radius == 0 ? 0 : a.radius + outset, transform: nil)
-        // Effects never paint inside the target window.
+        root.sublayers?.forEach { $0.removeFromSuperlayer() }; gradients.removeAll(); reflections.removeAll()
+        let geometry = EffectGeometry.contour(for: target, appearance: a)
+        let contour = CGPath(roundedRect: geometry.rect, cornerWidth: geometry.radius,
+                             cornerHeight: geometry.radius, transform: nil)
+        // Keep the central window area clear for every placement, including inside.
         let exterior = CGMutablePath(); exterior.addRect(bounds)
-        exterior.addRoundedRect(in: target, cornerWidth: a.radius, cornerHeight: a.radius)
+        let hole = a.placement == .outside ? target : geometry.innerRect
+        let holeRadius = a.placement == .outside ? min(a.radius, min(target.width,target.height)/2) : geometry.innerRadius
+        exterior.addRoundedRect(in: hole, cornerWidth: holeRadius, cornerHeight: holeRadius)
         let exteriorMask = CAShapeLayer(); exteriorMask.path = exterior
         exteriorMask.contentsScale = scale
         exteriorMask.fillRule = .evenOdd; exteriorMask.fillColor = NSColor.black.cgColor
         let effects = CALayer(); effects.frame = bounds; effects.mask = exteriorMask
         root.addSublayer(effects)
         if a.shadow.enabled {
-            addShadow(to: effects, contour: contour, width: a.width + 2 * a.shadow.spread,
+            addShadow(to: effects, geometry: geometry, spread: a.shadow.spread,
                 color: a.shadow.color, opacity: a.shadow.opacity, radius: a.shadow.blur,
                 offset: CGSize(width: a.shadow.offsetX, height: -a.shadow.offsetY), scale: scale)
         }
         if a.light.mode != .off {
-            let inherited = a.gradient.mode == .off ? EffectColor(a.red, a.green, a.blue) : a.gradient.first
-            addShadow(to: effects, contour: contour, width: a.width,
+            let inherited = a.material.mode != .standard ? a.material.baseColor :
+                (a.gradient.mode == .off ? EffectColor(a.red, a.green, a.blue) : a.gradient.first)
+            addShadow(to: effects, geometry: geometry, spread: 0,
                 color: a.light.followsFrame ? inherited : a.light.color,
                 opacity: a.light.intensity, radius: a.light.extent, offset: .zero, scale: scale)
         }
-        addBorder(contour: contour, width: a.width, target: target, bounds: bounds, whitening: 0, scale: scale)
+        let ring = CGMutablePath()
+        ring.addRoundedRect(in: geometry.outerRect, cornerWidth: geometry.outerRadius, cornerHeight: geometry.outerRadius)
+        ring.addRoundedRect(in: geometry.innerRect, cornerWidth: geometry.innerRadius, cornerHeight: geometry.innerRadius)
+        addBorder(contour: contour, ring: ring, width: geometry.width, target: target, bounds: bounds, whitening: 0, scale: scale)
+        if a.material.mode != .standard && a.material.reflectionEnabled {
+            addReflection(ring: ring, target: target, bounds: bounds, scale: scale)
+        }
         if a.light.mode == .neon {
-            addBorder(contour: contour, width: a.width * a.light.coreWidth, target: target,
+            addBorder(contour: contour, ring: nil, width: geometry.width * a.light.coreWidth, target: target,
                 bounds: bounds, whitening: a.light.whitening, scale: scale)
         }
         CATransaction.commit()
     }
 
-    private func addShadow(to parent: CALayer, contour: CGPath, width: CGFloat, color: EffectColor,
+    private func addShadow(to parent: CALayer, geometry: BorderContour, spread: Double, color: EffectColor,
                            opacity: Double, radius: Double, offset: CGSize, scale: CGFloat) {
         let layer = CALayer(); layer.frame = root.bounds; layer.contentsScale = scale
-        layer.shadowPath = contour.copy(strokingWithWidth: width, lineCap: .round, lineJoin: .round, miterLimit: 10)
+        let outer = geometry.outerRect.insetBy(dx: -spread,dy: -spread)
+        let inner = geometry.innerRect.insetBy(dx: spread,dy: spread)
+        let path = CGMutablePath()
+        path.addRoundedRect(in: outer, cornerWidth: geometry.outerRadius == 0 ? 0 : geometry.outerRadius+spread,
+                            cornerHeight: geometry.outerRadius == 0 ? 0 : geometry.outerRadius+spread)
+        if inner.width > 0 && inner.height > 0 {
+            let innerPath = CGPath(roundedRect: inner, cornerWidth: max(0,geometry.innerRadius-spread),
+                                  cornerHeight: max(0,geometry.innerRadius-spread), transform: nil)
+            // Opposite winding preserves the hole under CALayer's nonzero fill.
+            var mirror = CGAffineTransform(translationX: 2*inner.midX,y: 0).scaledBy(x: -1,y: 1)
+            if let reversed = innerPath.copy(using: &mirror) { path.addPath(reversed) }
+        }
+        layer.shadowPath = path
         layer.shadowColor = color.nsColor.cgColor; layer.shadowOpacity = Float(opacity)
         layer.shadowRadius = radius; layer.shadowOffset = offset
         parent.addSublayer(layer)
     }
 
-    private func addBorder(contour: CGPath, width: CGFloat, target: CGRect, bounds: CGRect,
+    private func addBorder(contour: CGPath, ring: CGPath?, width: CGFloat, target: CGRect, bounds: CGRect,
                            whitening: Double, scale: CGFloat) {
         let a = style
-        let mask = CAShapeLayer(); mask.path = contour; mask.lineWidth = width
-        mask.fillColor = nil; mask.strokeColor = NSColor.black.cgColor; mask.contentsScale = scale
+        let mask = CAShapeLayer(); mask.path = ring ?? contour; mask.lineWidth = width
+        mask.fillRule = .evenOdd
+        mask.fillColor = ring == nil ? nil : NSColor.black.cgColor
+        mask.strokeColor = ring == nil ? NSColor.black.cgColor : nil
+        mask.contentsScale = scale
         let holder = CALayer(); holder.frame = bounds; holder.mask = mask; root.addSublayer(holder)
         let gradient = CAGradientLayer(); gradient.contentsScale = scale
         // A rotating square covers the entire rectangle at every angle.
@@ -73,15 +97,43 @@ final class EffectRenderer {
             NSColor(srgbRed: c.red + (1-c.red)*whitening, green: c.green + (1-c.green)*whitening,
                     blue: c.blue + (1-c.blue)*whitening, alpha: 1).cgColor
         }
-        let first = a.gradient.mode == .off ? EffectColor(a.red,a.green,a.blue) : a.gradient.first
-        let second = a.gradient.mode == .off ? first : a.gradient.second
-        gradient.colors = a.gradient.mode == .conic ? [color(first), color(second), color(first)] : [color(first),color(second)]
-        gradient.locations = a.gradient.mode == .conic ? [0,0.5,1] : [0,1]
-        gradient.type = a.gradient.mode == .conic ? .conic : .axial
-        gradient.startPoint = a.gradient.mode == .conic ? CGPoint(x: 0.5,y: 0.5) : CGPoint(x: 0,y: 0.5)
+        let metal = a.material.mode != .standard
+        if metal {
+            gradient.colors = a.material.stops.map { color($0.color) }
+            gradient.locations = a.material.stops.map { NSNumber(value: $0.location) }
+        } else {
+            let first = a.gradient.mode == .off ? EffectColor(a.red,a.green,a.blue) : a.gradient.first
+            let second = a.gradient.mode == .off ? first : a.gradient.second
+            gradient.colors = a.gradient.mode == .conic ? [color(first), color(second), color(first)] : [color(first),color(second)]
+            gradient.locations = a.gradient.mode == .conic ? [0,0.5,1] : [0,1]
+        }
+        let conic = !metal && a.gradient.mode == .conic
+        gradient.type = conic ? .conic : .axial
+        gradient.startPoint = conic ? CGPoint(x: 0.5,y: 0.5) : CGPoint(x: 0,y: 0.5)
         gradient.endPoint = CGPoint(x: 1,y: 0.5)
-        gradient.transform = CATransform3DMakeRotation(a.gradient.angle * .pi / 180, 0,0,1)
+        gradient.transform = CATransform3DMakeRotation((metal ? a.material.angle : a.gradient.angle) * .pi / 180, 0,0,1)
         holder.addSublayer(gradient); gradients.append(gradient)
+    }
+
+    private func addReflection(ring: CGPath, target: CGRect, bounds: CGRect, scale: CGFloat) {
+        let mask = CAShapeLayer(); mask.path = ring; mask.fillRule = .evenOdd
+        mask.fillColor = NSColor.black.cgColor; mask.contentsScale = scale
+        let holder = CALayer(); holder.frame = bounds; holder.mask = mask; root.addSublayer(holder)
+        let m = style.material
+        let side = hypot(bounds.width, bounds.height) + 2
+        let reflection = CAGradientLayer(); reflection.contentsScale = scale
+        reflection.bounds = CGRect(x: 0,y: 0,width: side,height: side)
+        reflection.position = CGPoint(x: target.midX,y: target.midY)
+        let clear = NSColor.white.withAlphaComponent(0).cgColor
+        reflection.colors = [clear,clear,NSColor.white.withAlphaComponent(m.reflectionStrength).cgColor,clear,clear]
+        reflection.locations = [0, NSNumber(value: 0.5-m.reflectionWidth/2), 0.5, NSNumber(value: 0.5+m.reflectionWidth/2), 1]
+        reflection.startPoint = CGPoint(x: 0,y: 0.5); reflection.endPoint = CGPoint(x: 1,y: 0.5)
+        let angle = m.angle * .pi / 180
+        reflection.transform = CATransform3DMakeRotation(angle,0,0,1)
+        // The model remains invisible, so a focus sweep fades back to the static metal.
+        reflection.opacity = 0
+        holder.addSublayer(reflection)
+        reflections.append((reflection, CGSize(width: cos(angle)*side, height: sin(angle)*side)))
     }
 
     func setVisible(_ visible: Bool, focusChanged: Bool = false) {
@@ -92,6 +144,7 @@ final class EffectRenderer {
     func motionPreferenceChanged() { stop(); if visible { animate(focusChanged: false) } }
     func stop() {
         root.removeAllAnimations(); gradients.forEach { $0.removeAllAnimations() }
+        reflections.forEach { $0.layer.removeAllAnimations() }
     }
     func animate(focusChanged: Bool) {
         let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -123,7 +176,7 @@ final class EffectRenderer {
             root.add(animation, forKey: "opacityEffect")
         }
         let r = a.rotation
-        if r.enabled && a.gradient.mode != .off && EffectAnimationPolicy.shouldAnimate(visible: visible,
+        if r.enabled && a.material.mode == .standard && a.gradient.mode != .off && EffectAnimationPolicy.shouldAnimate(visible: visible,
             reducedMotion: reduced, trigger: r.trigger, focusChanged: focusChanged) {
             for gradient in gradients {
                 let animation = CABasicAnimation(keyPath: "transform.rotation.z")
@@ -132,6 +185,26 @@ final class EffectRenderer {
                 animation.duration = r.period
                 animation.repeatDuration = r.trigger == .continuous ? .infinity : r.focusDuration
                 gradient.add(animation, forKey: "rotationEffect")
+            }
+        }
+        let m = a.material
+        if m.mode != .standard && m.reflectionEnabled && EffectAnimationPolicy.shouldAnimate(visible: visible,
+            reducedMotion: reduced, trigger: m.trigger, focusChanged: focusChanged) {
+            for reflection in reflections {
+                let layer = reflection.layer
+                let position = CABasicAnimation(keyPath: "position")
+                let center = layer.position
+                position.fromValue = NSValue(point: CGPoint(x: center.x-reflection.travel.width/2, y: center.y-reflection.travel.height/2))
+                position.toValue = NSValue(point: CGPoint(x: center.x+reflection.travel.width/2, y: center.y+reflection.travel.height/2))
+                let opacity = CAKeyframeAnimation(keyPath: "opacity")
+                opacity.values = [0,1,1,0]; opacity.keyTimes = [0,0.15,0.85,1]
+                opacity.timingFunctions = [.init(name: .easeInEaseOut),.init(name: .linear),.init(name: .easeInEaseOut)]
+                let duration = m.trigger == .focus ? m.focusDuration : m.period
+                position.duration = duration; opacity.duration = duration
+                let group = CAAnimationGroup(); group.animations = [position,opacity]; group.duration = duration
+                group.beginTime = CACurrentMediaTime()
+                group.repeatCount = m.trigger == .continuous ? .infinity : 0
+                layer.add(group, forKey: "metalReflection")
             }
         }
     }
