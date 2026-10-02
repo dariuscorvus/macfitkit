@@ -1,6 +1,6 @@
 # Änderungen
 
-## 0.6.0 – 2. Oktober 2026 (lokale Entwicklung)
+## 0.6.0 – 2. Oktober 2026
 
 - Direkte Zahleneingaben neben allen Reglern; Dezimalwerte, Validierung und
   Speicherung bei Enter/Fokusverlust. Größere Grenzen für Stärke, Radius,
@@ -13,7 +13,9 @@
   verfolgen Fokus, Move, Resize und Minimieren ohne AX-Abfragen.
 - Separater Machbarkeitstest für automatische Rundung aus transparenten
   ScreenCaptureKit-Einzelaufnahmen; noch kein automatischer Radius-Modus.
-- Kein neuer Rollout, keine DMG, keine Veröffentlichung.
+- Standardradius 18,5 pt für neue Einstellungen und Zurücksetzen; gespeicherte
+  Radiuswerte bleiben erhalten. Signierte Universal-DMG für Intel/Apple Silicon,
+  weiterhin ohne Apple-Notarisierung.
 
 ## 0.5.3 – 2. Oktober 2026
 

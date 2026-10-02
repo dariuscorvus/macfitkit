@@ -6,7 +6,7 @@ public struct Appearance: Codable, Equatable, Sendable {
     public var blue: Double = 0.15
     public var opacity: Double = 1
     public var width: Double = 3
-    public var radius: Double = 10
+    public var radius: Double = 18.5
     public var gap: Double = 0
 
     public var light = LightEffect()
@@ -46,7 +46,7 @@ public struct Appearance: Codable, Equatable, Sendable {
         result.blue = clamp(blue, 0...1, fallback: 0.15)
         result.opacity = clamp(opacity, 0.1...1, fallback: 1)
         result.width = clamp(width, 1...100, fallback: 3)
-        result.radius = clamp(radius, 0...300, fallback: 10)
+        result.radius = clamp(radius, 0...300, fallback: 18.5)
         result.gap = clamp(gap, 0...200, fallback: 0)
         result.light = light.normalized; result.shadow = shadow.normalized
         result.gradient = gradient.normalized; result.opacityAnimation = opacityAnimation.normalized

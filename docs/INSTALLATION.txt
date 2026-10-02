@@ -6,13 +6,14 @@ Für Apple-Silicon- und Intel-Macs mit macOS 14 oder neuer.
 2. FocusFrame im Programme-Ordner starten. Das Symbol erscheint in der Menüleiste.
 3. In Systemeinstellungen > Datenschutz & Sicherheit > Bedienungshilfen
    FocusFrame erlauben. Falls es fehlt, mit + aus dem Programme-Ordner hinzufügen.
-4. Im FocusFrame-Menü „Berechtigung erneut prüfen“ wählen und ein anderes
-   App-Fenster aktivieren. „Rahmen aktiv“ muss eingeschaltet sein.
-5. Im Menü Einstellungen öffnen: Darstellung, Effekte, Animation, Verhalten.
+4. Zu FocusFrame zurückkehren und ein anderes App-Fenster aktivieren.
+   Die Berechtigung wird erneut geprüft. „Rahmen aktiv“ muss eingeschaltet sein.
+5. Im Menü Einstellungen öffnen: Darstellung, Leuchten, Schatten, Farbverlauf,
+   Animationen, Verhalten und App-Ausnahmen.
    Neue Effekte sind zunächst aus. Start bei Anmeldung ist optional.
 
 SIGNATUR UND NOTARISIERUNG
-Diese erste Datei mit „unnotarized“ im Namen ist Developer-ID-signiert, aber noch
+Diese Datei mit „unnotarized“ im Namen ist Developer-ID-signiert, aber noch
 nicht von Apple notarisiert. macOS kann ihren ersten Start deshalb blockieren.
 Nur wenn du dieses Paket vom Entwickler erhalten hast und ihm vertraust:
 Nach dem ersten Startversuch Systemeinstellungen > Datenschutz & Sicherheit

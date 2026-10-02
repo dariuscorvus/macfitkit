@@ -13,7 +13,7 @@ struct ConfigurationTests {
         appearance.red = 5
         let safe = appearance.normalized
         #expect(safe.width == 3)
-        #expect(safe.radius == 10)
+        #expect(safe.radius == 18.5)
         #expect(safe.gap == 0)
         #expect(safe.opacity == 0.1)
         #expect(safe.red == 1)

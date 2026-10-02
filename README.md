@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller lokaler Entwicklungsstand: 0.6.0 (noch kein neuer Release).
+Aktuelle Version: 0.6.0. Release als signierte Universal-DMG, noch nicht notarisiert.
 
 ## Start
 
@@ -237,3 +237,6 @@ zurückgesetzt, Werte außerhalb des Bereichs werden begrenzt.
 Stärke: 1–100 pt; Eckenradius: 0–300 pt; Abstand: 0–200 pt. Leuchtweite,
 Schattenweichheit und Ausbreitung: 0–200 pt; Schattenversatz: −200 bis +200 pt.
 Prozentwerte, Winkel und Animationsdauern behalten ihre bisherigen Grenzen.
+
+Standard-Eckenradius: 18,5 pt bei neuen Einstellungen und beim Zurücksetzen.
+Bereits gespeicherte Radiuswerte bleiben erhalten.
