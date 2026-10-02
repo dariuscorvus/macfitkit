@@ -372,3 +372,24 @@ keine neuen Timer/AX-Abfragen. Daueranimationen bleiben unverändert.
   Abhängigkeiten. Physisches Ziehen/Vollbild mit den neuen Metallkombinationen
   bleibt eine praktische Nutzerabnahme.
 - Neuer lokaler Stand; keine DMG, kein Tag, kein Rollout. Feuer bleibt später.
+
+## Separater Dock-Halo-Machbarkeitstest (2026-10-02)
+
+- Ausgangsstand 1f97d9e, 0.7.0/Build 6; produktive Quellen, Settings und Version
+  unverändert. Experiment unter script/experiments/DockHalo, separater Startpfad.
+- Dock-AX liest normale App-URLs und Zellrechtecke; Finder und Codex über eindeutige
+  Bundle-URL zugeordnet. Panel sichtbar geschaltet, ignoresMouseEvents=true;
+  Nichtmatch entfernt es, endliche Sitzung räumt Panel/Observer auf.
+- AXMoved/AXResized/AXLayoutChanged an Dock-App, Liste und Zellen: -25207
+  (notificationUnsupported). Kein zuverlässiges flüssiges Vergrößerungs-Tracking.
+  Auto-Hide unterdrückt den Halo; Sichtbarkeit/Layout außerhalb bekannter Ereignisse
+  bleibt unzuverlässig. Details, Testmatrix und Menüleisten-Alternative in
+  docs/DOCK-HALO.md. Keine permanente Produktintegration.
+- Diagnose im bereits berechtigten Terminal erfolgreich. Separates GUI-Bundle
+  besitzt keine AX-Freigabe und beendet ohne Prompt. Keine Sicherheits- oder
+  Dock-Einstellung geändert. Dock-UI-Automation timeout; keine visuelle Halo-
+  oder physische Klick-/Mehrschirm-/seitliche Dock-/Auto-Hide-Abnahme behauptet.
+- 31 Kernprüfungen, SwiftPM-Build, strenge Signatur, Xcode-Strukturprüfung und
+  Diff-Prüfung bestanden. Zusätzlich erneut 792 native Overlay-Geometrieprüfungen
+  und 9 Renderer-Pixelprüfungen bestanden. Aktive Toolchain weiterhin CLT;
+  vollständiges Xcode fehlt. Kein Release, Tag oder Upload.

@@ -129,3 +129,12 @@ Konturorientierungen, um das zentrale Loch zu bewahren.
 zusätzlich tatsächliche Renderer-Pixel und speichert optional synthetische
 Renderbilder (keine Screenshots fremder Fenster). Die Geometrieprobe prüft
 auch Maskenposition und Layer-Identität bei Subpixel-Bewegungen.
+
+## Separater Dock-Halo-Test
+
+`./script/probe_dock_halo.sh --halo --seconds 20` baut einen separaten,
+endlich laufenden Prototyp. Fehlende AX-Freigabe beendet ihn ohne Nachfrage;
+`--stdio` ist der Diagnosepfad mit vorhandener Terminal-Berechtigung.
+[docs/DOCK-HALO.md](docs/DOCK-HALO.md) enthält Messungen und Einschränkungen.
+AX-Geometrieereignisse sind hier nicht unterstützt; noch keine Integration in
+FocusManager/Settings und keine Änderung der Fenster-Ziehlogik.

@@ -97,3 +97,11 @@
 - AX-/Workspace-Ereignisse, klicktransparentes Overlay und Mehrschirm-Koordinaten.
 - Rahmenrundung und Mausverfolgung bei bestätigten Fenster-Ziehgesten.
 - Lokaler Build-/Startworkflow, Signaturprüfung und Geometrie-/Ziehgestentests.
+
+## Unveröffentlicht – separates Dock-Experiment
+
+- Endlicher Dock-Halo-Prototyp mit App-Bundle-URL-Zuordnung und gemeinsamem
+  Renderer, ohne Änderung der produktiven Fensterverfolgung oder Einstellungen.
+- Dock-AX-Geometrieereignisse lokal nicht unterstützt; Grenzen bei Vergrößerung,
+  Auto-Hide, seitlichem Dock und Displaywechsel in docs/DOCK-HALO.md dokumentiert.
+  Keine neue Versionsnummer und kein Release.
