@@ -68,10 +68,12 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         selectSection(0)
         sync()
         window.center()
+        NotificationCenter.default.addObserver(self, selector: #selector(powerPreferenceChanged), name: .NSProcessInfoPowerStateDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(refreshLogin),
             name: NSApplication.didBecomeActiveNotification, object: nil)
     }
     @objc private func refreshLogin() { syncLogin() }
+    @objc private func powerPreferenceChanged() { sync() }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
     func present() {
