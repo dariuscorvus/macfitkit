@@ -1,0 +1,29 @@
+LiveDesktop – Installation
+==========================
+Für Apple-Silicon- und Intel-Macs mit macOS 26 oder neuer.
+
+1. DMG öffnen und LiveDesktop.app nach Applications (Programme) ziehen.
+2. Die App aus Programme starten und auf das Video-Symbol in der Menüleiste klicken.
+3. Ein lokal vorhandenes Apple-Video auswählen. Wenn noch keines vorhanden ist:
+   Weitere Optionen > Apple-Hintergründe verwalten öffnet die macOS-Einstellungen.
+   Dort ein animiertes Apple-Hintergrundvideo herunterladen, dann in LiveDesktop
+   „Neu suchen“ klicken. Apple-Videos sind nicht im Download enthalten.
+4. Optional „Beim Anmelden starten“ aktivieren.
+5. Für automatischen Wechsel den Schalter einschalten, mindestens zwei Videos
+   markieren und den Zeitabstand auswählen.
+
+SIGNATUR UND NOTARISIERUNG
+Diese Datei mit „unnotarized“ im Namen ist Developer-ID-signiert, aber noch
+nicht von Apple notarisiert. macOS kann ihren ersten Start deshalb blockieren.
+Nur wenn du dieses Paket vom Entwickler erhalten hast und ihm vertraust:
+Nach dem ersten Startversuch Systemeinstellungen > Datenschutz & Sicherheit
+öffnen und für LiveDesktop „Dennoch öffnen“ wählen, dann das Öffnen bestätigen.
+Keine globalen Sicherheitseinstellungen ändern.
+Apple erläutert diesen Ablauf: https://support.apple.com/de-de/102445
+
+Die App ist eine persönliche Testversion. macOS 26, mehrere gleichzeitig
+angeschlossene Displays, Spaces, Mission Control und Stage Manager sind noch
+nicht vollständig praktisch abgenommen. Lokal geprüft wurde macOS 27.2.
+
+Zum Entfernen den Autostart ausschalten, die App beenden und in den Papierkorb
+verschieben. Apple-Assets und macOS-Hintergrundbild-Einstellungen bleiben bestehen.

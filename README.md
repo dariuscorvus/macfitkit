@@ -73,8 +73,8 @@ App-Bundle: `~/Library/Caches/LiveDesktop/App/LiveDesktop.app`.
 Nach Entpacken der ZIP kann die App z. B. in `~/Applications` liegen.
 „Beim Anmelden starten“ registriert die installierte App als macOS-Anmeldeobjekt.
 Der Schalter zeigt den Systemstatus; falls macOS eine Freigabe verlangt, erscheint
-zusätzlich ein Button zu den Anmeldeobjekten. Keine öffentliche Distribution oder
-Notarisierung.
+zusätzlich ein Button zu den Anmeldeobjekten. Die privaten GitHub-Releases sind Developer-ID-signiert; eine
+Apple-Notarisierung ist noch nicht erfolgt.
 
 Der native SwiftPM-Buildmodus ist wegen der hier installierten CLT erforderlich
 und in Swift 6.4 deprecated. Build-Dateien außerhalb von Documents vermeiden
@@ -156,3 +156,12 @@ Der Test speichert keine Wallpaper-Zuordnungen. `probe.txt.progress` enthält
 Player-Zustand und beobachtete Fensterreihenfolge. Keine Videos mitgeliefert.
 Noch keine Release-Lizenz festgelegt. Nächste Schritte: macOS-26-/Spaces-/Hotplug-
 Abnahme, Energieprofil mit Apple-Videos, optional Autostart und Release-Signing.
+
+## Private Download-Releases
+
+`./script/release.sh` baut eine Universal-App (arm64 + x86_64), signiert mit
+Developer ID und erzeugt unter `dist/releases/<Version>` eine DMG, SHA-256 und
+Installationshinweise. Version und Build stehen in `Config/Version.xcconfig`.
+Die DMG enthält die App und einen Programme-Link; keine Apple-Hintergrundvideos.
+Mit `--notarize <Keychain-Profil>` ist eine vorhandene Notary-Konfiguration nutzbar.
+Ohne Notarisierung kann macOS beim ersten Start eine zusätzliche Freigabe verlangen.
