@@ -40,6 +40,8 @@ else
   BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"
 fi
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
+mkdir -p "$APP_BUNDLE/Contents/Resources"
+cp Resources/AppIcon.icns "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
 cp "$BUILD_BINARY" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -48,7 +50,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>$APP_NAME</string>
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
-  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+<key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$APP_VERSION</string>
   <key>CFBundleVersion</key><string>$APP_BUILD</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>

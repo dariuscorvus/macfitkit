@@ -48,3 +48,19 @@ struct ConfigurationTests {
         #expect(!drag.isMoving)
     }
 }
+
+@Test func legacyConfigurationAndPowerPolicy() throws {
+    let legacy = Data("{\"appearance\":{},\"shortcutEnabled\":true}".utf8)
+    let decoded = try JSONDecoder().decode(Configuration.self, from: legacy)
+    #expect(decoded.shortcutKeyCode == 3); #expect(decoded.shortcutModifiers == 6144)
+    var value = decoded; value.appearance.rotation.enabled = true
+    value.appearance.opacityAnimation.mode = .pulse; value.appearance.material.reflectionEnabled = true
+    #expect(value.renderedAppearance(lowPower: true).rotation.enabled == false)
+    #expect(value.renderedAppearance(lowPower: false).rotation.enabled == true)
+    #expect(value.appearance.opacityAnimation.mode == .pulse)
+    value.shortcutModifiers = 0; value.shortcutKeyCode = 300
+    #expect(value.normalized.shortcutModifiers == 6144); #expect(value.normalized.shortcutKeyCode == 3)
+    let transfer = PortablePreferences(configuration: value.normalized, profiles: [AppearanceProfile(name: "Test", appearance: value.appearance)])
+    let restored = try JSONDecoder().decode(PortablePreferences.self, from: JSONEncoder().encode(transfer))
+    #expect(restored.configuration == value.normalized); #expect(restored.profiles == transfer.profiles)
+}

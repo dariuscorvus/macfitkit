@@ -6,12 +6,15 @@ final class ShortcutService {
     var onPress: (() -> Void)?
     var isEnabled: Bool { hotKey != nil }
     private var hotKey: EventHotKeyRef?
+    private var registeredKey: UInt32?
+    private var registeredModifiers: UInt32?
     private var handler: EventHandlerRef?
     private let signature: OSType = 0x4646524D // FFRM
 
-    func setEnabled(_ enabled: Bool) throws {
+    func setEnabled(_ enabled: Bool, keyCode: UInt32 = 3, modifiers: UInt32 = 6144) throws {
         if !enabled { stop(); return }
-        if hotKey != nil { return }
+        if hotKey != nil && registeredKey == keyCode && registeredModifiers == modifiers { return }
+        stop()
         var event = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let install = InstallEventHandler(GetApplicationEventTarget(), { _, event, context in
             guard let event, let context else { return OSStatus(eventNotHandledErr) }
@@ -26,14 +29,16 @@ final class ShortcutService {
             }
         }, 1, &event, Unmanaged.passUnretained(self).toOpaque(), &handler)
         guard install == noErr else { throw failure(install) }
-        let result = RegisterEventHotKey(UInt32(kVK_ANSI_F), UInt32(controlKey | optionKey),
+        let result = RegisterEventHotKey(keyCode, modifiers,
             EventHotKeyID(signature: signature, id: 1), GetApplicationEventTarget(), 0, &hotKey)
         if result != noErr { stop(); throw failure(result) }
+        registeredKey = keyCode; registeredModifiers = modifiers
     }
 
     func stop() {
         if let hotKey { UnregisterEventHotKey(hotKey) }
         if let handler { RemoveEventHandler(handler) }
+        registeredKey = nil; registeredModifiers = nil
         hotKey = nil
         handler = nil
     }

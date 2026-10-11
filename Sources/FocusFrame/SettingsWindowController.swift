@@ -16,7 +16,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private var sections: [(title: String, symbol: String, summary: String, content: NSView)] = []
     private let colorWell = NSColorWell()
     private let login = NSButton(checkboxWithTitle: "Bei Anmeldung starten", target: nil, action: nil)
-    private let shortcut = NSButton(checkboxWithTitle: "Rahmen mit ⌃⌥F ein-/ausschalten", target: nil, action: nil)
+    private let shortcut = NSButton(checkboxWithTitle: "Tastenkürzel aktivieren", target: nil, action: nil)
     private let frameToggle = NSButton(checkboxWithTitle: "Rahmen aktiv", target: nil, action: nil)
     private let shortcutStatus = NSTextField(wrappingLabelWithString: "")
     private var shortcutRegistered = false
@@ -24,6 +24,13 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private var frameEnabled = true
     private let fullScreen = NSButton(checkboxWithTitle: "Rahmen im Vollbild ausblenden", target: nil, action: nil)
     private let loginStatus = NSTextField(wrappingLabelWithString: "")
+    private let profilePicker = NSPopUpButton()
+    private let keyPicker = NSPopUpButton()
+    private let power = NSButton(checkboxWithTitle: "Animationen im Stromsparmodus aussetzen", target: nil, action: nil)
+    private let modifierButtons = [("⌃ Control", UInt32(4096)), ("⌥ Option", UInt32(2048)), ("⌘ Command", UInt32(256)), ("⇧ Shift", UInt32(512))].map { title, mask in
+        let b = NSButton(checkboxWithTitle: title, target: nil, action: nil); b.tag = Int(mask); return b
+    }
+    private let keys: [(String, Int)] = [("A",0),("B",11),("C",8),("D",2),("E",14),("F",3),("G",5),("H",4),("I",34),("J",38),("K",40),("L",37),("M",46),("N",45),("O",31),("P",35),("Q",12),("R",15),("S",1),("T",17),("U",32),("V",9),("W",13),("X",7),("Y",16),("Z",6),("0",29),("1",18),("2",19),("3",20),("4",21),("5",23),("6",22),("7",26),("8",28),("9",25)]
     private let table = NSTableView()
 
     init(store: PreferencesStore) {
@@ -93,7 +100,12 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             effectSlider("Abstand", \.gap, 0...200)
         ]
         views.append(NSButton(title: "Darstellung zurücksetzen", target: self, action: #selector(resetAppearance)))
+        profilePicker.target = self; profilePicker.action = #selector(selectProfile)
         return page([
+            section("Profile", [profilePicker,
+                NSButton(title: "Darstellung als Profil speichern …", target: self, action: #selector(saveProfile)),
+                NSButton(title: "Einstellungen exportieren …", target: self, action: #selector(exportPreferences)),
+                NSButton(title: "Einstellungen importieren …", target: self, action: #selector(importPreferences))]),
             section("Rahmen", views),
             section("Oberfläche", [
                 effectChoice("Oberfläche", \.material.mode, [("Farbe / Farbverlauf",.standard),("Gold",.gold),("Chrom",.chrome)]),
@@ -425,10 +437,14 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         login.target = self; login.action = #selector(changeLogin)
         shortcut.target = self; shortcut.action = #selector(changeShortcut)
         fullScreen.target = self; fullScreen.action = #selector(changeFullScreen)
+        power.target = self; power.action = #selector(changePower)
+        for (name, code) in keys { keyPicker.addItem(withTitle: name); keyPicker.lastItem?.tag = code }
+        keyPicker.target = self; keyPicker.action = #selector(changeKey)
+        for b in modifierButtons { b.target = self; b.action = #selector(changeKey) }
         let openLogin = NSButton(title: "Anmeldeobjekte öffnen …", target: self, action: #selector(openLoginSettings))
         return page([
-            section("Rahmen", [frameToggle, fullScreen]),
-            section("Tastenkürzel", [shortcut, shortcutStatus]),
+            section("Rahmen", [frameToggle, fullScreen, power]),
+            section("Tastenkürzel", [shortcut, NSStackView(views: modifierButtons), keyPicker, shortcutStatus]),
             section("Anmeldestart", [login, loginStatus, openLogin]),
             NSButton(title: "Diagnose …", target: self, action: #selector(openDiagnostics))
         ], inset: 0)
@@ -477,6 +493,13 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         let appearance = store.value.appearance.normalized
         colorWell.color = NSColor(srgbRed: appearance.red, green: appearance.green, blue: appearance.blue, alpha: 1)
         effectSync.forEach { $0() }
+        let oldProfile = profilePicker.titleOfSelectedItem
+        profilePicker.removeAllItems(); profilePicker.addItem(withTitle: "Profil auswählen …")
+        for p in store.profiles { profilePicker.addItem(withTitle: p.name) }
+        if let oldProfile { profilePicker.selectItem(withTitle: oldProfile) }
+        keyPicker.selectItem(withTag: Int(store.value.shortcutKeyCode))
+        for b in modifierButtons { b.state = store.value.shortcutModifiers & UInt32(b.tag) != 0 ? .on : .off }
+        power.state = store.value.savePower ? .on : .off
         shortcut.state = store.value.shortcutEnabled ? .on : .off
         fullScreen.state = store.value.hideInFullScreen ? .on : .off
         syncLogin()
@@ -506,7 +529,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         }
         let state = frameEnabled ? "aktiv" : "pausiert"
         let receipt = shortcutPresses == 0 ? "Noch kein Tastendruck empfangen." : "Tastendruck empfangen (\(shortcutPresses))."
-        shortcutStatus.stringValue = "Control + Option + F ist registriert. \(receipt) Rahmen: \(state)."
+        shortcutStatus.stringValue = "\(modifierButtons.filter { $0.state == .on }.map(\.title).joined(separator: " + ")) + \(keyPicker.titleOfSelectedItem ?? "?") ist registriert. \(receipt) Rahmen: \(state)."
     }
 
     @objc private func toggleFrame() { onToggleFrame?() }
@@ -524,6 +547,51 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         mutate { a in let d = Appearance(); a.red=d.red; a.green=d.green; a.blue=d.blue
             a.opacity=d.opacity; a.width=d.width; a.radius=d.radius; a.gap=d.gap; a.placement=d.placement }
         sync()
+    }
+    @objc private func changePower() { store.value.savePower = power.state == .on; sync() }
+    @objc private func changeKey() {
+        let mask = modifierButtons.filter { $0.state == .on }.reduce(UInt32(0)) { $0 | UInt32($1.tag) }
+        guard mask != 0 else { sync(); return }
+        var value = store.value; value.shortcutKeyCode = UInt32(keyPicker.selectedTag()); value.shortcutModifiers = mask
+        store.value = value.normalized; sync()
+    }
+    @objc private func selectProfile() {
+        let index = profilePicker.indexOfSelectedItem - 1
+        guard store.profiles.indices.contains(index) else { return }
+        store.value.appearance = store.profiles[index].appearance.normalized; sync()
+    }
+    @objc private func saveProfile() {
+        let alert = NSAlert(); alert.messageText = "Darstellung speichern"
+        let name = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24)); name.placeholderString = "Profilname"
+        alert.accessoryView = name; alert.addButton(withTitle: "Speichern"); alert.addButton(withTitle: "Abbrechen")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let title = String(name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80)); guard !title.isEmpty else { return }
+        if let index = store.profiles.firstIndex(where: { $0.name == title }) { store.profiles[index].appearance = store.value.appearance.normalized }
+        else { store.profiles.append(AppearanceProfile(name: title, appearance: store.value.appearance.normalized)) }
+        sync()
+    }
+    @objc private func exportPreferences() {
+        let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "FocusFrame-Einstellungen.json"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            try encoder.encode(PortablePreferences(configuration: store.value.normalized, profiles: store.profiles)).write(to: url, options: .atomic)
+        } catch { transferError(error) }
+    }
+    @objc private func importPreferences() {
+        let panel = NSOpenPanel(); panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let data = try Data(contentsOf: url); guard data.count < 1_000_000 else { throw CocoaError(.fileReadTooLarge) }
+            let document = try JSONDecoder().decode(PortablePreferences.self, from: data)
+            guard document.version == 1, document.profiles.count <= 100 else { throw CocoaError(.coderReadCorrupt) }
+            let profiles = document.profiles.map { AppearanceProfile(name: String($0.name.prefix(80)), appearance: $0.appearance.normalized) }
+            store.value = document.configuration.normalized
+            if !profiles.isEmpty { store.profiles = profiles }; sync()
+        } catch { transferError(error) }
+    }
+    private func transferError(_ error: Error) {
+        let alert = NSAlert(); alert.messageText = "Einstellungen konnten nicht übertragen werden"; alert.informativeText = error.localizedDescription; alert.runModal()
     }
     @objc private func changeShortcut() { store.value.shortcutEnabled = shortcut.state == .on; sync() }
     @objc private func changeFullScreen() { store.value.hideInFullScreen = fullScreen.state == .on; sync() }

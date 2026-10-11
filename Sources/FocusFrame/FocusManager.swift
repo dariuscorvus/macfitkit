@@ -62,6 +62,7 @@ final class FocusManager: NSObject {
         for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
             NotificationCenter.default.addObserver(self, selector: #selector(localGeometryChanged(_:)), name: name, object: nil)
         }
+        NotificationCenter.default.addObserver(self, selector: #selector(displayChanged), name: .NSProcessInfoPowerStateDidChange, object: nil)
         refresh()
     }
 
@@ -172,7 +173,7 @@ final class FocusManager: NSObject {
     private func showFrame(_ frame: CGRect) {
         guard enabled else { return }
         Diagnostics.shared.trackingState = .show
-        overlay.show(around: frame, appearance: configuration.appearance, focusChanged: pendingFocusAnimation)
+        overlay.show(around: frame, appearance: configuration.renderedAppearance(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled), focusChanged: pendingFocusAnimation)
         pendingFocusAnimation = false
     }
 

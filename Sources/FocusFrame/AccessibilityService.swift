@@ -15,6 +15,8 @@ final class AccessibilityService: NSObject {
     private(set) var focusGeneration: UInt64 = 0
     private var pid: pid_t?
     private var isFinder = false
+    private var desktopClassification: Bool?
+    private let queryTimeout: Float = 0.05
 
     var isTrusted: Bool { AXIsProcessTrusted() }
 
@@ -35,7 +37,7 @@ final class AccessibilityService: NSObject {
         pid = frontmost.processIdentifier
         isFinder = frontmost.bundleIdentifier == "com.apple.finder"
         let app = AXUIElementCreateApplication(frontmost.processIdentifier)
-        AXUIElementSetMessagingTimeout(app, 0.2)
+        AXUIElementSetMessagingTimeout(app, queryTimeout)
         application = app
         var newObserver: AXObserver?
         let result = AXObserverCreate(frontmost.processIdentifier, { _, element, notification, context in
@@ -82,6 +84,7 @@ final class AccessibilityService: NSObject {
         let start = ProcessInfo.processInfo.systemUptime
         defer { Diagnostics.shared.record("AX-Geometrie", milliseconds: (ProcessInfo.processInfo.systemUptime - start) * 1000) }
         guard let window else { return nil }
+        let generation = focusGeneration
         let names = [kAXPositionAttribute, kAXSizeAttribute, kAXMinimizedAttribute]
         var values: CFArray?
         let result = AXUIElementCopyMultipleAttributeValues(window, names as CFArray, [], &values)
@@ -102,6 +105,12 @@ final class AccessibilityService: NSObject {
         var position = CGPoint.zero
         var size = CGSize.zero
         guard AXValueGetValue(positionAX, .cgPoint, &position), AXValueGetValue(sizeAX, .cgSize, &size) else { return nil }
+        guard generation == focusGeneration,
+              NSWorkspace.shared.frontmostApplication?.processIdentifier == pid,
+              ProcessInfo.processInfo.systemUptime - start < 0.15 else {
+            Diagnostics.shared.record("Veraltete oder langsame AX-Antwort verworfen")
+            return nil
+        }
         if isFinderDesktop(position: position, size: size) { return nil }
         return (position, size)
     }
@@ -110,8 +119,9 @@ final class AccessibilityService: NSObject {
     /// Compare public WindowServer bounds/layers rather than localized titles.
     private func isFinderDesktop(position: CGPoint, size: CGSize) -> Bool {
         guard isFinder, let pid, let window else { return false }
+        if let desktopClassification { return desktopClassification }
         let role = attribute(window, kAXRoleAttribute) as? String ?? ""
-        if role == kAXScrollAreaRole { return true }
+        if role == kAXScrollAreaRole { desktopClassification = true; return true }
         let frame = CGRect(origin: position, size: size)
         let windows = (CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]) ?? []
         let layers = windows.compactMap { info -> Int? in
@@ -123,8 +133,12 @@ final class AccessibilityService: NSObject {
             return (info[kCGWindowLayer as String] as? NSNumber)?.intValue
         }
         // Preserve a normal Finder window, including one covering the whole display.
-        return DesktopFocusPolicy.isDesktop(isFinder: isFinder, role: role,
+        let result = DesktopFocusPolicy.isDesktop(isFinder: isFinder, role: role,
             matchingLayers: layers, desktopIconLevel: Int(CGWindowLevelForKey(.desktopIconWindow)))
+        // Empty metadata is inconclusive and should not be cached.
+        if !layers.isEmpty { desktopClassification = result }
+        Diagnostics.shared.record("Desktop-Klassifikation erneuert")
+        return result
     }
 
     var trackedWindowIsFullScreen: Bool {
@@ -143,6 +157,7 @@ final class AccessibilityService: NSObject {
         window = nil
         pid = nil
         isFinder = false
+        desktopClassification = nil
     }
 
     private func observeWindow(_ next: AXUIElement?) {
@@ -154,7 +169,9 @@ final class AccessibilityService: NSObject {
         }
         if next != nil { focusGeneration &+= 1 }
         window = next
+        desktopClassification = nil
         guard let next else { return }
+        AXUIElementSetMessagingTimeout(next, queryTimeout)
         for event in [kAXMovedNotification, kAXResizedNotification, kAXWindowMiniaturizedNotification,
                       kAXWindowDeminiaturizedNotification, kAXUIElementDestroyedNotification] {
             register(next, event)

@@ -65,13 +65,52 @@ public struct Configuration: Codable, Equatable, Sendable {
     public var excludedApps: [String] = []
     public var hideInFullScreen = false
     public var shortcutEnabled = false
+    public var shortcutKeyCode: UInt32 = 3
+    public var shortcutModifiers: UInt32 = 6144
+    public var savePower = true
     public init() {}
 
+    private enum CodingKeys: String, CodingKey { case appearance, excludedApps, hideInFullScreen, shortcutEnabled, shortcutKeyCode, shortcutModifiers, savePower }
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        appearance = try c.decodeIfPresent(Appearance.self, forKey: .appearance) ?? appearance
+        excludedApps = try c.decodeIfPresent([String].self, forKey: .excludedApps) ?? []
+        hideInFullScreen = try c.decodeIfPresent(Bool.self, forKey: .hideInFullScreen) ?? false
+        shortcutEnabled = try c.decodeIfPresent(Bool.self, forKey: .shortcutEnabled) ?? false
+        shortcutKeyCode = try c.decodeIfPresent(UInt32.self, forKey: .shortcutKeyCode) ?? 3
+        shortcutModifiers = try c.decodeIfPresent(UInt32.self, forKey: .shortcutModifiers) ?? 6144
+        savePower = try c.decodeIfPresent(Bool.self, forKey: .savePower) ?? true
+    }
+    public func renderedAppearance(lowPower: Bool) -> Appearance {
+        var result = appearance.normalized
+        if savePower && lowPower {
+            result.opacityAnimation.mode = .off
+            result.rotation.enabled = false
+            result.material.reflectionEnabled = false
+        }
+        return result
+    }
     public var normalized: Self {
         var result = self
+        if shortcutKeyCode > 126 { result.shortcutKeyCode = 3 }
+        result.shortcutModifiers &= 6912
+        if result.shortcutModifiers == 0 { result.shortcutModifiers = 6144 }
         result.appearance = appearance.normalized
         result.excludedApps = Array(Set(excludedApps.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty })).sorted()
         return result
     }
+}
+
+public struct AppearanceProfile: Codable, Equatable, Sendable {
+    public var name: String
+    public var appearance: Appearance
+    public init(name: String, appearance: Appearance) { self.name = name; self.appearance = appearance }
+}
+public struct PortablePreferences: Codable, Sendable {
+    public var version = 1
+    public var configuration: Configuration
+    public var profiles: [AppearanceProfile]
+    public init(configuration: Configuration, profiles: [AppearanceProfile]) { self.configuration = configuration; self.profiles = profiles }
 }

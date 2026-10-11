@@ -5,6 +5,9 @@ import FocusFrameCore
 final class PreferencesStore {
     var onChange: (() -> Void)?
     private let defaults: UserDefaults
+    var profiles: [AppearanceProfile] = [] {
+        didSet { if let data = try? JSONEncoder().encode(profiles) { defaults.set(data, forKey: "profiles.v1") } }
+    }
     var value: Configuration {
         didSet {
             if let data = try? JSONEncoder().encode(value.normalized) { defaults.set(data, forKey: "configuration.v1") }
@@ -14,6 +17,10 @@ final class PreferencesStore {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        var subtle = Appearance(); subtle.width = 2; subtle.opacity = 0.65
+        var contrast = Appearance(); contrast.width = 6; contrast.opacity = 1
+        profiles = [AppearanceProfile(name: "Dezent", appearance: subtle), AppearanceProfile(name: "Hoher Kontrast", appearance: contrast)]
+        if let data = defaults.data(forKey: "profiles.v1"), let stored = try? JSONDecoder().decode([AppearanceProfile].self, from: data), !stored.isEmpty { profiles = stored }
         if let data = defaults.data(forKey: "configuration.v1"),
            let stored = try? JSONDecoder().decode(Configuration.self, from: data) {
             value = stored.normalized

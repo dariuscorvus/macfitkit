@@ -27,6 +27,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             entry.target = self
             menu.addItem(entry)
         }
+        let downloads = NSMenuItem(title: "Downloads auf GitHub …", action: #selector(openReleases), keyEquivalent: "")
+        downloads.target = self; menu.addItem(downloads)
+        menu.addItem(NSMenuItem(title: "Version " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–"), action: nil, keyEquivalent: ""))
         menu.addItem(.separator())
         permissionItem.title = "Bedienungshilfen erlauben …"
         permissionItem.target = self
@@ -60,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func applyConfiguration() {
         manager.configuration = store.value.normalized
         do {
-            try shortcut.setEnabled(store.value.shortcutEnabled)
+            try shortcut.setEnabled(store.value.shortcutEnabled, keyCode: store.value.shortcutKeyCode, modifiers: store.value.shortcutModifiers)
             settings?.updateShortcutStatus(registered: shortcut.isEnabled, frameEnabled: manager.enabled)
         }
         catch {
@@ -79,6 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    @objc private func openReleases() { NSWorkspace.shared.open(URL(string: "https://github.com/dariuscorvus/FocusFrame/releases/latest")!) }
     @objc private func toggleEnabled() {
         manager.enabled.toggle()
         enabledItem.state = manager.enabled ? .on : .off
