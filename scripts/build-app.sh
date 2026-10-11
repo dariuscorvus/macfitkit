@@ -8,6 +8,8 @@ swift build --build-system native --scratch-path "$build_dir"
 bin_dir=$(swift build --build-system native --scratch-path "$build_dir" --show-bin-path)
 app_dir="${LIVE_DESKTOP_APP_DIR:-$HOME/Library/Caches/LiveDesktop/App}/LiveDesktop.app"
 mkdir -p "$app_dir/Contents/MacOS"
+mkdir -p "$app_dir/Contents/Resources"
+cp Resources/AppIcon.icns "$app_dir/Contents/Resources/AppIcon.icns"
 cp "$bin_dir/LiveDesktop" "$app_dir/Contents/MacOS/LiveDesktop"
 cat > "$app_dir/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -16,6 +18,7 @@ cat > "$app_dir/Contents/Info.plist" <<PLIST
 <key>CFBundleExecutable</key><string>LiveDesktop</string>
 <key>CFBundleIdentifier</key><string>tech.highbyte.LiveDesktop.prototype</string>
 <key>CFBundleName</key><string>LiveDesktop</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$version</string>
 <key>CFBundleVersion</key><string>$build</string>

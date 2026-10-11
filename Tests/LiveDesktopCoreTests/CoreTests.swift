@@ -86,4 +86,26 @@ func testRotationSequence() {
     XCTAssertEqual(RotationSequence.next(current: "a", paths: ["a", "a", "b"]), "b")
 }
 
+func testPersistentSettingsAndShuffle() throws {
+    var settings = LiveSettings(); settings.manualPause = true; settings.pauseOnLowPower = false
+    settings.rotationPaths = ["b", "a", "b"]; settings.rotationMinutes = -10
+    var options = LibraryOptions(); options.pauseOnBattery = true; options.shuffle = true
+    options.playlists = [VideoPlaylist(id: "test", name: "Test", paths: ["b", "a"])]
+    settings.library = options
+    let restored = try JSONDecoder().decode(LiveSettings.self, from: JSONEncoder().encode(settings.normalized))
+    XCTAssertEqual(restored.manualPause, true); XCTAssertEqual(restored.pauseOnLowPower, false)
+    XCTAssertEqual(restored.rotationPaths, ["b", "a"]); XCTAssertEqual(restored.rotationMinutes, 15)
+    XCTAssertEqual(restored.library, options)
+    var cycle = ShuffleCycle(); var current = "a"
+    for _ in 0..<50 {
+        var round: [String] = []
+        for _ in 0..<3 {
+            let next = cycle.next(current: current, paths: ["a","b","c","a"])!
+            XCTAssertEqual(next == current, false); current = next; round.append(next)
+        }
+        XCTAssertEqual(Set(round), Set(["a","b","c"]))
+    }
+    XCTAssertEqual(cycle.next(current: "a", paths: ["a"]), nil)
+}
+
 }

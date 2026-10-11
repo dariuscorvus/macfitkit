@@ -18,7 +18,8 @@ CoreTests().testPauseReasonsCannotOverrideManualPause()
 try CoreTests().testAppleMetadataUsesLocalizedNamesAndOnlyDownloadedVideos()
 try CoreTests().testMalformedMetadataKeepsLocalVideosSelectable()
 CoreTests().testRotationSequence()
+try CoreTests().testPersistentSettingsAndShuffle()
 print("PASS: rotation order, wraparound, duplicate and insufficient candidates; local catalog, localized Apple metadata, missing downloads, malformed metadata, explicit videos and all 16 playback-policy combinations")
 SWIFT
-swiftc -swift-version 6 Sources/LiveDesktopCore/AssetCatalog.swift "$check_dir/main.swift" -o "$check_dir/checks"
+swiftc -swift-version 6 Sources/LiveDesktopCore/*.swift "$check_dir/main.swift" -o "$check_dir/checks"
 "$check_dir/checks"

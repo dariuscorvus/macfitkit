@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import QuartzCore
+import LiveDesktopCore
 
 @MainActor
 final class DesktopWindow: NSPanel {
@@ -13,11 +14,12 @@ final class DesktopWindow: NSPanel {
         super.init(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         // Above the wallpaper level, below the declared icon level. This does not
         // promise ordering relative to Finder's implementation on every OS.
-        level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)) + 1)
         collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         ignoresMouseEvents = true
         becomesKeyOnlyIfNeeded = true
         isFloatingPanel = false
+        // NSPanel resets its level when floating behavior changes; assign last.
+        level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)) + 1)
         isMovable = false
         isMovableByWindowBackground = false
         // Decorative content must not become a window target for AX-based tools.
@@ -37,7 +39,7 @@ final class DesktopWindow: NSPanel {
 
 @MainActor
 final class VideoView: NSView {
-    let playerLayer = AVPlayerLayer()
+    var playerLayer = AVPlayerLayer()
     override init(frame: NSRect) {
         super.init(frame: frame)
         setAccessibilityElement(false)
@@ -55,69 +57,134 @@ final class VideoView: NSView {
     }
 }
 
+
+@MainActor
+private final class PlaybackUnit {
+    let player = AVQueuePlayer()
+    let layer = AVPlayerLayer()
+    let looper: AVPlayerLooper
+    var observations: [NSKeyValueObservation] = []
+    init(url: URL, bounds: CGRect) {
+        player.isMuted = true
+        player.preventsDisplaySleepDuringVideoPlayback = false
+        layer.player = player; layer.videoGravity = .resizeAspectFill; layer.frame = bounds
+        looper = AVPlayerLooper(player: player, templateItem: AVPlayerItem(url: url))
+    }
+    func stop() {
+        observations.removeAll(); player.pause(); looper.disableLooping(); player.removeAllItems()
+        layer.removeFromSuperlayer()
+    }
+}
+
 @MainActor
 final class DesktopSurface {
     let window: DesktopWindow
-    let player = AVQueuePlayer()
     let view: VideoView
-    private var looper: AVPlayerLooper?
-    private var statusObservation: NSKeyValueObservation?
-    private var layerObservation: NSKeyValueObservation?
+    private var active: PlaybackUnit?
+    private var pending: PlaybackUnit?
+    private var retiring: PlaybackUnit?
+    private let idlePlayer = AVQueuePlayer()
+    private var wantsPlayback = true
     private var generation = UUID()
-    private var failed = false
+    private var timeout: Task<Void, Never>?
     private(set) var url: URL?
-    var loopCount: Int { looper?.loopCount ?? 0 }
+    private(set) var state = SurfaceState.idle { didSet { if oldValue != state { onStateChange?(state) } } }
+    var onStateChange: ((SurfaceState) -> Void)?
     var onFailure: ((String) -> Void)?
+    var onReady: ((URL) -> Void)?
+    var crossfade = true
+    var player: AVQueuePlayer { active?.player ?? pending?.player ?? idlePlayer }
+    var loopCount: Int { active?.looper.loopCount ?? pending?.looper.loopCount ?? 0 }
 
     init(screen: NSScreen) {
         window = DesktopWindow(screen: screen)
         view = VideoView(frame: NSRect(origin: .zero, size: screen.frame.size))
         window.contentView = view
-        player.isMuted = true
-        player.preventsDisplaySleepDuringVideoPlayback = false
-        view.playerLayer.player = player
     }
 
     func load(_ url: URL) {
-        stop()
-        self.url = url
-        failed = false
-        let currentGeneration = generation
-        let item = AVPlayerItem(url: url)
-        // One queue/looper per screen. Decode and compositing cost scales with screens.
-        looper = AVPlayerLooper(player: player, templateItem: item)
-        statusObservation = looper?.observe(\.status, options: [.new]) { [weak self] looper, _ in
-            if looper.status == .failed {
-                let message = looper.error?.localizedDescription ?? "Videowiedergabe fehlgeschlagen"
-                Task { @MainActor [weak self] in
-                    guard let self, generation == currentGeneration else { return }
-                    failed = true
-                    window.orderOut(nil)
-                    player.pause()
-                    onFailure?(message)
-                }
+        generation = UUID(); let token = generation
+        timeout?.cancel(); pending?.stop(); retiring?.stop(); retiring = nil
+        self.url = url; state = .loading
+        let unit = PlaybackUnit(url: url, bounds: view.bounds)
+        pending = unit
+        unit.layer.opacity = 0
+        view.layer?.addSublayer(unit.layer)
+        unit.observations.append(unit.layer.observe(\.isReadyForDisplay, options: [.initial, .new]) { [weak self, weak unit] layer, _ in
+            guard layer.isReadyForDisplay else { return }
+            Task { @MainActor [weak self, weak unit] in
+                guard let self, let unit, generation == token, pending === unit else { return }
+                promote(unit, url: url)
             }
-        }
-        layerObservation = view.playerLayer.observe(\.isReadyForDisplay, options: [.initial, .new]) { [weak self] layer, _ in
-            if layer.isReadyForDisplay {
-                Task { @MainActor [weak self] in
-                    guard let self, generation == currentGeneration, !failed else { return }
-                    window.orderFrontRegardless()
-                }
+        })
+        unit.observations.append(unit.looper.observe(\.status, options: [.initial, .new]) { [weak self] looper, _ in
+            guard looper.status == .failed else { return }
+            let message = looper.error?.localizedDescription ?? "Video kann nicht abgespielt werden"
+            Task { @MainActor [weak self] in self?.fail(message, token: token) }
+        })
+        unit.observations.append(unit.player.observe(\.timeControlStatus, options: [.new]) { [weak self, weak unit] _, _ in
+            Task { @MainActor [weak self, weak unit] in
+                guard let self, let unit, active === unit, generation == token else { return }
+                refreshState()
             }
+        })
+        unit.player.play() // Decode one first frame while the old surface remains visible.
+        timeout = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(15))
+            guard !Task.isCancelled, let self, generation == token, pending != nil else { return }
+            fail("Das Video liefert kein darstellbares Bild", token: token)
         }
     }
 
-    func setPlaying(_ playing: Bool) { (playing && !failed) ? player.play() : player.pause() }
+    private func promote(_ unit: PlaybackUnit, url: URL) {
+        timeout?.cancel(); timeout = nil
+        let old = active; pending = nil; active = unit; retiring = old
+        view.playerLayer = unit.layer
+        window.orderFrontRegardless()
+        CATransaction.begin(); CATransaction.setAnimationDuration(crossfade && old != nil ? 0.3 : 0)
+        unit.layer.opacity = 1
+        CATransaction.commit()
+        if !wantsPlayback { unit.player.pause() }
+        refreshState(); onReady?(url)
+        Task { @MainActor [weak self, weak old] in
+            try? await Task.sleep(for: .milliseconds(350))
+            old?.stop()
+            if self?.retiring === old { self?.retiring = nil }
+        }
+    }
+
+    private func fail(_ message: String, token: UUID) {
+        guard generation == token else { return }
+        timeout?.cancel(); timeout = nil
+        pending?.stop(); pending = nil
+        if active == nil { window.orderOut(nil) }
+        state = .failed(message); onFailure?(message)
+    }
+
+    private func refreshState() {
+        guard url != nil else { return }
+        if pending != nil { state = .loading; return }
+        if case .failed = state { return }
+        state = !wantsPlayback ? .paused : (active?.player.timeControlStatus == .playing ? .playing : .loading)
+    }
+
+    func resize(to screen: NSScreen) {
+        window.setFrame(screen.frame, display: true)
+        for unit in [active, pending, retiring].compactMap({ $0 }) {
+            CATransaction.begin(); CATransaction.setDisableActions(true); unit.layer.frame = view.bounds; CATransaction.commit()
+        }
+    }
+
+    func setPlaying(_ playing: Bool) {
+        wantsPlayback = playing
+        playing ? active?.player.play() : active?.player.pause()
+        refreshState()
+    }
+
     func stop() {
-        generation = UUID()
-        player.pause()
-        layerObservation = nil
-        statusObservation = nil
-        looper?.disableLooping()
-        looper = nil
-        player.removeAllItems()
-        url = nil
+        generation = UUID(); timeout?.cancel(); timeout = nil
+        pending?.stop(); active?.stop(); retiring?.stop()
+        pending = nil; active = nil; retiring = nil; url = nil; state = .idle
         window.orderOut(nil)
     }
 }

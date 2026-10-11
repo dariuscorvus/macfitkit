@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
         popover.behavior = .transient
         popover.animates = false
-        popover.contentSize = NSSize(width: 440, height: 700)
+        popover.contentSize = NSSize(width: 440, height: BackgroundLibraryView.panelHeight)
         popover.contentViewController = NSHostingController(rootView: BackgroundLibraryView(controller: WallpaperController.shared))
     }
 
@@ -44,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         setupMenuBar()
         if CommandLine.arguments.contains("--show-library") {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 700), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: BackgroundLibraryView.panelHeight), styleMask: [.titled, .closable], backing: .buffered, defer: false)
             window.title = "LiveDesktop – Hintergrundauswahl"
             window.contentViewController = NSHostingController(rootView: BackgroundLibraryView(controller: WallpaperController.shared))
             window.isReleasedWhenClosed = false

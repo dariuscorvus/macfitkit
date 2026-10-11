@@ -39,6 +39,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <key>CFBundleExecutable</key><string>LiveDesktop</string>
 <key>CFBundleIdentifier</key><string>tech.highbyte.LiveDesktop.prototype</string>
 <key>CFBundleName</key><string>LiveDesktop</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$VERSION</string>
 <key>CFBundleVersion</key><string>$BUILD</string>
@@ -48,6 +49,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 REVISION=$(git rev-parse HEAD)
 printf '%s\n' "$REVISION" > "$APP/Contents/Resources/SourceRevision.txt"
 ARCHS=$(xcrun lipo "$APP/Contents/MacOS/LiveDesktop" -archs)

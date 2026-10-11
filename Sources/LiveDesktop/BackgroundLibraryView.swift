@@ -7,8 +7,9 @@ struct BackgroundLibraryView: View {
 
     private var filtered: [VideoAsset] {
         let search = controller.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        return controller.assets.filter { search.isEmpty || $0.name.localizedStandardContains(search) || $0.category.localizedStandardContains(search) }
+        return controller.assets.filter { (!controller.favoritesOnly || controller.favorites.contains($0.url.path)) && (search.isEmpty || $0.name.localizedStandardContains(search) || $0.category.localizedStandardContains(search)) }
     }
+    static var panelHeight: CGFloat { min(760, max(460, (NSScreen.main?.visibleFrame.height ?? 840) - 80)) }
     private var categories: [String] { Array(Set(filtered.map(\.category))).sorted() }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -33,6 +34,15 @@ struct BackgroundLibraryView: View {
             .onChange(of: controller.screens.count) { _, _ in
                 if !controller.targetDisplayID.isEmpty && !controller.screens.contains(where: { controller.screenID($0) == controller.targetDisplayID }) { controller.targetDisplayID = "" }
             }
+            Picker("Wechselliste", selection: Binding(get: { controller.selectedPlaylistID }, set: { controller.choosePlaylist($0) })) {
+                ForEach(controller.playlists) { Text($0.name).tag($0.id) }
+            }
+            .onChange(of: controller.targetDisplayID) { _, _ in controller.synchronizePlaylistEditor() }
+            HStack {
+                TextField("Neue Liste", text: $controller.playlistName)
+                Button("Speichern") { controller.saveNamedPlaylist() }.disabled(controller.playlistName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Toggle("Favoriten", isOn: $controller.favoritesOnly).toggleStyle(.checkbox)
+            }
             HStack {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Hintergründe suchen", text: $controller.searchQuery).textFieldStyle(.plain)
@@ -44,6 +54,9 @@ struct BackgroundLibraryView: View {
                 Text(controller.currentName(target: controller.targetDisplayID)).lineLimit(1)
             }.font(.callout)
             Text(controller.status).font(.caption).foregroundStyle(.secondary)
+            if controller.surfaceStates.values.contains(where: { if case .failed = $0 { return true }; return false }) {
+                Button("Erneut versuchen") { controller.retryTarget() }
+            }
             Toggle("Beim Anmelden starten", isOn: Binding(get: { controller.loginEnabled || controller.loginNeedsApproval }, set: { controller.setLoginEnabled($0) }))
             if controller.loginNeedsApproval {
                 Button("Autostart in Systemeinstellungen erlauben …") { controller.openLoginSettings() }
@@ -55,9 +68,14 @@ struct BackgroundLibraryView: View {
                     Picker("Alle", selection: $controller.rotationMinutes) {
                         ForEach([1, 5, 15, 30, 60], id: \.self) { Text($0 == 1 ? "1 Minute" : "\($0) Minuten").tag($0) }
                     }
-                    Button("Jetzt wechseln") { controller.advanceRotation() }.disabled(controller.rotationPaths.count < 2)
+                    Button("Jetzt wechseln") { controller.advanceRotation() }.disabled(controller.availableRotationCount < 2)
                 }
-                Text("\(controller.rotationPaths.count) ausgewählt · mindestens zwei markieren. Gilt für Displays mit aktivem Video.").font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Toggle("Zufällige Reihenfolge", isOn: $controller.shuffle).toggleStyle(.checkbox)
+                    Spacer()
+                    if let next = controller.nextChange { Text(next, style: .relative).font(.caption).foregroundStyle(.secondary) }
+                }
+                Text("\(controller.availableRotationCount) verfügbar · mindestens zwei markieren.").font(.caption).foregroundStyle(.secondary)
             }
             Divider()
             ScrollView {
@@ -74,6 +92,7 @@ struct BackgroundLibraryView: View {
                         Text(category).font(.caption.bold()).foregroundStyle(.secondary).padding(.top, 4)
                         ForEach(filtered.filter { $0.category == category }) { asset in
                             HStack(spacing: 4) {
+                            Button { controller.toggleFavorite(asset.url.path) } label: { Image(systemName: controller.favorites.contains(asset.url.path) ? "star.fill" : "star") }.buttonStyle(.plain).help("Favorit umschalten").accessibilityLabel("Favorit: \(asset.name)")
                             if controller.rotationEnabled {
                                 Toggle("Zum Wechsel hinzufügen: \(asset.name)", isOn: Binding(get: { controller.rotationPaths.contains(asset.url.path) }, set: { _ in controller.toggleRotationAsset(asset.url.path) })).labelsHidden().toggleStyle(.checkbox)
                             }
@@ -118,6 +137,14 @@ struct BackgroundLibraryView: View {
                     }
                     Button("Videoordner hinzufügen …") { controller.chooseFolder() }
                     Toggle("Im Stromsparmodus pausieren", isOn: $controller.pauseOnLowPower)
+                    Toggle("Bei Akkubetrieb pausieren", isOn: $controller.pauseOnBattery)
+                    Toggle("Sanfter Videoübergang", isOn: $controller.crossfade)
+                    Button("Aktuelle Wechselliste löschen") { controller.deletePlaylist() }.disabled(controller.playlists.count < 2)
+                    Divider()
+                    Button("Listen und Einstellungen exportieren …") { controller.exportLibrary() }
+                    Button("Listen und Einstellungen importieren …") { controller.importLibrary() }
+                    Button("Downloads auf GitHub …") { controller.openReleases() }
+                    Text("Version " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–"))
                     if !controller.warnings.isEmpty {
                         Divider()
                         ForEach(Array(controller.warnings.suffix(5).enumerated()), id: \.offset) { _, warning in Text(warning) }
@@ -128,11 +155,11 @@ struct BackgroundLibraryView: View {
             }
         }
         .padding(16)
-        .frame(width: 440, height: 700)
+        .frame(width: 440, height: Self.panelHeight)
         .onAppear { controller.refreshLoginStatus() }
     }
     @ViewBuilder private func thumbnail(_ asset: VideoAsset) -> some View {
-        if let url = asset.thumbnailURL, let image = NSImage(contentsOf: url) {
+        if let image = controller.thumbnails[asset.url.path] {
             Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
                 .frame(width: 82, height: 50).clipped().clipShape(RoundedRectangle(cornerRadius: 6))
         } else {
