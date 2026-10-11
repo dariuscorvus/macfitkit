@@ -121,6 +121,22 @@ struct SettingsWindowTests {
                 check(animationKeys(in: canvas.renderer.root).isEmpty, "Hidden renderer restarted on motion preference change")
                 manager.stop()
                 check(!overlay.isVisible && animationKeys(in: canvas.renderer.root).isEmpty, "Stopped settings frame/animation remained active")
+                if let navigation = tables(in: window.contentView!).first(where: { $0.numberOfRows == 7 }) {
+                    navigation.selectRowIndexes(IndexSet(integer: 4), byExtendingSelection: false)
+                    window.contentView?.layoutSubtreeIfNeeded()
+                    let controls = descendants(in: window.contentView!)
+                    let preset = controls.compactMap { $0 as? NSButton }.first { $0.title == "Lichtläufer" }
+                    preset?.performClick(nil); window.contentView?.layoutSubtreeIfNeeded()
+                    check(store.value.appearance.motion.mode == .runner, "Runner preset did not apply")
+                    controls.compactMap { $0 as? NSButton }.first { $0.title == "Animation abspielen" }?.performClick(nil)
+                    let preview = controls.compactMap { $0 as? EffectCanvas }.first
+                    check(preview != nil, "Animation preview missing")
+                    if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, let preview {
+                        check(animationKeys(in: preview.renderer.root).contains("motionRunner"), "Preview did not play runner")
+                    }
+                    navigation.selectRowIndexes(IndexSet(integer: 5), byExtendingSelection: false)
+                    if let preview { check(animationKeys(in: preview.renderer.root).isEmpty, "Detached preview kept animating") }
+                }
                 result = failures.isEmpty ? "PASS: Seven sidebar sections, numeric inputs, persistence, validation, live settings frame, appearance, metals, focus sweep without movement restart, animation, pause/resume, move, resize, input transparency and stop." : "FAIL: " + failures.joined(separator: "; ")
             } else { result = "FAIL: Overlay or settings window missing." }
             defaults.removePersistentDomain(forName: suite)

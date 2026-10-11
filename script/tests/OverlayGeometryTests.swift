@@ -9,6 +9,7 @@ struct OverlayGeometryTests {
         NSApplication.shared.setActivationPolicy(.prohibited)
         guard !NSScreen.screens.isEmpty else { fatalError("A desktop session is required") }
         verifyPixels()
+        verifyNewEffects()
         let overlay = OverlayWindow()
         var glow = Appearance()
         glow.light.mode = .glow
@@ -56,7 +57,7 @@ struct OverlayGeometryTests {
                             if step == 2 { target.size.height += 50 }
                             if step == 3 { target = target.offsetBy(dx: 0.25, dy: 0.75) }
                             let canvas = overlay.contentView as! EffectCanvas
-                            let previousMask = canvas.renderer.root.sublayers?.dropFirst().first?.mask
+                            let previousMask = canvas.renderer.root.sublayers?.dropFirst().first?.sublayers?.first?.mask
                             overlay.show(around: target, appearance: style, focusChanged: step == 1)
                             let expected = EffectGeometry.alignedOverlayRect(for: target, appearance: style)
                             guard overlay.frame == expected else {
@@ -64,7 +65,7 @@ struct OverlayGeometryTests {
                                 exit(1)
                             }
                             let root = (overlay.contentView as! EffectCanvas).renderer.root
-                            let mask = root.sublayers![1].mask as! CAShapeLayer
+                            let mask = root.sublayers![1].sublayers!.first!.mask as! CAShapeLayer
                             if step == 1 || step == 3 { precondition(mask === previousMask, "Move rebuilt contour layers") }
                             let painted = mask.path!.boundingBoxOfPath.applying(root.affineTransform())
                                 .offsetBy(dx: overlay.frame.minX,dy: overlay.frame.minY)
@@ -84,6 +85,69 @@ struct OverlayGeometryTests {
         print("Passed \(checks) actual AppKit overlay frame checks (initial display, same-size focus switch, resize, screen edges, maximal effects).")
     }
     /// Exercises the actual layer tree in a transparent bitmap, not just its bounds.
+    @MainActor private static func verifyNewEffects() {
+        let size = 300, target = CGRect(x: 100,y: 100,width: 100,height: 100)
+        func nodes(_ root: CALayer) -> [CALayer] { [root] + (root.sublayers ?? []).flatMap(nodes) + (root.mask.map { nodes($0) } ?? []) }
+        func render(_ style: Appearance) -> [UInt8] {
+            let renderer = EffectRenderer(); var pixels = [UInt8](repeating: 0,count: size*size*4)
+            pixels.withUnsafeMutableBytes { data in
+                let context = CGContext(data: data.baseAddress,width: size,height: size,bitsPerComponent: 8,bytesPerRow: size*4,
+                    space: CGColorSpaceCreateDeviceRGB(),bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)!
+                renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: style,scale: 1)
+                renderer.root.render(in: context)
+            }
+            return pixels
+        }
+        var a = Appearance(); a.width = 10; a.shadow.enabled = true; a.shadow.colorSource = .gradient
+        a.shadow.blur = 4; a.shadow.spread = 8; a.shadow.offsetY = 0; a.shadow.opacity = 0.8
+        a.gradient.mode = .linear; a.gradient.first = EffectColor(1,0,0); a.gradient.second = EffectColor(0,0,1)
+        let pixels = render(a); let left = (150*size+86)*4, right = (150*size+214)*4
+        precondition(pixels[left+3] > 10 && pixels[right+3] > 10, "Gradient shadow missing")
+        precondition(pixels[left] > pixels[left+2] && pixels[right+2] > pixels[right], "Gradient shadow lost spatial colors")
+        precondition(pixels[(150*size+150)*4+3] == 0, "Gradient shadow covers window contents")
+        a.shadow.colorSource = .frame; a.red = 0; a.green = 1; a.blue = 0
+        // CALayer.render does not rasterize native shadow properties; inspect the
+        // actual layer color here, while the gradient mask is pixel-checked above.
+        let solid = EffectRenderer(); solid.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1)
+        let inherited = nodes(solid.root).first { $0.shadowPath != nil }!.shadowColor!
+        precondition(NSColor(cgColor: inherited)!.greenComponent == 1 && NSColor(cgColor: inherited)!.redComponent == 0, "Frame-color shadow not inherited")
+        a.shadow.colorSource = .gradient; a.rotation.enabled = true; a.rotation.trigger = .continuous
+        let renderer = EffectRenderer(); renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1)
+        renderer.setVisible(true,focusChanged: true)
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            let rotations = nodes(renderer.root).compactMap { $0.animation(forKey: "rotationEffect") }
+            precondition(rotations.count == 2 && rotations[0].beginTime == rotations[1].beginTime, "Shadow rotation not synchronized")
+        }
+        for mode in [MotionMode.impulse,.runner,.draw,.breathe,.flow] {
+            a.rotation.enabled = false; a.motion.mode = mode; a.motion.target = .shadow; a.motion.cycles = 2
+            renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1)
+            renderer.setVisible(true,focusChanged: true)
+            let layers = nodes(renderer.root), animated = layers.flatMap { $0.animationKeys() ?? [] }
+            if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { precondition(animated.isEmpty) }
+            else {
+                precondition(!animated.isEmpty, "Missing motion: \(mode)")
+                let motion = layers.compactMap { $0.animation(forKey: animated[0]) }.first!
+                precondition(motion.repeatCount == 1 && motion.duration == a.motion.duration, "Finite repetition/duration incorrect")
+                if mode == .flow {
+                    let flows = layers.compactMap { $0.animation(forKey: "motionFlow") }
+                    precondition(flows.count == 2 && flows[0].beginTime == flows[1].beginTime, "Frame/shadow color flow not synchronized")
+                }
+                if mode == .draw { precondition(animated.contains("motionTrace"), "Draw does not reveal actual border") }
+                if mode == .breathe { precondition(animated.contains("motionTightShadow"), "Gradient shadow has no compact phase") }
+                let before = layers.compactMap { $0.animation(forKey: animated[0]) }.first!.beginTime
+                renderer.update(bounds: CGRect(x: 0,y: 0,width: 340,height: size),target: target.insetBy(dx: -10,dy: 0),style: a,scale: 1)
+                renderer.setVisible(true,focusChanged: false)
+                let after = nodes(renderer.root).compactMap { $0.animation(forKey: animated[0]) }.first!.beginTime
+                precondition(before == after, "Resize restarted animation")
+            }
+            renderer.setVisible(false)
+            precondition(nodes(renderer.root).allSatisfy { ($0.animationKeys() ?? []).isEmpty }, "Hidden motion still running")
+        }
+        a.motion.mode = .off; a.opacityAnimation.mode = .pulse; a.opacityAnimation.target = .shadow; a.opacityAnimation.trigger = .continuous
+        renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1); renderer.setVisible(true)
+        precondition(renderer.root.animation(forKey: "opacityEffect") == nil, "Targeted shadow animation pulses whole frame")
+        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, five motion modes, resize phase, hidden cleanup and independent shadow opacity checks.")
+    }
     @MainActor private static func verifyPixels() {
         let w = 480, h = 300
         let target = CGRect(x: 100,y: 60,width: 280,height: 180)

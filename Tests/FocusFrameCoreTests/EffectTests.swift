@@ -137,3 +137,18 @@ struct EffectTests {
         #expect(EffectAnimationPolicy.shouldAnimate(visible: true,reducedMotion: false,trigger: .continuous,focusChanged: false))
     }
 }
+
+@Test func newEffectMigrationAndPresets() throws {
+    let old = Data("{\"shadow\":{\"enabled\":true,\"blur\":17},\"opacityAnimation\":{\"mode\":\"pulse\"}}".utf8)
+    let a = try JSONDecoder().decode(Appearance.self, from: old)
+    #expect(a.shadow.colorSource == .custom); #expect(a.shadow.blur == 17)
+    #expect(a.opacityAnimation.target == .all); #expect(a.motion.mode == .off)
+    for preset in MotionPreset.allCases {
+        let applied = preset.applying(to: a)
+        #expect(try JSONDecoder().decode(Appearance.self, from: JSONEncoder().encode(applied)) == applied)
+        var configuration = Configuration(); configuration.appearance = applied
+        #expect(configuration.renderedAppearance(lowPower: true).motion.mode == .off)
+    }
+    var motion = MotionEffect(); motion.duration = -.infinity; motion.cycles = 100; motion.strength = -4
+    #expect(motion.normalized.duration == 1.5); #expect(motion.normalized.cycles == 6); #expect(motion.normalized.strength == 0)
+}

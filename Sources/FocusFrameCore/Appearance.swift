@@ -16,10 +16,11 @@ public struct Appearance: Codable, Equatable, Sendable {
     public var gradient = GradientEffect()
     public var opacityAnimation = OpacityEffect()
     public var rotation = RotationEffect()
+    public var motion = MotionEffect()
 
     public init() {}
     private enum CodingKeys: String, CodingKey {
-        case red, green, blue, opacity, width, radius, gap, placement, material, light, shadow, gradient, opacityAnimation, rotation
+        case red, green, blue, opacity, width, radius, gap, placement, material, light, shadow, gradient, opacityAnimation, rotation, motion
     }
     public init(from decoder: Decoder) throws {
         self.init()
@@ -37,6 +38,7 @@ public struct Appearance: Codable, Equatable, Sendable {
         shadow = try c.decodeIfPresent(ShadowEffect.self, forKey: .shadow) ?? shadow
         gradient = try c.decodeIfPresent(GradientEffect.self, forKey: .gradient) ?? gradient
         opacityAnimation = try c.decodeIfPresent(OpacityEffect.self, forKey: .opacityAnimation) ?? opacityAnimation
+        motion = try c.decodeIfPresent(MotionEffect.self, forKey: .motion) ?? motion
         rotation = try c.decodeIfPresent(RotationEffect.self, forKey: .rotation) ?? rotation
     }
 
@@ -55,7 +57,7 @@ public struct Appearance: Codable, Equatable, Sendable {
         result.material = material.normalized
         result.light = light.normalized; result.shadow = shadow.normalized
         result.gradient = gradient.normalized; result.opacityAnimation = opacityAnimation.normalized
-        result.rotation = rotation.normalized
+        result.rotation = rotation.normalized; result.motion = motion.normalized
         return result
     }
 }
@@ -85,6 +87,7 @@ public struct Configuration: Codable, Equatable, Sendable {
     public func renderedAppearance(lowPower: Bool) -> Appearance {
         var result = appearance.normalized
         if savePower && lowPower {
+            result.motion.mode = .off; result.motion.synchronize = false
             result.opacityAnimation.mode = .off
             result.rotation.enabled = false
             result.material.reflectionEnabled = false

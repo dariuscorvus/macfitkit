@@ -33,8 +33,12 @@ public struct LightEffect: Codable, Equatable, Sendable {
         s.color = color.normalized; return s
     }
 }
+public enum ShadowColorSource: String, Codable, Sendable { case custom, frame, gradient }
+public enum AnimationTarget: String, Codable, Sendable { case all, frame, light, shadow }
+
 public struct ShadowEffect: Codable, Equatable, Sendable {
     public var enabled = false
+    public var colorSource = ShadowColorSource.custom
     public var color = EffectColor(0, 0, 0)
     public var opacity = 0.35
     public var blur = 12.0
@@ -42,6 +46,18 @@ public struct ShadowEffect: Codable, Equatable, Sendable {
     public var offsetX = 0.0
     public var offsetY = 4.0
     public init() {}
+    private enum CodingKeys: String, CodingKey { case enabled, colorSource, color, opacity, blur, spread, offsetX, offsetY }
+    public init(from decoder: Decoder) throws {
+        self.init(); let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? enabled
+        colorSource = try c.decodeIfPresent(ShadowColorSource.self, forKey: .colorSource) ?? .custom
+        color = try c.decodeIfPresent(EffectColor.self, forKey: .color) ?? color
+        opacity = try c.decodeIfPresent(Double.self, forKey: .opacity) ?? opacity
+        blur = try c.decodeIfPresent(Double.self, forKey: .blur) ?? blur
+        spread = try c.decodeIfPresent(Double.self, forKey: .spread) ?? spread
+        offsetX = try c.decodeIfPresent(Double.self, forKey: .offsetX) ?? offsetX
+        offsetY = try c.decodeIfPresent(Double.self, forKey: .offsetY) ?? offsetY
+    }
     public var normalized: Self {
         var s = self; s.color = color.normalized
         s.opacity = bounded(opacity, 0...1, 0.35); s.blur = bounded(blur, 0...200, 12)
@@ -62,6 +78,7 @@ public struct GradientEffect: Codable, Equatable, Sendable {
     }
 }
 public struct OpacityEffect: Codable, Equatable, Sendable {
+    public var target = AnimationTarget.all
     public var mode = OpacityMode.off
     public var pulsePeriod = 2.0
     public var blinkPeriod = 1.0
@@ -71,6 +88,19 @@ public struct OpacityEffect: Codable, Equatable, Sendable {
     public var trigger = AnimationTrigger.focus
     public var focusDuration = 1.5
     public init() {}
+    private enum CodingKeys: String, CodingKey { case mode, target, pulsePeriod, blinkPeriod, pulseMinimum, blinkMinimum, maximum, trigger, focusDuration }
+    public init(from decoder: Decoder) throws {
+        self.init(); let c = try decoder.container(keyedBy: CodingKeys.self)
+        mode = try c.decodeIfPresent(OpacityMode.self, forKey: .mode) ?? mode
+        target = try c.decodeIfPresent(AnimationTarget.self, forKey: .target) ?? target
+        pulsePeriod = try c.decodeIfPresent(Double.self, forKey: .pulsePeriod) ?? pulsePeriod
+        blinkPeriod = try c.decodeIfPresent(Double.self, forKey: .blinkPeriod) ?? blinkPeriod
+        pulseMinimum = try c.decodeIfPresent(Double.self, forKey: .pulseMinimum) ?? pulseMinimum
+        blinkMinimum = try c.decodeIfPresent(Double.self, forKey: .blinkMinimum) ?? blinkMinimum
+        maximum = try c.decodeIfPresent(Double.self, forKey: .maximum) ?? maximum
+        trigger = try c.decodeIfPresent(AnimationTrigger.self, forKey: .trigger) ?? trigger
+        focusDuration = try c.decodeIfPresent(Double.self, forKey: .focusDuration) ?? focusDuration
+    }
     public var normalized: Self {
         var s = self
         s.pulsePeriod = bounded(pulsePeriod, 0.5...10, 2); s.blinkPeriod = bounded(blinkPeriod, 0.5...5, 1)
@@ -200,5 +230,45 @@ public struct MaterialEffect: Codable, Equatable, Sendable {
 public enum EffectAnimationPolicy {
     public static func shouldAnimate(visible: Bool, reducedMotion: Bool, trigger: AnimationTrigger, focusChanged: Bool) -> Bool {
         visible && !reducedMotion && (trigger == .continuous || focusChanged)
+    }
+}
+
+public enum MotionMode: String, Codable, Sendable { case off, impulse, runner, draw, breathe, flow }
+public enum MotionCurve: String, Codable, Sendable { case smooth, linear, spring }
+public struct MotionEffect: Codable, Equatable, Sendable {
+    public var mode = MotionMode.off
+    public var trigger = AnimationTrigger.focus
+    public var target = AnimationTarget.frame
+    public var duration = 1.5
+    public var cycles = 1.0
+    public var strength = 0.65
+    public var curve = MotionCurve.smooth
+    public var synchronize = false
+    public init() {}
+    public var normalized: Self {
+        var s = self; s.duration = bounded(duration, 0.5...30, 1.5)
+        s.cycles = bounded(cycles, 1...6, 1).rounded()
+        s.strength = bounded(strength, 0...1, 0.65); return s
+    }
+}
+public enum MotionPreset: String, CaseIterable, Sendable {
+    case subtle, runner, breathingShadow, colorFlow
+    public func applying(to appearance: Appearance) -> Appearance {
+        var a = appearance
+        a.opacityAnimation = OpacityEffect(); a.rotation = RotationEffect()
+        a.material.reflectionEnabled = false; a.motion = MotionEffect()
+        switch self {
+        case .subtle: a.motion.mode = .impulse; a.motion.strength = 0.35; a.motion.duration = 0.8
+        case .runner: a.motion.mode = .runner; a.motion.duration = 1.8
+        case .breathingShadow:
+            a.shadow.enabled = true; a.shadow.colorSource = .gradient
+            a.motion.mode = .breathe; a.motion.target = .shadow; a.motion.trigger = .continuous; a.motion.duration = 4
+        case .colorFlow:
+            a.material.mode = .standard
+            if a.gradient.mode == .off { a.gradient.mode = .conic; a.gradient.first = EffectColor(a.red,a.green,a.blue) }
+            a.shadow.enabled = true; a.shadow.colorSource = .gradient
+            a.motion.mode = .flow; a.motion.trigger = .continuous; a.motion.duration = 8
+        }
+        return a.normalized
     }
 }

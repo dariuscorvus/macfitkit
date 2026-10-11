@@ -24,6 +24,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     private var frameEnabled = true
     private let fullScreen = NSButton(checkboxWithTitle: "Rahmen im Vollbild ausblenden", target: nil, action: nil)
     private let loginStatus = NSTextField(wrappingLabelWithString: "")
+    private let animationPreview = AnimationPreview(frame: .zero)
     private let profilePicker = NSPopUpButton()
     private let keyPicker = NSPopUpButton()
     private let power = NSButton(checkboxWithTitle: "Animationen im Stromsparmodus aussetzen", target: nil, action: nil)
@@ -349,7 +350,9 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         section("Fensterschatten", [
             effectCheck("Schatten anzeigen", \.shadow.enabled),
             conditional([
-                effectColor("Farbe", \.shadow.color),
+                effectChoice("Farbe verwenden von", \.shadow.colorSource, [("Eigene Farbe",.custom),("Rahmenfarbe",.frame),("Rahmenverlauf",.gradient)]),
+                conditional([effectColor("Eigene Farbe", \.shadow.color)]) { $0.shadow.colorSource == .custom },
+                NSTextField(wrappingLabelWithString: "Rahmenverlauf übernimmt die sichtbare Oberfläche. Ohne Verlauf wird die Rahmenfarbe verwendet."),
                 effectSlider("Deckkraft", \.shadow.opacity, 0...100, percent: true),
                 effectSlider("Weichheit", \.shadow.blur, 0...200),
                 effectSlider("Ausbreitung", \.shadow.spread, 0...200),
@@ -373,8 +376,32 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
     }
     private func animationPage() -> NSView {
         let trigger: [(String,AnimationTrigger)] = [("Nur beim Fokuswechsel",.focus),("Dauerhaft",.continuous)]
+        animationPreview.heightAnchor.constraint(equalToConstant: 190).isActive = true
         return page([
+            section("Vorschau und Presets", [animationPreview,
+                NSButton(title: "Animation abspielen", target: self, action: #selector(playPreview)),
+                resetEffect("Dezent") { $0 = MotionPreset.subtle.applying(to: $0) },
+                resetEffect("Lichtläufer") { $0 = MotionPreset.runner.applying(to: $0) },
+                resetEffect("Atmender Schatten") { $0 = MotionPreset.breathingShadow.applying(to: $0) },
+                resetEffect("Farbfluss") { $0 = MotionPreset.colorFlow.applying(to: $0) }
+            ]),
+            section("Bewegung", [
+                effectChoice("Effekt", \.motion.mode, [("Aus",.off),("Fokusimpuls",.impulse),("Lichtläufer",.runner),("Rahmen zeichnen",.draw),("Atmen",.breathe),("Farbfluss",.flow)]),
+                conditional([
+                    effectChoice("Auslöser", \.motion.trigger, trigger),
+                    effectSlider("Dauer je Durchlauf", \.motion.duration, 0.5...30, unit: "s"),
+                    conditional([effectSlider("Durchläufe", \.motion.cycles, 1...6)]) { $0.motion.trigger == .focus },
+                    effectSlider("Stärke", \.motion.strength, 0...100, percent: true),
+                    effectChoice("Bewegungsverlauf", \.motion.curve, [("Sanft",.smooth),("Gleichmäßig",.linear),("Federnd (Impuls)",.spring)]),
+                    conditional([effectChoice("Animieren", \.motion.target, [("Schatten",.shadow),("Rahmen",.frame),("Leuchten",.light),("Alles",.all)])]) { $0.motion.mode == .breathe },
+                    NSTextField(wrappingLabelWithString: "Farbfluss braucht einen aktiven Farbverlauf. Atmen wirkt auf das gewählte Element; ein Schatten oder Leuchten muss eingeschaltet sein.")
+                ]) { $0.motion.mode != .off },
+                effectCheck("Dauer und Auslöser für weitere Effekte übernehmen", \.motion.synchronize),
+                NSTextField(wrappingLabelWithString: "Bei gemeinsamer Steuerung gelten Dauer und Auslöser oben auch für Deckkraft, Rotation und Metallreflex. Die Einzelwerte bleiben gespeichert."),
+                resetEffect("Bewegung zurücksetzen") { $0.motion = MotionEffect() }
+            ]),
             section("Deckkraft", [
+                effectChoice("Animieren", \.opacityAnimation.target, [("Alles",.all),("Rahmen",.frame),("Leuchten",.light),("Schatten",.shadow)]),
                 effectChoice("Animation", \.opacityAnimation.mode, [("Aus",.off),("Pulsieren",.pulse),("Blinken",.blink)]),
                 conditional([
                     conditional([
@@ -429,6 +456,8 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
             NSTextField(wrappingLabelWithString: "Bei macOS ‘Bewegung reduzieren’ bleiben Effekte statisch.")
         ], inset: 0)
     }
+    func windowWillClose(_ notification: Notification) { animationPreview.renderer.setVisible(false) }
+    @objc private func playPreview() { animationPreview.play() }
     @objc private func testFocus() { onTestFocus?() }
 
     private func behaviorPage() -> NSView {
@@ -491,6 +520,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
 
     func sync() {
         let appearance = store.value.appearance.normalized
+        animationPreview.previewStyle = store.value.normalized.renderedAppearance(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
         colorWell.color = NSColor(srgbRed: appearance.red, green: appearance.green, blue: appearance.blue, alpha: 1)
         effectSync.forEach { $0() }
         let oldProfile = profilePicker.titleOfSelectedItem
@@ -668,4 +698,25 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
 
 private final class SettingsDocumentView: NSView {
     override var isFlipped: Bool { true }
+}
+
+@MainActor
+private final class AnimationPreview: EffectCanvas {
+    var previewStyle = Appearance() { didSet { needsLayout = true } }
+    override func layout() {
+        super.layout()
+        guard bounds.width > 0 && bounds.height > 0 else { return }
+        let target = CGRect(x: 0,y: 0,width: 500,height: 260)
+        let outer = EffectGeometry.alignedOverlayRect(for: target, appearance: previewStyle)
+        let ratio = min((bounds.width-16)/outer.width,(bounds.height-16)/outer.height)
+        renderer.update(bounds: CGRect(origin: .zero,size: outer.size), target: target.offsetBy(dx: -outer.minX,dy: -outer.minY), style: previewStyle, scale: 1)
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        renderer.root.anchorPoint = .zero
+        renderer.root.position = CGPoint(x: (bounds.width-outer.width*ratio)/2,y: (bounds.height-outer.height*ratio)/2)
+        renderer.root.transform = CATransform3DMakeScale(ratio,ratio,1)
+        CATransaction.commit()
+        renderer.setVisible(window?.isVisible == true)
+    }
+    func play() { layoutSubtreeIfNeeded(); renderer.setVisible(true, focusChanged: true) }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); if window == nil { renderer.setVisible(false) }; needsLayout = true }
 }
