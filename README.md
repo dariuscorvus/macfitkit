@@ -2,7 +2,7 @@
 
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
 klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
-Aktueller lokaler Entwicklungsstand: 0.7.0. Letzter Release: 0.6.0 als signierte
+Aktueller lokaler Entwicklungsstand: 0.7.1. Letzter Release: 0.6.0 als signierte
 Universal-DMG, noch nicht notarisiert.
 
 ## Start
@@ -263,3 +263,11 @@ dauerhaft (Zyklus 2–30 s). Die Fokusvariante führt einen Durchlauf mit weiche
 Ein-/Ausblenden aus. Pausieren, Ausblenden und Bewegung reduzieren stoppen ihn.
 Jeder Zahlenwert hat einen Regler und eine direkte Eingabe; Oberfläche und
 Lichtreflex besitzen eigene Zurücksetzen-Schaltflächen. Neue Effekte sind aus.
+
+### Finder-Desktop (0.7.1 lokal)
+
+Der Finder-Desktop erhält keinen FocusFrame-Rahmen. Normale Finder-Fenster,
+auch maximierte Fenster, werden weiterhin verfolgt. Die Erkennung verwendet
+AX-Rolle sowie übereinstimmende öffentliche WindowServer-Geometrie/-Ebenen,
+keine lokalisierten Fenstertitel oder privaten Fenster-ID-APIs.
+Die Ausnahme betrifft ausschließlich Finder; sie schließt nicht die gesamte App aus.

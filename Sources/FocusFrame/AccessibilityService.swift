@@ -1,4 +1,5 @@
 import AppKit
+import FocusFrameCore
 @preconcurrency import ApplicationServices
 import OSLog
 
@@ -13,6 +14,7 @@ final class AccessibilityService: NSObject {
     private var registrations: [(AXUIElement, String)] = []
     private(set) var focusGeneration: UInt64 = 0
     private var pid: pid_t?
+    private var isFinder = false
 
     var isTrusted: Bool { AXIsProcessTrusted() }
 
@@ -31,6 +33,7 @@ final class AccessibilityService: NSObject {
         if pid == frontmost.processIdentifier, observer != nil { return }
         stop()
         pid = frontmost.processIdentifier
+        isFinder = frontmost.bundleIdentifier == "com.apple.finder"
         let app = AXUIElementCreateApplication(frontmost.processIdentifier)
         AXUIElementSetMessagingTimeout(app, 0.2)
         application = app
@@ -99,7 +102,29 @@ final class AccessibilityService: NSObject {
         var position = CGPoint.zero
         var size = CGSize.zero
         guard AXValueGetValue(positionAX, .cgPoint, &position), AXValueGetValue(sizeAX, .cgSize, &size) else { return nil }
+        if isFinderDesktop(position: position, size: size) { return nil }
         return (position, size)
+    }
+
+    /// Finder's desktop is an AX focus target too, but is not a document window.
+    /// Compare public WindowServer bounds/layers rather than localized titles.
+    private func isFinderDesktop(position: CGPoint, size: CGSize) -> Bool {
+        guard isFinder, let pid, let window else { return false }
+        let role = attribute(window, kAXRoleAttribute) as? String ?? ""
+        if role == kAXScrollAreaRole { return true }
+        let frame = CGRect(origin: position, size: size)
+        let windows = (CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]) ?? []
+        let layers = windows.compactMap { info -> Int? in
+            guard (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == pid,
+                  let bounds = info[kCGWindowBounds as String] as? NSDictionary,
+                  let rect = CGRect(dictionaryRepresentation: bounds as CFDictionary),
+                  abs(rect.minX - frame.minX) < 1, abs(rect.minY - frame.minY) < 1,
+                  abs(rect.width - frame.width) < 1, abs(rect.height - frame.height) < 1 else { return nil }
+            return (info[kCGWindowLayer as String] as? NSNumber)?.intValue
+        }
+        // Preserve a normal Finder window, including one covering the whole display.
+        return DesktopFocusPolicy.isDesktop(isFinder: isFinder, role: role,
+            matchingLayers: layers, desktopIconLevel: Int(CGWindowLevelForKey(.desktopIconWindow)))
     }
 
     var trackedWindowIsFullScreen: Bool {
@@ -117,6 +142,7 @@ final class AccessibilityService: NSObject {
         application = nil
         window = nil
         pid = nil
+        isFinder = false
     }
 
     private func observeWindow(_ next: AXUIElement?) {

@@ -16,4 +16,14 @@ struct VisibilityPolicyTests {
         #expect(VisibilityPolicy.decide(enabled: true, trusted: true, fullScreen: false, hideInFullScreen: true) == .show)
         #expect(VisibilityPolicy.decide(enabled: true, trusted: true, fullScreen: true, hideInFullScreen: true, hasWindow: false) == .noWindow)
     }
+    @Test func finderDesktopIsExcludedButNormalWindowsRemain() {
+        let icons = -2147483603
+        #expect(DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXScrollArea", matchingLayers: [], desktopIconLevel: icons))
+        #expect(DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [icons], desktopIconLevel: icons))
+        #expect(!DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [icons, 0], desktopIconLevel: icons))
+        #expect(!DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [0], desktopIconLevel: icons))
+        #expect(!DesktopFocusPolicy.isDesktop(isFinder: false, role: "AXScrollArea", matchingLayers: [icons], desktopIconLevel: icons))
+        #expect(!DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [], desktopIconLevel: icons))
+    }
+
 }

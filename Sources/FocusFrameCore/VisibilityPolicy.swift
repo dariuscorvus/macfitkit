@@ -19,3 +19,14 @@ public enum VisibilityPolicy {
         return .show
     }
 }
+
+/// Only Finder desktop targets are excluded; regular and other apps' windows stay visible.
+public enum DesktopFocusPolicy {
+    public static func isDesktop(isFinder: Bool, role: String, matchingLayers: [Int], desktopIconLevel: Int) -> Bool {
+        guard isFinder else { return false }
+        if role == "AXScrollArea" { return true }
+        // A normal Finder window may have the exact same bounds as the desktop.
+        if matchingLayers.contains(where: { $0 >= 0 }) { return false }
+        return matchingLayers.contains { $0 <= desktopIconLevel }
+    }
+}
