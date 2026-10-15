@@ -8,6 +8,7 @@ final class HubController {
     let bridge: ToolBridgeHost
     private let previewDirectory: URL?
     private let previewNamespace: String?
+    @ObservationIgnored private var sessionLocations: [ToolID: URL] = [:]
     var isMenuPreview: Bool { previewDirectory != nil }
     init() {
         var directory: URL?
@@ -32,7 +33,16 @@ final class HubController {
         return NSRunningApplication.runningApplications(withBundleIdentifier: previewNamespace + "." + tool.rawValue).first
     }
     private func location(_ tool: ToolID) -> URL? {
-        guard let previewDirectory else { return ToolLocator.location(tool) }
+        guard let previewDirectory else {
+            if let url = running(tool)?.bundleURL {
+                sessionLocations[tool] = url
+                return url
+            }
+            // Restart the same app the user was controlling, even when another copy is installed.
+            if let url = sessionLocations[tool], FileManager.default.fileExists(atPath: url.path),
+               Bundle(url: url)?.bundleIdentifier == tool.bundleIdentifier { return url }
+            return ToolLocator.location(tool)
+        }
         let url = previewDirectory.appendingPathComponent(tool.rawValue + ".app")
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
