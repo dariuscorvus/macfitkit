@@ -9,8 +9,8 @@ Stand: 15. Oktober 2026.
 - Fensterminiaturen über ScreenCaptureKit und SCScreenshotManager, beschränkt auf die betreffende App. Zuordnung über Fenstertitel und Geometrie; bei Mehrdeutigkeit erscheint ein Platzhalter.
 - Nicht aktivierendes NSPanel mit SwiftUI-Karten; Klickannahme beim ersten Klick. Position am Dock unten, links oder rechts; Begrenzung auf den nutzbaren Bildschirm und Scrollen bei vielen Fenstern.
 - 350 ms Hover-Verzögerung, 280 ms Ausblendverzögerung und schmaler Übergangsbereich zwischen Dock und Vorschau. Schnelle App-Wechsel brechen ausstehende Bildladeaufträge ab.
-- Klick entminimiert das gewählte AX-Fenster, aktiviert die App und führt AXRaise nach deren Aktivierung aus. Danach werden vorderste App und fokussiertes AX-Fenster geprüft; Fehlschläge erscheinen in der Einrichtung und im lokalen Log.
-- LSUIElement-Menüleistenbetrieb, Einrichtung mit getrennten Freigabeständen und Pause-Schalter. Beim Fehlen der Bildschirmaufnahme bleibt die Fensterauswahl mit Platzhaltern verfügbar.
+- Klick entminimiert das gewählte AX-Fenster, aktiviert die App und führt AXRaise nach deren Aktivierung aus. Die Aktivierung wird bis zu 500 ms abgewartet; danach werden vorderste App und fokussiertes AX-Fenster bis zu einer Sekunde geprüft; Fehlschläge erscheinen in der Einrichtung und im lokalen Log.
+- LSUIElement-Menüleistenbetrieb, Einrichtung mit getrennten Freigabeständen und Pause-Schalter. Die Bildschirmfreigabe wird asynchron über SCShareableContent angefragt. Aufnahme-Einstellungen und aktuelles App-Bundle im Finder sind separat erreichbar. NSScreenCaptureUsageDescription ist im App-Bundle hinterlegt. Beim Fehlen der Bildschirmaufnahme bleibt die Fensterauswahl mit Platzhaltern verfügbar.
 - Keine externen Packages, keine privaten Fenster-APIs, keine Netzwerkübertragung oder Speicherung der Miniaturen. Bilder werden beim Ausblenden verworfen. Logs enthalten keine Fenstertitel oder Bildinhalte.
 
 ## Nachgewiesen
@@ -29,12 +29,21 @@ Das Startskript nutzt jetzt ein bereits installiertes Apple-Development-Zertifik
 
 ## Laufzeittest
 
-Ausstehend: tatsächlicher Dock-Hover, gerenderte Miniaturen und Auswahl zwischen zwei Fenstern. Derzeit ist die Freigabe für die neue stabile Codeidentität noch zu bestätigen. Diese Punkte sind durch erfolgreiche Builds oder Core-Checks nicht nachgewiesen.
+Nach erneuter Freigabe ist DockPreview in der Systemeinstellung „Aufnahme von Bildschirm & Systemaudio“ mit eingeschaltetem Schalter sichtbar. Die Bedienungshilfen wurden zuvor bereits in der App als freigegeben angezeigt. Nach App-Neustart:
+
+- Echter Dock-Hover: Vorschauleisten für mehrere laufende Apps im Accessibility-Baum und in den App-Logs beobachtet.
+- Gerenderte Miniaturen: Screenshot der UTM-Leiste mit zwei unterschiedlichen Fensterminiaturen und den passenden Titeln geprüft.
+- Ausblenden: Beim Verlassen des Vorschaubereichs verschwand das Panel wieder.
+- Klick: App-Logs bestätigen mehrere Aktivierungen mit vorderster Ziel-App und demselben fokussierten AX-Fenster (`verified: true`). Der Nutzer bestätigte zusätzlich: „Ja, das ausgewählte Fenster kommt nach vorne“.
+
+Frühe Klickversuche meldeten teilweise `verified: false`, spätere Versuche derselben App waren erfolgreich. Die zuvor feste 150-ms-Wartezeit wurde deshalb durch begrenztes Warten auf die tatsächliche Vordergrund- und AX-Fokusänderung ersetzt. Neuere Auswahlen brechen ausstehende ältere Aktivierungsaufträge ab. Diese Warte-/Abbruchkorrektur ist gebaut; sie ist keine Zusage vollständiger Kompatibilität mit jeder App.
+
+Die fehlende Bildschirmaufnahme-Registrierung wurde im laufenden Setup nachvollzogen. Der Knopf nutzt jetzt die tatsächliche ScreenCaptureKit-Abfrage; Ablehnung wird angezeigt und protokolliert. Ein fehlender Systemeinstellungs-Eintrag kann zusätzlich über „App im Finder zeigen“ und „+“ manuell ergänzt werden. Es wurden keine Datenschutz-Datenbanken zurückgesetzt oder direkt verändert.
 
 ## Einschränkungen
 
 - Momentaufnahmen beim Öffnen; kein kontinuierliches Live-Video.
-- Minimierte oder nicht erfassbare Fenster zeigen einen Platzhalter; Entminimieren ist implementiert, aber noch nicht im vollständigen Ablauf bestätigt.
+- Minimierte oder nicht erfassbare Fenster zeigen einen Platzhalter; Entminimieren ist implementiert, aber noch nicht gesondert im vollständigen Ablauf bestätigt.
 - Fenster auf anderen Spaces, Vollbild-Apps, mehrere Displays, ein automatisch verstecktes Dock und Apps mit unvollständigem Accessibility-Baum benötigen eigene Laufzeittests.
 - Kein Intel-Hardware- oder macOS-14-Lauf und keine Notarisierung geprüft.
 

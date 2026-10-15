@@ -21,6 +21,15 @@ struct ContentView: View {
                 permissionRow("Bildschirmaufnahme", detail: "Erstellt die Fensterminiaturen lokal auf deinem Mac.",
                               granted: controller.screenRecordingGranted, action: controller.requestScreenRecording)
             }.padding(16).background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+            if !controller.screenRecordingMessage.isEmpty {
+                Text(controller.screenRecordingMessage).font(.caption).fixedSize(horizontal: false, vertical: true)
+            }
+            if !controller.screenRecordingGranted {
+                HStack {
+                    Button("Aufnahme-Einstellungen", action: controller.showScreenRecordingSettings)
+                    Button("App im Finder zeigen", action: controller.showCurrentApp)
+                }.controlSize(.small)
+            }
             Text("Falls macOS nach einer Freigabe einen Neustart verlangt, DockPreview beenden und erneut öffnen.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Toggle("Fenstervorschauen aktiv", isOn: $controller.enabled)
@@ -46,7 +55,7 @@ struct ContentView: View {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            if !granted { Button("Freigeben …", action: action) }
+            if !granted { Button("Freigeben …", action: action).disabled(controller.requestingScreenRecording) }
         }
     }
 }

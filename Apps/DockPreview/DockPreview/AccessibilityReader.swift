@@ -102,15 +102,27 @@ enum AccessibilityReader {
         }
         app.unhide()
         app.activate(options: [])
-        // Activation may restore an app's previously focused window. Raise the selected window afterwards.
-        try? await Task.sleep(for: .milliseconds(150))
+        // Activation is asynchronous; wait for the target before raising its selected window.
+        for _ in 0..<10 {
+            guard !Task.isCancelled else { return false }
+            if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid { break }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        guard !Task.isCancelled else { return false }
         AXUIElementSetAttributeValue(window.element, kAXMainAttribute as CFString, kCFBooleanTrue)
         AXUIElementSetAttributeValue(window.element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
         AXUIElementSetAttributeValue(application, kAXFocusedWindowAttribute as CFString, window.element)
         let result = AXUIElementPerformAction(window.element, kAXRaiseAction as CFString)
-        try? await Task.sleep(for: .milliseconds(150))
-        guard result == .success, NSWorkspace.shared.frontmostApplication?.processIdentifier == pid,
-              let focused = element(application, kAXFocusedWindowAttribute) else { return false }
-        return CFEqual(focused, window.element)
+        guard result == .success else { return false }
+        // Some apps publish their focused AX window after the foreground transition finishes.
+        for _ in 0..<10 {
+            guard !Task.isCancelled else { return false }
+            if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid,
+               let focused = element(application, kAXFocusedWindowAttribute), CFEqual(focused, window.element) {
+                return true
+            }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return false
     }
 }

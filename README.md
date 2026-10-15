@@ -50,7 +50,7 @@ Das Xcode-Projekt verwendet standardmäßig lokale Ad-hoc-Signierung und benöti
 ## Dock-Vorschau verwenden
 
 1. DockPreview mit `./script/build_and_run.sh` starten. Die App läuft in der Menüleiste, ohne eigenes Dock-Symbol.
-2. Im Einrichtungsfenster **Bedienungshilfen** und **Bildschirmaufnahme** für DockPreview freigeben. Die Knöpfe öffnen die jeweilige Seite unter Datenschutz & Sicherheit. Falls macOS es verlangt, die App anschließend neu starten.
+2. Im Einrichtungsfenster **Bedienungshilfen** und **Bildschirmaufnahme** für DockPreview freigeben. Die Bildschirmaufnahme wird direkt über ScreenCaptureKit angefragt; bei ausstehender Freigabe öffnet sich die passende Seite unter Datenschutz & Sicherheit. Fehlt dort der Eintrag, zeigt **App im Finder zeigen** das aktuelle App-Bundle zur Auswahl über **+**. Falls macOS es verlangt, die App anschließend neu starten.
 3. Den Zeiger etwa 0,35 Sekunden über ein laufendes App-Symbol im Dock halten. Eine Leiste mit Fensterminiaturen erscheint.
 4. Auf eine Miniatur klicken: Das zugehörige Fenster wird gegebenenfalls entminimiert und in den Vordergrund geholt. Die Vorschau selbst übernimmt beim Hover keinen Tastaturfokus.
 5. Beim Verlassen von Dock-Symbol und Vorschau schließt sich die Leiste nach kurzer Verzögerung. Über das Menüleistensymbol lässt sich die Einrichtung erneut öffnen oder DockPreview beenden.

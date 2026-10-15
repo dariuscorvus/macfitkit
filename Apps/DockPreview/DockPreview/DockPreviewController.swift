@@ -9,12 +9,17 @@ import ScreenCaptureKit
 final class DockPreviewController {
     var accessibilityGranted = false
     var screenRecordingGranted = false
+    var requestingScreenRecording = false
+    var screenRecordingMessage = ""
     var enabled = true
     var status = "DockPreview wird gestartet …"
     var lastAction = ""
 
+    @ObservationIgnored private var captureAccessVerified = false
+    @ObservationIgnored private var permissionTask: Task<Void, Never>?
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored private var activationTask: Task<Void, Never>?
     @ObservationIgnored private var candidate: AccessibilityReader.DockTarget?
     @ObservationIgnored private var candidateSince = Date.distantPast
     @ObservationIgnored private var outsideSince: Date?
@@ -37,12 +42,16 @@ final class DockPreviewController {
     func stop() {
         timer?.invalidate()
         timer = nil
+        permissionTask?.cancel()
+        permissionTask = nil
+        activationTask?.cancel()
+        activationTask = nil
         dismiss()
     }
 
     func refreshPermissions() {
         accessibilityGranted = AXIsProcessTrusted()
-        screenRecordingGranted = CGPreflightScreenCaptureAccess()
+        screenRecordingGranted = CGPreflightScreenCaptureAccess() || captureAccessVerified
         permissionChecked = Date()
         status = !accessibilityGranted ? "Bitte Bedienungshilfen freigeben." :
             !screenRecordingGranted ? "Fensterauswahl bereit. Für Miniaturen fehlt die Bildschirmaufnahme." :
@@ -56,9 +65,37 @@ final class DockPreviewController {
     }
 
     func requestScreenRecording() {
-        _ = CGRequestScreenCaptureAccess()
+        guard !requestingScreenRecording else { return }
+        requestingScreenRecording = true
+        screenRecordingMessage = "macOS-Freigabe wird angefragt …"
+        permissionTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.requestingScreenRecording = false; self.permissionTask = nil }
+            do {
+                // Query the same API used for thumbnails. Merely opening Settings does not register access.
+                _ = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
+                guard !Task.isCancelled else { return }
+                self.captureAccessVerified = true
+                self.refreshPermissions()
+                self.screenRecordingMessage = "Bildschirmzugriff erfolgreich geprüft."
+                self.logger.info("ScreenCaptureKit permission query succeeded")
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.captureAccessVerified = false
+                self.refreshPermissions()
+                self.screenRecordingMessage = "Bitte DockPreview in den Systemeinstellungen freigeben und danach neu starten. Fehlt der Eintrag, die aktuelle App über + hinzufügen."
+                self.logger.error("ScreenCaptureKit permission query failed: \(error.localizedDescription, privacy: .public)")
+                self.openPrivacyPane("Privacy_ScreenCapture")
+            }
+        }
+    }
+
+    func showCurrentApp() {
+        NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+    }
+
+    func showScreenRecordingSettings() {
         openPrivacyPane("Privacy_ScreenCapture")
-        refreshPermissions()
     }
 
     private func openPrivacyPane(_ pane: String) {
@@ -179,6 +216,8 @@ final class DockPreviewController {
             }
         } catch {
             guard !Task.isCancelled else { return }
+            captureAccessVerified = false
+            refreshPermissions()
             for window in windows { markUnavailable(window.id) }
             content.message = "Miniaturen nicht verfügbar. Bildschirmaufnahme prüfen; Auswahl bleibt möglich."
             if let candidate { positionPanel(candidate) }
@@ -194,8 +233,10 @@ final class DockPreviewController {
         suppressedPID = app.processIdentifier
         dismiss()
         candidate = nil
-        Task {
+        activationTask?.cancel()
+        activationTask = Task {
             let succeeded = await AccessibilityReader.raise(window, in: app)
+            guard !Task.isCancelled else { return }
             lastAction = succeeded ? "Fenster in den Vordergrund geholt." : "Das Fenster konnte nicht aktiviert werden. Bitte erneut versuchen."
             logger.info("Window activation for PID \(app.processIdentifier), verified: \(succeeded)")
         }
