@@ -7,7 +7,16 @@ import FocusFrameCore
 struct SettingsWindowTests {
     @MainActor static func main() {
         let app = NSApplication.shared
+        let delegate = SettingsTestDelegate()
+        app.delegate = delegate
         app.setActivationPolicy(.regular)
+        withExtendedLifetime(delegate) { app.run() }
+    }
+}
+
+@MainActor final class SettingsTestDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let app = NSApplication.shared
         let suite = "FocusFrame.SettingsProbe.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defaults.removePersistentDomain(forName: suite)
@@ -19,7 +28,6 @@ struct SettingsWindowTests {
         settings.onTestFocus = { manager.testSettingsFocusAnimation() }
         store.onChange = { manager.configuration = store.value }
         manager.start()
-        app.finishLaunching()
         settings.present()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             let result: String
@@ -110,29 +118,22 @@ struct SettingsWindowTests {
                 check(animationKeys(in: canvas.renderer.root).isEmpty, "Hidden renderer restarted on motion preference change")
                 manager.stop()
                 check(!overlay.isVisible && animationKeys(in: canvas.renderer.root).isEmpty, "Stopped settings frame/animation remained active")
-                if let navigation = tables(in: window.contentView!).first(where: { $0.numberOfRows == 7 }) {
-                    navigation.selectRowIndexes(IndexSet(integer: 4), byExtendingSelection: false)
-                    window.contentView?.layoutSubtreeIfNeeded()
-                    let controls = descendants(in: window.contentView!)
-                    let preset = controls.compactMap { $0 as? NSButton }.first { $0.title == "Lichtläufer" }
-                    preset?.performClick(nil); window.contentView?.layoutSubtreeIfNeeded()
-                    check(store.value.appearance.motion.mode == .runner, "Runner preset did not apply")
-                    controls.compactMap { $0 as? NSButton }.first { $0.title == "Animation abspielen" }?.performClick(nil)
-                    let preview = controls.compactMap { $0 as? EffectCanvas }.first
-                    check(preview != nil, "Animation preview missing")
-                    if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, let preview {
-                        check(animationKeys(in: preview.renderer.root).contains("motionRunner"), "Preview did not play runner")
-                    }
-                    navigation.selectRowIndexes(IndexSet(integer: 5), byExtendingSelection: false)
-                    if let preview { check(animationKeys(in: preview.renderer.root).isEmpty, "Detached preview kept animating") }
+                settings.model.mutate { $0 = MotionPreset.runner.applying(to: $0) }
+                check(store.value.appearance.motion.mode == .runner, "Runner preset did not apply")
+                let preview = AnimationPreview(frame: NSRect(x: 0, y: 0, width: 500, height: 260))
+                preview.previewStyle = store.value.appearance
+                window.contentView = preview
+                preview.play()
+                if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                    check(animationKeys(in: preview.renderer.root).contains("motionRunner"), "Preview did not play runner")
                 }
-                result = failures.isEmpty ? "PASS: Seven sidebar sections, numeric inputs, persistence, validation, live settings frame, appearance, metals, focus sweep without movement restart, animation, pause/resume, move, resize, input transparency and stop." : "FAIL: " + failures.joined(separator: "; ")
+                window.contentView = NSView()
+                check(animationKeys(in: preview.renderer.root).isEmpty, "Detached preview kept animating")
+                result = failures.isEmpty ? "PASS: Shared sidebar, numeric inputs, persistence, validation, live settings frame, appearance, metals, focus sweep without movement restart, animation, pause/resume, move, resize, input transparency and stop." : "FAIL: " + failures.joined(separator: "; ")
             } else { result = "FAIL: Overlay or settings window missing." }
             defaults.removePersistentDomain(forName: suite)
             try! result.write(toFile: CommandLine.arguments[1], atomically: true, encoding: .utf8)
             app.terminate(nil)
         }
-        app.run()
-        defaults.removePersistentDomain(forName: suite)
     }
 }

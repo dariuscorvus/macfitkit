@@ -28,10 +28,11 @@ public struct ToolStatus: Codable, Equatable, Sendable {
     public let processID: Int32
     public let instance: UUID
     public var enabled: Bool
+    public var menuManaged: Bool
     public var detail: String
-    public init(tool: ToolID, processID: Int32, instance: UUID, enabled: Bool, detail: String) {
+    public init(tool: ToolID, processID: Int32, instance: UUID, enabled: Bool, detail: String, menuManaged: Bool = false) {
         self.tool = tool; self.processID = processID; self.instance = instance
-        self.enabled = enabled; self.detail = detail
+        self.enabled = enabled; self.detail = detail; self.menuManaged = menuManaged
     }
 }
 

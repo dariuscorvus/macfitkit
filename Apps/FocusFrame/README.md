@@ -1,7 +1,9 @@
 # FocusFrame
 
+> MacFitKit-Monorepo: aktueller Build-/Prüfeinstieg ist die [Root-README](../../README.md). Die gemeinsame SwiftUI-Navigation ergänzt Berechtigungen und Info; die bisherige Funktions- und Release-Dokumentation folgt unten.
+
 Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
-klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
+klicktransparenten Rahmen. Swift 6 / SwiftUI / AppKit, keine externen Paketabhängigkeiten.
 Aktueller Quellstand: 0.9.0 (Config/Version.xcconfig); historische Releases bleiben im ursprünglichen Repository.
 
 ## Start
@@ -67,9 +69,9 @@ geteilte Schemes ohne Xcode. Das ersetzt keinen Xcode-Build.
 Im Menüleistenmenü **Einstellungen …** öffnen:
 
 - Native Seitenleiste mit **Darstellung**, **Leuchten**, **Schatten**,
-  **Farbverlauf**, **Animationen**, **Verhalten** und **App-Ausnahmen**.
-- **Darstellung:** freie Rahmenfarbe, Deckkraft 10–100 %, Stärke 1–12 pt,
-  Eckenradius 0–40 pt und Abstand 0–20 pt. Die Darstellung kann separat
+  **Farbverlauf**, **Animationen**, **Allgemein** und **App-Ausnahmen**.
+- **Darstellung:** freie Rahmenfarbe, Deckkraft 10–100 %, Stärke 1–100 pt,
+  Eckenradius 0–300 pt und Abstand 0–200 pt. Die Darstellung kann separat
   zurückgesetzt werden.
 - **Leuchten:** Glow/Neon mit Intensität, Leuchtweite, eigener oder übernommener
   Rahmenfarbe und Neon-Kern. **Schatten:** Farbe, Deckkraft, Weichheit, Ausbreitung
@@ -101,7 +103,7 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
   macOS; erforderliche Bestätigung und Fehler werden sichtbar angezeigt.
 - Ein belegtes Tastenkürzel wird mit einer Fehlermeldung abgelehnt. Es liest
   keine Tastatureingaben mit, sondern registriert ausschließlich diese Kombination.
-  Unter **Verhalten** zuerst aktivieren und **Control + Option + F** drücken
+  Unter **Allgemein** zuerst aktivieren und **Control + Option + F** drücken
   (Control, nicht Command). Die Statuszeile zeigt Registrierung, empfangene
   Tastendrücke und „Rahmen: aktiv/pausiert“ unmittelbar. Zum globalen Test ein
   anderes App-Fenster aktivieren, drücken und anschließend den Status ansehen.

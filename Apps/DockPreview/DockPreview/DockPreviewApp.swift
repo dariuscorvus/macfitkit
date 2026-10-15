@@ -1,5 +1,8 @@
 import AppKit
 import SwiftUI
+import MacFitKitUI
+import MacFitKitCore
+import MacFitKitPlatform
 
 @main
 struct DockPreviewApp: App {
@@ -15,6 +18,7 @@ struct DockPreviewApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let controller = DockPreviewController()
+    private var bridge: ToolBridgeClient?
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
 
@@ -22,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--ui-preview") {
             NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
             showSettings()
+            SettingsPreview.present(settingsWindow)
             return
         }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -36,6 +41,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.menu = menu
         statusItem = item
         controller.start()
+        bridge = ToolBridgeClient(tool: .dockPreview, state: { [weak self] in
+            guard let self else { return (false, "Beendet") }
+            return (self.controller.enabled, self.controller.enabled ? self.controller.status : "Manuell pausiert")
+        }, command: { [weak self] command in
+            switch command {
+            case .openSettings: self?.showSettings()
+            case .setEnabled(let enabled): self?.controller.enabled = enabled
+            case .quit: NSApp.terminate(nil)
+            case .requestStatus: break
+            }
+        }, menuVisible: { [weak self] visible in self?.statusItem?.isVisible = visible })
+        bridge?.start()
         if !controller.accessibilityGranted || !controller.screenRecordingGranted || CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
@@ -54,5 +71,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func applicationWillTerminate(_ notification: Notification) { controller.stop() }
+    func applicationWillTerminate(_ notification: Notification) { bridge?.stop(); controller.stop() }
 }

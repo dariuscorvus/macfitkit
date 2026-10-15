@@ -1,6 +1,9 @@
 import AppKit
 import OSLog
 import FocusFrameCore
+import MacFitKitUI
+import MacFitKitCore
+import MacFitKitPlatform
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -9,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let shortcut = ShortcutService()
     private var settings: SettingsWindowController?
     private var diagnostics: DiagnosticsWindowController?
+    private var bridge: ToolBridgeClient?
     private var previewDomain: String?
     private var statusItem: NSStatusItem?
     private let permissionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -20,9 +24,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             previewDomain = domain
             let previewStore = PreferencesStore(defaults: UserDefaults(suiteName: domain)!)
             settings = SettingsWindowController(store: previewStore)
+            if let settings {
+                let model = settings.model
+                settings.onToggleFrame = { [weak model] in model?.frameEnabled.toggle() }
+            }
             if CommandLine.arguments.contains("--dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
             else { NSApp.appearance = NSAppearance(named: .aqua) }
             settings?.present()
+            SettingsPreview.present(settings?.window)
             return
         }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -64,6 +73,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store.onChange = { [weak self] in self?.applyConfiguration() }
         applyConfiguration()
         manager.start()
+        bridge = ToolBridgeClient(tool: .focusFrame, state: { [weak self] in
+            guard let self else { return (false, "Beendet") }
+            return (self.manager.enabled, !self.manager.accessibility.isTrusted ? "Bedienungshilfen fehlen" : self.manager.enabled ? "Rahmen aktiv" : "Manuell pausiert")
+        }, command: { [weak self] command in
+            guard let self else { return }
+            switch command {
+            case .openSettings: self.showSettings()
+            case .setEnabled(let enabled): if enabled != self.manager.enabled { self.toggleEnabled() }
+            case .quit: NSApp.terminate(nil)
+            case .requestStatus: break
+            }
+        }, menuVisible: { [weak self] visible in self?.statusItem?.isVisible = visible })
+        bridge?.start()
         Logger(subsystem: "de.highbytetech.FocusFrame", category: "Lifecycle")
             .info("Started; accessibility trusted: \(self.manager.accessibility.isTrusted)")
         if !manager.accessibility.isTrusted { manager.accessibility.requestPermission() }
@@ -88,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        bridge?.stop()
         manager.stop()
         shortcut.stop()
         if let previewDomain { UserDefaults.standard.removePersistentDomain(forName: previewDomain) }

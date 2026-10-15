@@ -8,7 +8,7 @@ Entwicklungsbasis ist `dariuscorvus/macfitkit`. Die bisherigen Repositories blei
 | LiveDesktop | https://github.com/dariuscorvus/LiveDesktop | 21e90a2769f906c03b15e916b6e55e5adf753e03 | 0.4.0 / 5 | tech.highbyte.LiveDesktop.prototype |
 | DockPreview | bereits MacFitKit | 6827ab0d1a26d147a333b5e3b0b6aee29ab769cb | 0.2.0 / 2 | tech.highbyte.macfitkit.DockPreview |
 
-Am 15.10.2026 vor dem Import gegen die GitHub-Main-Refs geprüft. FocusFrame und LiveDesktop wurden mit `git subtree add` ohne Squash übernommen: die originalen Commits sind weiterhin Vorfahren der Import-Commits. Keine verschachtelten .git-Verzeichnisse oder Build-Artefakte importiert.
+Am 15.10.2026 vor dem Import gegen die GitHub-Main-Refs geprüft. FocusFrame und LiveDesktop wurden mit `git subtree add` ohne Squash übernommen: die originalen Main-Commits sind weiterhin Vorfahren der Import-Commits. Alte Release-Uploads und benannte Tags bleiben in den Herkunfts-Repositories. Keine verschachtelten .git-Verzeichnisse oder Build-Artefakte importiert.
 
 Alle drei Apps sind eigenständige Workspace-Schemes. LiveDesktop behält macOS 26 als Mindestversion, die beiden anderen macOS 14. Konfigurationen, UserDefaults-Schlüssel und App-Identitäten bleiben erhalten. Die Quellmigration installiert oder startet keine App und setzt keine Datenschutzfreigaben zurück.
 

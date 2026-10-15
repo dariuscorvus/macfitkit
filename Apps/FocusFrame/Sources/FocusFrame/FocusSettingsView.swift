@@ -25,7 +25,7 @@ struct FocusSettingsView: View {
             case "exclusions": exclusionsPage
             case "permissions": SettingsSection("Bedienungshilfen") {
                 PermissionRow("Bedienungshilfen", detail: "Erkennt das aktive Fenster und folgt seiner Position.", granted: model.permissionGranted,
-                    action: PrivacyAccess.requestAccessibility)
+                    action: PrivacyAccess.requestAccessibility).disabled(CommandLine.arguments.contains("--ui-preview"))
                 Button("Erneut prüfen", action: model.refresh)
             }
             default: AppInfoSection("FocusFrame")
@@ -51,7 +51,7 @@ struct FocusSettingsView: View {
                 ChoiceRow("Taste", selection: model.configuration(\.shortcutKeyCode), options: Self.keys)
                 StatusMessage(model.shortcutRegistered ? "Registriert · Tastendrücke: \(model.shortcutPresses) · Rahmen: \(model.frameEnabled ? "aktiv" : "pausiert")" : "Tastenkürzel ist ausgeschaltet.")
             }
-            SettingsSection("Anmeldestart") { LoginItemRow() }
+            SettingsSection("Anmeldestart") { LoginItemRow().disabled(CommandLine.arguments.contains("--ui-preview")) }
         }
     }
     var exclusionsPage: some View {

@@ -1,6 +1,9 @@
 import AppKit
 import SwiftUI
 import AVFoundation
+import MacFitKitUI
+import MacFitKitCore
+import MacFitKitPlatform
 
 @main
 struct LiveDesktopApp: App {
@@ -12,6 +15,7 @@ struct LiveDesktopApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var bridge: ToolBridgeClient?
     private var probe: DesktopSurface?
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
@@ -52,16 +56,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         libraryWindow?.makeKeyAndOrderFront(nil); NSApp.activate()
     }
 
-    func applicationWillTerminate(_ notification: Notification) { WallpaperController.shared.shutdown() }
+    func applicationWillTerminate(_ notification: Notification) { bridge?.stop(); WallpaperController.shared.shutdown() }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if CommandLine.arguments.contains("--ui-preview") {
             NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
             showSettings()
+            SettingsPreview.present(libraryWindow)
             return
         }
         NSApp.setActivationPolicy(.accessory)
         setupMenuBar()
+        if !CommandLine.arguments.contains("--probe") {
+            bridge = ToolBridgeClient(tool: .liveDesktop, state: {
+                let controller = WallpaperController.shared
+                return (!controller.manualPause, controller.status)
+            }, command: { [weak self] command in
+                switch command {
+                case .openSettings: self?.showSettings()
+                case .setEnabled(let enabled): WallpaperController.shared.manualPause = !enabled
+                case .quit: NSApp.terminate(nil)
+                case .requestStatus: break
+                }
+            }, menuVisible: { [weak self] visible in self?.popover.performClose(nil); self?.statusItem?.isVisible = visible })
+            bridge?.start()
+        }
         if CommandLine.arguments.contains("--show-library") || CommandLine.arguments.contains("--settings") { showSettings() }
         if CommandLine.arguments.contains("--show-menu") {
             Task { @MainActor in

@@ -1,4 +1,6 @@
-# LiveDesktop 0.3.1
+# LiveDesktop 0.4.0
+
+> MacFitKit-Monorepo: aktueller Build-/Prüfeinstieg ist die [Root-README](../../README.md). Die bisherige Funktions- und Release-Dokumentation folgt unten.
 
 Eigenständiges natives macOS-Utility neben FocusFrame. Swift 6,
 SwiftUI/AppKit/AVFoundation, macOS 26+, keine externen Pakete und keine Cloud.
