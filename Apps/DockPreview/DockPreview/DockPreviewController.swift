@@ -1,4 +1,5 @@
 import AppKit
+import MacFitKitPlatform
 @preconcurrency import ApplicationServices
 import Observation
 import OSLog
@@ -50,8 +51,8 @@ final class DockPreviewController {
     }
 
     func refreshPermissions() {
-        accessibilityGranted = AXIsProcessTrusted()
-        screenRecordingGranted = CGPreflightScreenCaptureAccess() || captureAccessVerified
+        accessibilityGranted = PrivacyAccess.accessibilityGranted
+        screenRecordingGranted = PrivacyAccess.screenRecordingGranted || captureAccessVerified
         permissionChecked = Date()
         status = !accessibilityGranted ? "Bitte Bedienungshilfen freigeben." :
             !screenRecordingGranted ? "Fensterauswahl bereit. Für Miniaturen fehlt die Bildschirmaufnahme." :
@@ -59,9 +60,7 @@ final class DockPreviewController {
     }
 
     func requestAccessibility() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
-        openPrivacyPane("Privacy_Accessibility")
+        PrivacyAccess.requestAccessibility()
     }
 
     func requestScreenRecording() {
@@ -73,7 +72,7 @@ final class DockPreviewController {
             defer { self.requestingScreenRecording = false; self.permissionTask = nil }
             do {
                 // Query the same API used for thumbnails. Merely opening Settings does not register access.
-                _ = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
+                try await PrivacyAccess.requestScreenRecording()
                 guard !Task.isCancelled else { return }
                 self.captureAccessVerified = true
                 self.refreshPermissions()
@@ -99,9 +98,7 @@ final class DockPreviewController {
     }
 
     private func openPrivacyPane(_ pane: String) {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") {
-            NSWorkspace.shared.open(url)
-        }
+        PrivacyAccess.openSettings(pane)
     }
 
     private func tick() {

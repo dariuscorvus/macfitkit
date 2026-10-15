@@ -19,6 +19,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if CommandLine.arguments.contains("--ui-preview") {
+            NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
+            showSettings()
+            return
+        }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(systemSymbolName: "macwindow.on.rectangle", accessibilityDescription: "DockPreview")
         let menu = NSMenu()
@@ -31,13 +36,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.menu = menu
         statusItem = item
         controller.start()
-        if !controller.accessibilityGranted || !controller.screenRecordingGranted { showSettings() }
+        if !controller.accessibilityGranted || !controller.screenRecordingGranted || CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
     @objc private func showSettings() {
         if settingsWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 450),
-                                  styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 600),
+                                  styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.title = "DockPreview"
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: ContentView(controller: controller))

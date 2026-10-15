@@ -31,3 +31,14 @@ Stand: 15.10.2026. Ergebnisse werden je Migrationsstufe ergänzt.
 - Die Einstellungen bleiben im bisherigen WallpaperController und `settings.v1`; keine neuen Produktions-Preferences-Domains.
 - Debug/Universal-Release erfolgreich. Vorhandene Core-Prüfungen inklusive 16 Wiedergabepolitik-Kombinationen, Katalog und Persistenz erfolgreich.
 - Interaktive UI-/VoiceOver-Abnahme weiterhin durch Computer-Use-Verbindung blockiert.
+
+## DockPreview-UI
+
+- Gemeinsame Navigation (Allgemein/Berechtigungen/Info), Freigabezeilen, Statusanzeigen und Abstände. Spezialisierte nicht aktivierende Vorschauleiste bleibt erhalten.
+- Freigabeoperationen nutzen die gemeinsame Platform-Unterstützung; kein automatisches Anfordern/Zurücksetzen zusätzlicher Rechte.
+- Debug/Universal-Release und alle 16 Geometrie-/Fensterzuordnungschecks erfolgreich.
+- Der frühere echte Hover-/Klick-Nachweis bleibt historisch dokumentiert; die UI-migrierte Version ist noch interaktiv abzunehmen.
+
+## Wiedergabe-Laufzeittest
+
+LiveDesktops unveränderter Playback-Harness wurde mit zwei künstlich erzeugten lokalen Farbvideos ausgeführt (keine Apple-Assets). Erfolgreich: erster Frame, Wechsel, Fehlerbeibehaltung, Wiederholung, Pause, klicktransparentes Desktop-Fenster, Fensterlevel und Decoder-Freigabe. Die historische Testausgabe nennt „Apple playback“; die verwendeten Eingaben dieses Laufs waren synthetische MP4-Dateien.

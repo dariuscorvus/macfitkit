@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import MacFitKitUI
 
 @MainActor
 @Observable
@@ -41,7 +42,7 @@ private struct PreviewCard: View {
                 .frame(width: 220, height: 140)
                 Text(item.window.title).font(.callout).lineLimit(1).frame(width: 220, alignment: .leading)
             }
-            .padding(8)
+            .padding(KitSpacing.small)
             .background(hovered ? Color.accentColor.opacity(0.18) : .clear, in: RoundedRectangle(cornerRadius: 12))
             .contentShape(Rectangle())
         }
@@ -72,10 +73,10 @@ private struct PreviewPanelView: View {
                 }.scrollIndicators(.visible)
             }
             if let message = content.message {
-                Text(message).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
+                StatusMessage(message).padding(.horizontal, KitSpacing.small)
             }
         }
-        .padding(12)
+        .padding(KitSpacing.medium)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.15)))
