@@ -64,4 +64,4 @@ Ein passiver Listener bestätigte Statusnachrichten aller drei echten App-Prozes
 
 Nach dem Start sind die Binärprüfsummen beider installierter Original-Apps unverändert. Die geänderten Einstellungskeys betreffen die von macOS gespeicherte Menüleistensichtbarkeit; LiveDesktops `settings.v1` wurde neu serialisiert, ist nach JSON-Dekodierung inhaltlich identisch zur Sicherung.
 
-Die Benutzerprüfung von DockPreview ergab: Beim Hover erscheinen die Miniaturen, und ein Klick bringt genau das ausgewählte Fenster nach vorne. Die zentrale Pause-/Aktivieren-Aktion ist als nächster interaktiver Schritt noch offen.
+Die Benutzerprüfung von DockPreview ergab: Beim Hover erscheinen die Miniaturen, und ein Klick bringt genau das ausgewählte Fenster nach vorne. Der Benutzer bestätigte danach auch die zentrale Pause-/Aktivieren-Aktion: Über MacFitKit pausiert DockPreview die Vorschauen und stellt sie nach Aktivieren wieder bereit. Der reguläre Rückfall beim Beenden des echten MacFitKit-Menüs ist der nächste offene interaktive Schritt.
