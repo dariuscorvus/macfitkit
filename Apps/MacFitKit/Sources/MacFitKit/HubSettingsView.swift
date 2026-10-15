@@ -10,7 +10,7 @@ struct HubSettingsView: View {
             switch page {
             case "tools":
                 if controller.isMenuPreview { StatusMessage("Menü-Test mit getrennten Test-Tools") }
-                if controller.available.isEmpty { EmptyState("Keine Tools gefunden", detail: "Installiere FocusFrame, LiveDesktop oder DockPreview.") }
+                if controller.available.isEmpty { EmptyState("Keine Tools gefunden", detail: "Installiere FocusFrame, LiveDesktop, DockPreview oder UniversalPiP.") }
                 ForEach(controller.available) { tool in
                     SettingsSection(tool.name) {
                         StatusMessage(controller.description(tool))

@@ -4,4 +4,5 @@
    <FileRef location="group:Apps/FocusFrame/FocusFrame.xcodeproj"/>
    <FileRef location="group:Apps/LiveDesktop/LiveDesktop.xcodeproj"/>
    <FileRef location="group:Apps/MacFitKit/MacFitKit.xcodeproj"/>
+   <FileRef location="group:Apps/UniversalPiP/UniversalPiP.xcodeproj"/>
 </Workspace>

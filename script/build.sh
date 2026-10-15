@@ -5,8 +5,8 @@ APP="${1:-all}"
 CONFIGURATION="${2:-Debug}"
 case "$CONFIGURATION" in Debug|Release) ;; *) echo 'Configuration must be Debug or Release' >&2; exit 2;; esac
 case "$APP" in
- all) APPS=(FocusFrame LiveDesktop DockPreview); [[ ! -d "$ROOT_DIR/Apps/MacFitKit" ]] || APPS+=(MacFitKit) ;;
- FocusFrame|LiveDesktop|DockPreview|MacFitKit) APPS=("$APP") ;;
+ all) APPS=(FocusFrame LiveDesktop DockPreview UniversalPiP); [[ ! -d "$ROOT_DIR/Apps/MacFitKit" ]] || APPS+=(MacFitKit) ;;
+ FocusFrame|LiveDesktop|DockPreview|MacFitKit|UniversalPiP) APPS=("$APP") ;;
  *) echo 'Unknown MacFitKit app' >&2; exit 2 ;;
 esac
 BUILD_DIR="${MACFITKIT_BUILD_DIR:-$HOME/Library/Caches/MacFitKit/Monorepo}"

@@ -22,9 +22,12 @@ import Foundation
     #expect(BridgeEnvelope<ToolCommand>.decode(Data(repeating: 0, count: 65_536)) == nil)
 }
 @Test func identitiesAreStableAndDistinct() {
-    #expect(Set(ToolID.allCases.map(\.bundleIdentifier)).count == 3)
+    #expect(Set(ToolID.allCases.map(\.bundleIdentifier)).count == ToolID.allCases.count)
     #expect(ToolID.liveDesktop.bundleIdentifier == "tech.highbyte.LiveDesktop.prototype")
     #expect(ToolID.focusFrame.bundleIdentifier == "de.highbytetech.FocusFrame")
+    #expect(ToolID.dockPreview.bundleIdentifier == "tech.highbyte.macfitkit.DockPreview")
+    #expect(ToolID.universalPiP.bundleIdentifier == "tech.highbyte.macfitkit.UniversalPiP")
+    #expect(ToolID.universalPiP.minimumSystemMajor == 14)
 }
 
 @Test func numericEditingPreservesLegacyDecimalInput() {

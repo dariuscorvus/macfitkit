@@ -37,3 +37,8 @@ ToolBridgeClient passt feste Befehle an bestehende App-Zustände an. LiveDesktop
 Root-Builds schreiben ausschließlich in den Library-Cache. Die bisherigen Repositories bleiben unverändert; ihre importierten Commits sind durch unsquashed Subtree-Merges erreichbar. Die PRs sind aufeinander aufgebaut und müssen in dieser Reihenfolge übernommen werden: Import → Shared → FocusFrame → LiveDesktop → DockPreview → Menüintegration. Der Benutzer hat die Zusammenführung der fertigen PRs nach den dokumentierten Funktionstests beauftragt. Offene Abnahmen stehen in validation-monorepo.md; eine Veröffentlichung gehört nicht zur Zusammenführung.
 
 Historische Release-Skripte bleiben erhalten. Releases aus dem Monorepo müssen einzeln versioniert und signiert werden; diese Migration führt weder Notarisierung noch einen Upload aus. Installierte Apps werden erst nach einer gesonderten lokalen Abnahme mit gesicherten Originalen ersetzt.
+
+
+## UniversalPiP
+
+Die eigenständige fünfte App im Workspace bindet zusätzlich das lokale Package `Packages/UniversalPiP` ein. Capture-Engine und PiP-Panel bleiben dort unabhängig von DockPreview und vom optionalen Menü-Host. UniversalPiP verwendet die bestehenden Core-/Platform-/UI-Produkte und das unveränderte Bridge-Protokoll; ToolID erhält einen zusätzlichen festen Fall. Details und offene Abnahmen stehen in [universal-pip.md](universal-pip.md).
