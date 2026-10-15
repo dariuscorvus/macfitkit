@@ -26,3 +26,11 @@ import Foundation
     #expect(ToolID.liveDesktop.bundleIdentifier == "tech.highbyte.LiveDesktop.prototype")
     #expect(ToolID.focusFrame.bundleIdentifier == "de.highbytetech.FocusFrame")
 }
+
+@Test func numericEditingPreservesLegacyDecimalInput() {
+    #expect(NumericInput.accept("64,5", in: 1...100) == 64.5)
+    #expect(NumericInput.accept("8.25", in: 1...100) == 8.25)
+    #expect(NumericInput.accept("2000", in: 1...100) == 100)
+    #expect(NumericInput.accept("invalid", in: 1...100) == nil)
+    #expect(NumericInput.accept("nan", in: 1...100) == nil)
+}

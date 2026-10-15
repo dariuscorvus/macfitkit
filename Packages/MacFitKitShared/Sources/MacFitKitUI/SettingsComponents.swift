@@ -84,18 +84,28 @@ public struct ToggleRow: View {
 
 public struct SliderRow: View {
     let title: String; let range: ClosedRange<Double>; let unit: String; @Binding var value: Double
+    @State private var input = ""
+    @FocusState private var editing: Bool
     public init(_ title: String, value: Binding<Double>, in range: ClosedRange<Double>, unit: String = "") { self.title = title; _value = value; self.range = range; self.unit = unit }
     private var bounded: Binding<Double> { Binding(get: { value }, set: { if $0.isFinite { value = min(range.upperBound, max(range.lowerBound, $0)) } }) }
     public var body: some View {
         VStack(alignment: .leading, spacing: KitSpacing.small) {
             HStack {
                 Text(title); Spacer()
-                TextField(title, value: bounded, format: .number.precision(.fractionLength(0...3)))
+                TextField(title, text: $input).focused($editing)
                     .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 80).accessibilityLabel(title + " – Zahlenwert")
+                    .onSubmit { commit() }
+                    .onChange(of: editing) { _, active in if !active { commit() } }
                 if !unit.isEmpty { Text(unit).foregroundStyle(.secondary) }
             }
             Slider(value: bounded, in: range).accessibilityLabel(title)
-        }
+        }.onAppear { input = formatted() }
+        .onChange(of: value) { _, _ in if !editing { input = formatted() } }
+    }
+    private func formatted() -> String { value.formatted(.number.grouping(.never).precision(.fractionLength(0...3))) }
+    private func commit() {
+        if let accepted = NumericInput.accept(input, in: range) { bounded.wrappedValue = accepted }
+        input = formatted()
     }
 }
 
