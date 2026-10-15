@@ -22,6 +22,8 @@ Stand: 15. Oktober 2026.
 - Release-Build mit generischem macOS-Ziel: **BUILD SUCCEEDED**.
 - Laufendes Debug-Fenster zusätzlich über Accessibility-Baum und Screenshot geprüft: Titel „DockPreview“, Text „Das Grundgerüst ist bereit.“ und Hinweis auf die späteren Dock-Funktionen sichtbar.
 - Shell-Syntax des Startskripts erfolgreich geprüft.
+- Ad-hoc-Signaturen beider App-Bundles mit `codesign --verify --deep --strict` erfolgreich geprüft.
+- Xcode meldet übersprungene App-Intents-Metadaten, da die App keine App Intents verwendet; keine Compiler- oder Linkerfehler.
 
 Die vollständigen reproduzierbaren Build-Befehle stehen in der README. Debug wurde für den aktuellen Apple-Silicon-Mac gebaut; Release enthält arm64 und x86_64. Ein Lauf auf Intel-Hardware oder macOS 14 wurde nicht geprüft.
 
