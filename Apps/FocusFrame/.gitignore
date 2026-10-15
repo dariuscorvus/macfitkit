@@ -1,0 +1,11 @@
+.build/
+.swiftpm/
+dist/
+work/
+outputs/
+.DS_Store
+*.xcuserstate
+xcuserdata/
+
+DerivedData/
+*.xcarchive/
