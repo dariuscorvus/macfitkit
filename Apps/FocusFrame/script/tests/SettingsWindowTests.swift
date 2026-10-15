@@ -19,8 +19,9 @@ struct SettingsWindowTests {
         settings.onTestFocus = { manager.testSettingsFocusAnimation() }
         store.onChange = { manager.configuration = store.value }
         manager.start()
+        app.finishLaunching()
         settings.present()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             let result: String
             if !app.isActive || app.keyWindow !== settings.window {
                 result = "FAIL: Test settings did not become active/key. Active=\(app.isActive), key=\(app.keyWindow?.title ?? "nil"), foreground=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "nil")."
@@ -36,7 +37,7 @@ struct SettingsWindowTests {
                 }
                 check(FocusSettingsView.pages.count == 9, "Native shared sidebar is missing pages")
                 check(window.contentView is NSHostingView<FocusSettingsView>, "Shared SwiftUI root missing")
-                func enter(_ text: String) {
+                @MainActor func enter(_ text: String) {
                     if let width = NumericInput.accept(text, in: 1...100) { settings.model.mutate { $0.width = width } }
                 }
                 enter("64,5")
