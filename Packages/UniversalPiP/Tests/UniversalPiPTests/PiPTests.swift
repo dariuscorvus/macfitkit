@@ -238,3 +238,60 @@ private let second = WindowSource(id: 2, processID: 10, appName: "UTM", title: "
     #expect(WindowFocusCandidate.uniqueMatch(source: first, candidates: [.init(title: "Other", frame: frame)]) == nil)
     #expect(WindowFocusCandidate.uniqueMatch(source: first, candidates: [.init(title: "VM", frame: frame.offsetBy(dx: 100, dy: 0)), .init(title: "VM", frame: frame)]) == 1)
 }
+
+
+@Test @MainActor func sleepWakeRestartsSameSourceExactlyOnce() async throws {
+    let old = FakeCapture(), restarted = FakeCapture()
+    var creations = 0, delivered = 0
+    let owner = PiPSessionCoordinator(provider: SourceList(), permission: { true }, monitoring: false, factory: {
+        creations += 1; return creations == 1 ? old : restarted
+    })
+    owner.onFrame = { _ in delivered += 1 }
+    owner.start(first); await owner.waitForOperations()
+    old.receive?(.frame(try frame()))
+    owner.willSleep(); await owner.waitForOperations()
+    #expect(old.stops == 1); #expect(owner.state == .unavailable)
+    old.receive?(.frame(try frame())); #expect(delivered == 1)
+    owner.didWake(); owner.didWake(); await owner.waitForOperations()
+    #expect(creations == 2); #expect(restarted.starts == 1)
+    #expect(owner.source?.id == first.id); #expect(owner.source?.processID == first.processID)
+    restarted.receive?(.frame(try frame())); #expect(owner.state == .live)
+    owner.stop(); await owner.waitForOperations(); #expect(restarted.stops == 1)
+}
+
+@Test @MainActor func wakeWithMissingSourceEndsWithoutRetryOrReplacement() async {
+    let capture = FakeCapture(), provider = SourceList()
+    let owner = PiPSessionCoordinator(provider: provider, permission: { true }, monitoring: false, factory: { capture })
+    owner.start(first); await owner.waitForOperations()
+    owner.willSleep(); await owner.waitForOperations()
+    provider.values = [WindowSource(id: first.id, processID: 999, appName: "UTM", title: first.title, frame: first.frame)]
+    owner.didWake(); await owner.waitForOperations()
+    #expect(owner.state == .ended); #expect(capture.starts == 1)
+    owner.didWake(); await owner.waitForOperations()
+    #expect(owner.state == .ended); #expect(capture.starts == 1)
+    owner.stop(); await owner.waitForOperations()
+}
+
+@Test @MainActor func sourceResizeAndDensityChangeReconfigureCapture() async throws {
+    let capture = FakeCapture(), provider = SourceList()
+    let owner = PiPSessionCoordinator(provider: provider, permission: { true }, monitorInterval: .milliseconds(10), factory: { capture })
+    owner.start(first); await owner.waitForOperations()
+    provider.values = [WindowSource(id: first.id, processID: first.processID, appName: first.appName, title: first.title,
+        frame: CGRect(x: 0, y: 0, width: 300, height: 600), pixelScale: 2)]
+    for _ in 0..<100 where capture.resizeCount == 0 { try await Task.sleep(for: .milliseconds(10)) }
+    await owner.waitForOperations()
+    #expect(owner.source?.frame.size == CGSize(width: 300, height: 600))
+    #expect(owner.source?.pixelScale == 2)
+    #expect(capture.lastSize == CGSize(width: 250, height: 500))
+    owner.stop(); await owner.waitForOperations()
+}
+
+@Test @MainActor func manualStopDuringSleepCancelsWakeAndRejectsOldCallbacks() async throws {
+    let capture = FakeCapture()
+    let owner = PiPSessionCoordinator(provider: SourceList(), permission: { true }, monitoring: false, factory: { capture })
+    owner.start(first); await owner.waitForOperations()
+    owner.willSleep(); owner.stop(); owner.didWake(); await owner.waitForOperations()
+    capture.receive?(.frame(try frame())); capture.receive?(.failure)
+    #expect(owner.state == .ready); #expect(owner.source == nil)
+    #expect(capture.starts == 1); #expect(capture.stops == 1)
+}

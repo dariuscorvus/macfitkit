@@ -1,6 +1,6 @@
 # UniversalPiP
 
-UniversalPiP ist eine eigenständige macOS-14-App im MacFitKit-Workspace. Der Implementierungsstand enthält einen einzelnen lokalen Fensterstream, ein nicht aktivierendes skalierbares Floating-Panel und die bestehende Menüleistenintegration. Die Live-Abnahme mit UTM und die Leistungsabnahme sind noch offen.
+UniversalPiP ist eine eigenständige macOS-14-App im MacFitKit-Workspace. Der Implementierungsstand enthält einen einzelnen lokalen Fensterstream, ein nicht aktivierendes skalierbares Floating-Panel und die bestehende Menüleistenintegration. Erste UTM-Live-Tests und der vom Nutzer bestätigte Original-Fokus sind bestanden; die vollständige Plattform- und Leistungsabnahme bleibt offen.
 
 ## Entwicklung
 
@@ -43,11 +43,11 @@ ToolID.universalPiP enthält die feste Bundle-ID und Mindestversion 14. Die Brid
 
 ## Optionaler Fokus des Originals
 
-Der Fokus-Befehl validiert die ausgewählte Fenster-/Prozess-ID erneut über ScreenCaptureKit und sucht innerhalb dieses Prozesses ein eindeutiges AX-Fenster anhand Titel und Geometrie. Mehrdeutige Treffer werden abgelehnt. Es werden nur öffentliche Accessibility-Aktionen verwendet; keine Maus- oder Tastatureingaben an die VM gesendet. Ein Quellenwechsel oder Schließen bricht einen ausstehenden Fokusauftrag ab. Ohne optionale Freigabe erklärt die App den Bedarf im Einstellungsfenster. Die Freigabe wurde im Test nicht neu erteilt; das tatsächliche AX-Fokussieren bleibt deshalb offen.
+Der Fokus-Befehl validiert die ausgewählte Fenster-/Prozess-ID erneut über ScreenCaptureKit und sucht innerhalb dieses Prozesses ein eindeutiges AX-Fenster anhand Titel und Geometrie. Mehrdeutige Treffer werden abgelehnt. Es werden nur öffentliche Accessibility-Aktionen verwendet; keine Maus- oder Tastatureingaben an die VM gesendet. Ein Quellenwechsel oder Schließen bricht einen ausstehenden Fokusauftrag ab. Ohne optionale Freigabe erklärt die App den Bedarf im Einstellungsfenster. Am 15. Oktober 2026 hat der Nutzer das Fokussieren des ausgewählten Originalfensters im Live-Betrieb erfolgreich getestet und bestätigt. Der separate Tastenkürzeltest und Fokus-Fehlerfälle bleiben offen.
 
 ## Tests und Abnahme
 
-19 automatische Modulprüfungen decken Aspect Fit, Retina-Ausgabe, negative Monitor-Koordinaten, Monitorverlust, Rechteverweigerung und -entzug, Quellenverlust, verspätete Frames, konkurrierende Starts, Pause während Start, Sleep bei manueller Pause, Resize-Debouncing den tatsächlichen NSPanel-Vertrag, rahmenlosen Standard, Hover-/Menü-Zustand, Titelleistenumschaltung und eindeutige Fokuszuordnung ab. Die isolierten Bridge-Prüfungen umfassen vier Tools sowie PiP-Pause, Fortsetzung, Einstellungen und Host-Ausfall. Die bestehenden Tool-Checks bleiben Teil von script/check.sh.
+23 automatische Modulprüfungen decken Aspect Fit, Retina-Ausgabe, negative Monitor-Koordinaten, Monitorverlust, Rechteverweigerung und -entzug, Quellenverlust, verspätete Frames, konkurrierende Starts, Pause während Start, Sleep bei manueller Pause, Resize-Debouncing den tatsächlichen NSPanel-Vertrag, rahmenlosen Standard, Hover-/Menü-Zustand, Titelleistenumschaltung und eindeutige Fokuszuordnung ab. Die isolierten Bridge-Prüfungen umfassen vier Tools sowie PiP-Pause, Fortsetzung, Einstellungen und Host-Ausfall. Die bestehenden Tool-Checks bleiben Teil von script/check.sh.
 
 Die synthetische Testquelle aus `script/run_pip_fixture.sh` zeigt vier markierte Ränder, einen Kreis und einen laufenden Zeitwert. Sie wird als gesonderte App im Cache gebaut. Damit lassen sich Seitenverhältnis, Stillstand/Idle und Verzögerung prüfen, ohne private App-Inhalte zu verwenden.
 
@@ -86,3 +86,10 @@ Die 30-Minuten-Speicherprüfung und das P95-Ziel von höchstens 250 ms sind offe
 Release-Bundles bleiben zunächst im Build-Cache beziehungsweise als ZIP-Prüfpaket. Keine Veröffentlichung oder Notarisierung. Der Austausch installierter Apps erfordert den im Auftrag separat vorgesehenen Installationsauftrag. Dabei sowohl das MacFitKit-Menü als auch UniversalPiP berücksichtigen: Das aktuell installierte alte Menü kennt den neuen Tool-Fall noch nicht.
 
 Vor Installation bestehendes MacFitKit-Bundle und app-eigene Einstellungen sichern, Signaturen und Binärprüfsummen des neuen Builds prüfen und vorhandene Originale erhalten. UniversalPiP darf zunächst eigenständig getestet werden. Bei Rückkehr die vorherige Menü-App wiederherstellen und UniversalPiP regulär beenden; die drei bestehenden Tools und ihre Datenschutzfreigaben bleiben erhalten. TCC wird nicht zurückgesetzt. Mehrere PiPs und Eingabeweiterleitung bleiben spätere separate Erweiterungen.
+
+
+## Weitere Prüfungen am 15. Oktober 2026
+
+Vier zusätzliche automatisierte Robustheitsprüfungen bestehen: Sleep/Wake startet dieselbe Quelle genau einmal neu und verwirft alte Frames; eine nach Wake fehlende Quelle beziehungsweise ein anderer Prozess mit wiederverwendeter Fenster-ID wird nicht übernommen und nicht endlos neu versucht; Quellgröße und Pixeldichte aktualisieren die proportionale Capture-Ausgabe; manueller Stop während Sleep verhindert Wiederanlauf und späte Callback-Wirkung. Insgesamt bestehen 23 Modulprüfungen.
+
+Dies sind Tests mit austauschbaren Capture-/Quelladaptern. Reales Sleep/Wake, Monitorwechsel und die sichtbare Wiedergabe bei Auflösungswechsel bleiben manuell abzunehmen. Die nächste manuelle Runde (Größenwahl, Titelleiste, synthetische Quelle) konnte nicht abgeschlossen werden: Die native UI-Testverbindung meldete beim Quellauswahlfenster wiederholt „Sky Computer Use native pipe closed before response“, auch nach Neuinitialisierung. Kein bestandener Live-Test wird daraus abgeleitet. Produktivcode und Auslieferungs-ZIPs wurden in dieser Runde nicht verändert.
