@@ -15,7 +15,7 @@ struct LiveDesktopSettingsView: View {
                 ToggleRow("Bei Akkubetrieb pausieren", isOn: $controller.pauseOnBattery)
                 ToggleRow("Sanfter Videoübergang", isOn: $controller.crossfade)
                 StatusMessage(controller.status)
-                LoginItemRow()
+                LoginItemRow().disabled(CommandLine.arguments.contains("--ui-preview"))
             }
             default:
                 AppInfoSection("LiveDesktop")

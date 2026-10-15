@@ -29,7 +29,11 @@ for name, folder in expected.items():
         deps = [objects[key]['target'] for key in target['dependencies']]
         assert targets['FocusFrameCore'] in deps, f'{name}: missing core dependency'
         libraries = next(p for p in phases if p['isa'] == 'PBXFrameworksBuildPhase')
-        assert objects[targets['FocusFrameCore']]['productReference'] in [objects[k]['fileRef'] for k in libraries['files']]
+        assert objects[targets['FocusFrameCore']]['productReference'] in [objects[k].get('fileRef') for k in libraries['files']]
+app = objects[targets['FocusFrame']]
+products = {objects[key]['productName'] for key in app.get('packageProductDependencies', [])}
+assert products == {'MacFitKitCore', 'MacFitKitPlatform', 'MacFitKitUI'}, 'Missing shared package products'
+assert any(objects[key].get('relativePath') == '../../Packages/MacFitKitShared' for key in project_object.get('packageReferences', [])), 'Missing local shared package'
 for name in ('FocusFrame', 'FocusFrameFixture'):
     scheme = ET.parse(project / 'xcshareddata/xcschemes' / f'{name}.xcscheme')
     for reference in scheme.findall('.//BuildableReference'):

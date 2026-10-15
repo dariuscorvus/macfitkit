@@ -9,6 +9,22 @@ public enum BridgeNames {
     public static func command(_ tool: ToolID) -> Notification.Name { .init("tech.highbyte.macfitkit.bridge.v1.command.\(tool.rawValue)") }
 }
 
+/// Separate channels let integration fixtures exercise IPC without addressing installed apps.
+public struct BridgeEnvironment: Sendable {
+    public let namespace: String
+    public let hubBundleIdentifier: String
+    public let toolBundleIdentifiers: [ToolID: String]
+    public static let production = Self(namespace: "tech.highbyte.macfitkit.bridge.v1", hubBundleIdentifier: BridgeNames.hubBundleIdentifier)
+    public init(namespace: String, hubBundleIdentifier: String, toolBundleIdentifiers: [ToolID: String] = [:]) {
+        self.namespace = namespace; self.hubBundleIdentifier = hubBundleIdentifier; self.toolBundleIdentifiers = toolBundleIdentifiers
+    }
+    public func bundleIdentifier(for tool: ToolID) -> String { toolBundleIdentifiers[tool] ?? tool.bundleIdentifier }
+    public var heartbeat: Notification.Name { .init(namespace + ".heartbeat") }
+    public var status: Notification.Name { .init(namespace + ".status") }
+    public var disconnect: Notification.Name { .init(namespace + ".disconnect") }
+    public func command(_ tool: ToolID) -> Notification.Name { .init(namespace + ".command." + tool.rawValue) }
+}
+
 @MainActor
 public enum ToolTransport {
     public static func post<P: Codable & Sendable>(_ payload: P, name: Notification.Name) {
@@ -33,6 +49,7 @@ public enum ToolTransport {
 @MainActor
 public final class ToolBridgeClient {
     public let instance = UUID()
+    private let environment: BridgeEnvironment
     private let tool: ToolID
     private let state: @MainActor () -> (Bool, String)
     private let command: @MainActor (ToolCommand) -> Void
@@ -43,29 +60,30 @@ public final class ToolBridgeClient {
     private var hub: HubHeartbeat?
     private var hidden = false
 
-    public init(tool: ToolID, state: @escaping @MainActor () -> (Bool, String),
+    public init(tool: ToolID, environment: BridgeEnvironment = .production, state: @escaping @MainActor () -> (Bool, String),
                 command: @escaping @MainActor (ToolCommand) -> Void,
                 menuVisible: @escaping @MainActor (Bool) -> Void) {
-        self.tool = tool; self.state = state; self.command = command; self.visibility = menuVisible
+        self.environment = environment; self.tool = tool; self.state = state; self.command = command; self.visibility = menuVisible
     }
     public func start() {
         guard observers.isEmpty else { return }
-        observers.append(ToolTransport.observe(BridgeNames.heartbeat, as: HubHeartbeat.self) { [weak self] heartbeat in
-            guard let self, ToolTransport.validProcess(heartbeat.processID, bundle: BridgeNames.hubBundleIdentifier) else { return }
+        visibility(true)
+        observers.append(ToolTransport.observe(environment.heartbeat, as: HubHeartbeat.self) { [weak self] heartbeat in
+            guard let self, ToolTransport.validProcess(heartbeat.processID, bundle: self.environment.hubBundleIdentifier) else { return }
             self.hub = heartbeat
             if heartbeat.acknowledged.contains(self.instance) { self.lease.acknowledge(at: ProcessInfo.processInfo.systemUptime) }
             self.updateVisibility(); self.publishStatus()
         })
-        observers.append(ToolTransport.observe(BridgeNames.disconnect, as: UUID.self) { [weak self] id in
+        observers.append(ToolTransport.observe(environment.disconnect, as: UUID.self) { [weak self] id in
             guard let self, self.hub?.instance == id else { return }
             self.hub = nil; self.lease.clear(); self.updateVisibility()
         })
-        observers.append(ToolTransport.observe(BridgeNames.command(tool), as: ToolCommand.self) { [weak self] action in
+        observers.append(ToolTransport.observe(environment.command(tool), as: ToolCommand.self) { [weak self] action in
             guard let self else { return }
             // Only connected hubs can control a running tool; discovery is read-only.
             if action != .requestStatus {
                 guard let hub = self.hub, self.lease.isConnected(at: ProcessInfo.processInfo.systemUptime),
-                      ToolTransport.validProcess(hub.processID, bundle: BridgeNames.hubBundleIdentifier) else { return }
+                      ToolTransport.validProcess(hub.processID, bundle: self.environment.hubBundleIdentifier) else { return }
             }
             if action != .requestStatus { self.command(action) }
             self.publishStatus()
@@ -79,7 +97,7 @@ public final class ToolBridgeClient {
     public func publishStatus() {
         let (enabled, detail) = state()
         ToolTransport.post(ToolStatus(tool: tool, processID: ProcessInfo.processInfo.processIdentifier,
-            instance: instance, enabled: enabled, detail: String(detail.prefix(240))), name: BridgeNames.status)
+            instance: instance, enabled: enabled, detail: String(detail.prefix(240)), menuManaged: hidden), name: environment.status)
     }
     private func updateVisibility() {
         let connected = lease.isConnected(at: ProcessInfo.processInfo.systemUptime)

@@ -7,7 +7,7 @@ let package = Package(
     dependencies: [.package(path: "../../Packages/MacFitKitShared")],
     targets: [
         .target(name: "LiveDesktopCore"),
-        .executableTarget(name: "LiveDesktop", dependencies: ["LiveDesktopCore", .product(name: "MacFitKitUI", package: "MacFitKitShared"), .product(name: "MacFitKitPlatform", package: "MacFitKitShared")]),
+        .executableTarget(name: "LiveDesktop", dependencies: ["LiveDesktopCore", .product(name: "MacFitKitCore", package: "MacFitKitShared"), .product(name: "MacFitKitUI", package: "MacFitKitShared"), .product(name: "MacFitKitPlatform", package: "MacFitKitShared")]),
         .testTarget(name: "LiveDesktopCoreTests", dependencies: ["LiveDesktopCore"])
     ],
     swiftLanguageModes: [.v6]

@@ -1,74 +1,73 @@
 # MacFitKit
 
-Monorepo für eigenständige native macOS-Utilities. Der erste Baustein ist DockPreview: Fenstervorschauen direkt am macOS-Dock.
+Drei eigenständige native macOS-Tools mit gemeinsamer Codebasis und Designsprache. Eine optionale vierte App bündelt ihre Menüleisteneinträge.
 
-## Struktur
+| App | Aufgabe | Mindestversion |
+|---|---|---|
+| FocusFrame | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 |
+| LiveDesktop | Lokale Videohintergründe, Favoriten und Wechsellisten pro Bildschirm | macOS 26 |
+| DockPreview | Fenster am Dock voranzeigen und gezielt aktivieren | macOS 14 |
+| MacFitKit (optional) | Installierte Tools anzeigen, starten und steuern | macOS 14 |
 
-```text
-MacFitKit.xcworkspace
-Apps/DockPreview/
-  DockPreview.xcodeproj
-  DockPreview/
-    DockPreviewApp.swift
-    ContentView.swift
-    AccessibilityReader.swift
-    DockPreviewController.swift
-    PreviewPanel.swift
-    PreviewGeometry.swift
-script/build_and_run.sh
-```
+## Entwicklung
 
-DockPreview verwendet Swift 6, SwiftUI und einen AppKit-App-Delegate. Das gemeinsame Schema `DockPreview` ist eingecheckt. Keine externen Packages, kein Hub.
-
-## Öffnen und starten
-
-Voraussetzungen: macOS 14 oder neuer sowie Xcode mit macOS-SDK (Swift 6).
+`MacFitKit.xcworkspace` öffnen und das gewünschte gemeinsame Scheme auswählen. Jede App hat weiterhin ein eigenes Xcode-Projekt und eine eigene App-Identität. Swift 6 und ein Xcode mit macOS-26-SDK oder neuer werden für den gesamten Workspace benötigt.
 
 ```sh
-open MacFitKit.xcworkspace
-./script/build_and_run.sh
+./script/build.sh all Debug
+./script/build.sh all Release
+./script/check.sh
 ```
 
-In Xcode das Schema **DockPreview** und **My Mac** wählen und mit ⌘R starten. Für dauerhaft gültige macOS-Freigaben unter Signing ein eigenes Entwicklungszertifikat wählen; das Startskript erkennt ein vorhandenes Apple-Development-Zertifikat automatisch. Auch `Apps/DockPreview/DockPreview.xcodeproj` lässt sich eigenständig öffnen. In Codex ist die Aktion **Run** auf dasselbe Startskript eingestellt.
+Die Builds liegen unter `~/Library/Caches/MacFitKit/Monorepo/Build/Products/Debug` bzw. `Release`. `MACFITKIT_BUILD_DIR` überschreibt den DerivedData-Pfad. Die Skripte verwenden ein vorhandenes Apple-Development-Zertifikat oder Ad-hoc-Signierung; `MACFITKIT_SIGNING_IDENTITY` setzt die Identität explizit. Für eine verteilbare Veröffentlichung bleiben Developer-ID-Signierung und Notarisierung ein eigener Schritt.
 
-Das Skript beendet eine vorhandene DockPreview-Instanz, baut Debug und öffnet die App. `--verify` prüft zusätzlich den laufenden Prozess; `--debug`, `--logs` und `--telemetry` öffnen Debugger bzw. Log-Streams. Der Subsystem-Logfilter zeigt Vorschau- und Aktivierungsergebnisse ohne Fenstertitel oder Bildinhalte.
-
-## Nur bauen
+Nur bauen oder eine bestimmte Entwicklungsversion öffnen:
 
 ```sh
-xcodebuild -workspace MacFitKit.xcworkspace -scheme DockPreview \
-  -configuration Debug -destination 'platform=macOS' \
-  -derivedDataPath "$HOME/Library/Caches/MacFitKit/DerivedData" build
-
-xcodebuild -workspace MacFitKit.xcworkspace -scheme DockPreview \
-  -configuration Release -destination 'generic/platform=macOS' \
-  -derivedDataPath "$HOME/Library/Caches/MacFitKit/ReleaseDerivedData" build
+./script/build_and_run.sh FocusFrame --build-only
+./script/build_and_run.sh LiveDesktop --settings
+./script/build_and_run.sh DockPreview --verify
+./script/build_and_run.sh MacFitKit
 ```
 
-Das Xcode-Projekt verwendet standardmäßig lokale Ad-hoc-Signierung und benötigt damit kein Apple-Entwicklerteam. Das Startskript wählt ein installiertes Apple-Development-Zertifikat, falls vorhanden, damit Datenschutz-Freigaben über Rebuilds hinweg gültig bleiben. Mit `MACFITKIT_SIGNING_IDENTITY` kann die lokale Identität explizit gewählt werden (z. B. `-` für Ad-hoc). Ohne Zertifikat können Freigaben nach Codeänderungen erneut nötig sein. Für eine spätere Verteilung müssen Signierung, Hardened Runtime und Notarisierung eingerichtet werden. Das Startskript legt Build-Dateien unter `~/Library/Caches/MacFitKit/DerivedData` ab; `MACFITKIT_BUILD_DIR` überschreibt diesen Pfad. Build-Dateien außerhalb synchronisierter Dokumente-Ordner vermeiden lokale Signierungsfehler durch Finder-Metadaten.
+Der Run-Befehl beendet oder ersetzt keine installierte App. Bei bereits laufendem gleichnamigem Prozess bricht der Start mit einem Hinweis ab. Reine Builds ändern keine installierten Apps. `--debug`, `--logs` und `--telemetry` unterstützen die lokale Diagnose. Bestehende app-interne Skripte sind mit dem Import erhalten; die Root-Skripte sind die gemeinsame Build-Basis.
 
-## Dock-Vorschau verwenden
+## Gemeinsame Oberfläche
 
-1. DockPreview mit `./script/build_and_run.sh` starten. Die App läuft in der Menüleiste, ohne eigenes Dock-Symbol.
-2. Im Einrichtungsfenster **Bedienungshilfen** und **Bildschirmaufnahme** für DockPreview freigeben. Die Bildschirmaufnahme wird direkt über ScreenCaptureKit angefragt; bei ausstehender Freigabe öffnet sich die passende Seite unter Datenschutz & Sicherheit. Fehlt dort der Eintrag, zeigt **App im Finder zeigen** das aktuelle App-Bundle zur Auswahl über **+**. Falls macOS es verlangt, die App anschließend neu starten.
-3. Den Zeiger etwa 0,35 Sekunden über ein laufendes App-Symbol im Dock halten. Eine Leiste mit Fensterminiaturen erscheint.
-4. Auf eine Miniatur klicken: Das zugehörige Fenster wird gegebenenfalls entminimiert und in den Vordergrund geholt. Die Vorschau selbst übernimmt beim Hover keinen Tastaturfokus.
-5. Beim Verlassen von Dock-Symbol und Vorschau schließt sich die Leiste nach kurzer Verzögerung. Über das Menüleistensymbol lässt sich die Einrichtung erneut öffnen oder DockPreview beenden.
+`Packages/MacFitKitShared` enthält drei lokale Module ohne externe Abhängigkeiten:
 
-Die Leiste unterstützt das Dock unten, links und rechts sowie horizontales Scrollen bei vielen Fenstern. Die Miniaturen sind Momentaufnahmen beim Öffnen, kein laufender Videostream. Bilder bleiben im Arbeitsspeicher und werden beim Schließen der Vorschau verworfen; es gibt keine Uploads oder Bilddateien.
+- **MacFitKitCore:** Tool-Kennungen, Status, feste Steuerbefehle und Validierung.
+- **MacFitKitPlatform:** Datenschutzfreigaben, Autostart, App-Suche und lokale Menüleistenkommunikation.
+- **MacFitKitUI:** gemeinsamer Einstellungsrahmen, native Seitenleiste, Gruppen, Regler, Auswahl-, Schalter-, Freigabe- und Statuszeilen.
 
-Ohne Bildschirmaufnahme sind Fenstertitel und Auswahl weiterhin verfügbar. Minimierte, geschützte oder nicht eindeutig zuordenbare Fenster erhalten einen Platzhalter. Minimierte Fenster bleiben auswählbar. Ohne Bedienungshilfen ist die Dock-Erkennung pausiert. Die verfügbaren Fenster hängen von der Accessibility-Unterstützung der jeweiligen App und macOS ab; andere Spaces und Vollbild-Sonderfälle sind gesondert zu testen.
+Alle Apps verwenden Systemfarben, Systemschrift, native Materialien und ein gemeinsames Abstandsraster. App-spezifische Ansichten und Engines bleiben bei den jeweiligen Apps. Die Stores bleiben die einzige Quelle der Einstellungen; Profile, Hintergrundlisten, App-Ausnahmen und bisherige UserDefaults-Formate werden nicht in einen gemeinsamen Store verschoben.
 
-Bei einer Freigabe, die in den Systemeinstellungen eingeschaltet ist, aber von DockPreview nicht erkannt wird: App neu starten. Wurde die Signatur geändert, den DockPreview-Eintrag für die aktuelle App erneut freigeben; bei einem veralteten Eintrag diesen entfernen und die aktuelle App neu hinzufügen. Das Startskript verwendet bei vorhandenem Entwicklungszertifikat eine stabile Signatur.
+## Optionales MacFitKit-Menü
 
-## Prüfen
+MacFitKit listet bekannte installierte oder bereits laufende Tools. Verbundene Versionen lassen sich aktivieren/pausieren, öffnen und beenden. Der manuelle Aktiv-Schalter hebt automatische Wiedergabepausen durch Stromsparmodus, Schlafzustand oder thermische Belastung nicht auf.
+
+Die eigenen Menüleistensymbole der Tools verschwinden erst nach bestätigter Verbindung. MacFitKit sendet jede Sekunde ein Lebenszeichen. Beim regulären Beenden werden die Symbole wiederhergestellt; nach einem Absturz spätestens nach Ablauf der drei Sekunden langen Lease. Die Tools laufen dabei weiter. Ohne MacFitKit bleiben sie vollständig eigenständig. Ältere Versionen behalten ihr eigenes Symbol und werden als nicht verbunden angezeigt; für die zentrale Steuerung benötigen sie die integrierte Version.
+
+Die Kommunikation verwendet einen versionierten lokalen `DistributedNotificationCenter`-Kanal mit festen Befehlen. Keine Fenstertitel, Screenshots, Videodateipfade oder vollständigen Einstellungen werden übertragen. Dieser Benutzer-Sitzungskanal ist keine Authentifizierungsgrenze für feindliche Prozesse desselben Benutzers.
+
+## Datenschutz und Bestand
+
+Bundle-Identifier und vorhandene Speicherformate bleiben erhalten. Freigaben und Autostart gehören weiter zur jeweiligen App. DockPreview benötigt Bedienungshilfen und für Miniaturen Bildschirmaufnahme; FocusFrame benötigt Bedienungshilfen. Freigaben werden über die nativen Systemeinstellungen angefragt und nicht zurückgesetzt. Ein Wechsel der lokalen Signatur kann eine erneute manuelle Freigabe erfordern.
+
+Die Migration veröffentlicht keine Releases, archiviert keine alten Repositories und installiert keine Apps. Vor einem späteren Austausch installierter Apps: vorhandene Bundles und Konfiguration sichern, das neue Bundle prüfen und einen Rückweg behalten.
+
+## Abnahme und Prüfhilfen
 
 ```sh
-./script/check_preview_core.sh
-./script/build_and_run.sh --verify
+./script/check_bridge.sh
+./Apps/FocusFrame/script/test_settings_window.sh
+./script/preview_ui.sh FocusFrame
+./script/preview_ui.sh DockPreview --dark
 ```
 
-Die Core-Prüfungen testen Bildschirmkoordinaten, Panel-Positionen, den Übergang vom Dock zur Vorschau und die Zuordnung gleichnamiger bzw. mehrdeutiger Fenster. Sie benötigen keine Datenschutz-Freigaben. Der vollständige Hover-/Miniatur-/Klick-Test benötigt die beiden Freigaben.
+Die Bridge-Prüfung verwendet eigene Bundle-IDs und einen zufälligen Kanal; sie steuert keine installierten Tools. UI-Vorschauen verwenden ebenfalls eigene Bundle-IDs, deaktivierte Engines bzw. getrennte Testeinstellungen und kopieren nur Build-Artefakte. Systemfreigaben und Autostart sind im Vorschaumodus nicht zum Verändern vorgesehen. Nach der Prüfung diese Vorschau-Instanzen beenden; ihre temporären Bundles befinden sich im Library-Cache.
 
-- [Aktueller Prüfbericht zur Dock-Vorschau](docs/dock-preview-validation.md)
-- [Historischer Nachweis des Grundgerüsts](docs/validation.md)
+- [Migration und Herkunft](docs/migration.md)
+- [Aktuelle Nachweise und offene Abnahmen](docs/validation-monorepo.md)
+- [Architektur und Komponenten](docs/architecture.md)
+- [Historische DockPreview-Laufzeittests](docs/dock-preview-validation.md)

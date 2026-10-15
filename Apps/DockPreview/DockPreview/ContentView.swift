@@ -14,12 +14,12 @@ struct ContentView: View {
                     if !controller.lastAction.isEmpty { StatusMessage(controller.lastAction) }
                     Text("DockPreview bleibt in der Menüleiste aktiv.").font(.caption).foregroundStyle(.secondary)
                 }
-                SettingsSection("Anmeldestart") { LoginItemRow() }
+                SettingsSection("Anmeldestart") { LoginItemRow().disabled(CommandLine.arguments.contains("--ui-preview")) }
             case "permissions":
                 SettingsSection("Fensterzugriff") {
-                    PermissionRow("Bedienungshilfen", detail: "Erkennt Dock-Symbole und aktiviert Fenster.", granted: controller.accessibilityGranted, action: controller.requestAccessibility)
+                    PermissionRow("Bedienungshilfen", detail: "Erkennt Dock-Symbole und aktiviert Fenster.", granted: controller.accessibilityGranted, action: controller.requestAccessibility).disabled(CommandLine.arguments.contains("--ui-preview"))
                     PermissionRow("Bildschirmaufnahme", detail: "Erstellt die Fensterminiaturen lokal auf deinem Mac.", granted: controller.screenRecordingGranted, action: controller.requestScreenRecording)
-                        .disabled(controller.requestingScreenRecording)
+                        .disabled(controller.requestingScreenRecording || CommandLine.arguments.contains("--ui-preview"))
                     if !controller.screenRecordingMessage.isEmpty { StatusMessage(controller.screenRecordingMessage) }
                     if !controller.screenRecordingGranted {
                         HStack {

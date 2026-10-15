@@ -1,44 +1,47 @@
 # Monorepo-Validierung
 
-Stand: 15.10.2026. Ergebnisse werden je Migrationsstufe ergänzt.
+Stand: 15.10.2026. Codebasis: aufeinander aufbauende PRs #2–#7. Keine Veröffentlichung und keine Änderung installierter Apps.
 
-## Import
+## Builds und Herkunft
 
-- Die Remote-Main-Revisionen entsprechen den dokumentierten Quellständen.
-- Beide Historien mit unsquashed Subtree-Import übernommen.
-- `script/build.sh all Debug`: alle drei App-Schemes erfolgreich gebaut und Signaturen verifiziert.
-- `script/build.sh all Release`: alle drei App-Schemes für das generische macOS-Ziel erfolgreich gebaut und Signaturen verifiziert.
-- Keine installierte App gestartet, ersetzt oder beendet; keine Benutzerkonfiguration verändert.
+- FocusFrame-Main `15e3b58e548fad876c34a4ec5d7503691b13479a` und LiveDesktop-Main `21e90a2769f906c03b15e916b6e55e5adf753e03` vor Import gegen GitHub geprüft und ohne Squash per Subtree übernommen. Beide sind weiterhin Vorfahren der Migration.
+- Bestehendes FocusFrame-Xcode-Projekt erhalten; LiveDesktop- und optionales MacFitKit-Projekt ergänzt. Workspace hat vier eigenständige App-Schemes.
+- Alle vier Apps in Debug und Universal-Release erfolgreich gebaut; Signaturen mit `codesign --verify --deep --strict` geprüft. Beide Architekturen über `lipo` kontrolliert.
+- App-Identitäten und Mindestversionen entsprechen dem Migrationsplan. FocusFrame/LiveDesktop verwenden weiter ihre vorhandenen Icons, Versionsdateien und Store-Formate.
+- FocusFrame PreferencesStore und LiveDesktopCore/Settings.swift sind gegenüber den importierten Quellen unverändert. Die UI-Adapter schreiben in die bisherigen Stores. Tests verwenden separate Domains oder ephemere Controller.
+- Builds/Tests liegen im Library-Cache. Original-Repositories, installierte Bundles, produktive UserDefaults, Login-Registrierungen und Datenschutzfreigaben wurden nicht ersetzt oder zurückgesetzt.
 
-## Gemeinsame Komponenten
+## Bestandene Prüfungen
 
-- Lokales Package mit Core, Platform und UI; keine externen Abhängigkeiten.
-- Drei Swift-Testing-Prüfungen erfolgreich: Menü-Lease/Timeout, Protokollvalidierung und stabile App-Identitäten.
-- Package als Universal-Release für arm64/x86_64 gebaut.
+| Prüfung | Ergebnis |
+|---|---|
+| `script/check.sh` | Erfolgreich |
+| Shared Swift Testing | 4 Tests: Lease/Timeout, Version/ungültige Nutzlasten, Identitäten, numerische Komma-/Punkt-Eingabe |
+| FocusFrame-Core | 34 Tests in 6 Suites, inklusive Persistenz, Konfiguration, Effekte und Bewegung |
+| LiveDesktop-Core | Katalog, Apple-Metadaten, Favoriten/Wechsellisten-Persistenz und alle 16 Wiedergabepolitik-Kombinationen |
+| DockPreview-Core | 16 Geometrie-/Fensterzuordnungschecks |
+| Native Prozess-Bridge | Beide Startreihenfolgen, drei Tools gleichzeitig, Handshake vor Verstecken, Pause/Fortsetzen/Einstellungen/Beenden, Absturz-Rückfall, regulärer Rückfall, Wiederverbindung und ältere inkompatible Version mit Timeout |
+| FocusFrame-Settings-/Renderer-Harness | Gemeinsame SwiftUI-Wurzel und Seitenliste, numerische Eingabe/Persistenz, echter lokaler Einstellungsrahmen, Metalle, Fokusanimation ohne Neustart bei Bewegung, Pause/Fortsetzen, Move/Resize, Eingabetransparenz und Stop |
+| LiveDesktop-Playback-Harness | Erster Frame, Wechsel, Fehlerbeibehaltung, Wiederholung, Pause, klicktransparentes Desktop-Fenster, Fensterlevel und Decoder-Freigabe |
 
-## FocusFrame-UI
+Die Bridge-Prüfung nutzt zufällige Notification-Kanäle und eigene Bundle-IDs. Sie steuert keine installierten Tools. Der Playback-Test wurde mit zwei selbst erzeugten Farb-MP4s ausgeführt; seine historische Ausgabe „Apple playback“ beschreibt in diesem Lauf keine Apple-Asset-Prüfung.
 
-- Vollständige Effektseiten auf SwiftUI und gemeinsame Komponenten umgestellt; Rendering/AX-Fensterbeobachtung bleiben app-spezifisch.
-- 34 vorhandene Core-Tests erfolgreich; Debug und Universal-Release erfolgreich gebaut.
-- Gemeinsame numerische Eingabe erhält Punkt/Komma, Begrenzung und Ablehnung ungültiger Werte.
-- Separater UI-Vorschaumodus nutzt eine eigene Preferences-Domain und startet keine globale Fensterbeobachtung.
-- Die interaktive Screenshot-/VoiceOver-Prüfung ist derzeit durch den Computer-Use-Fehler `native pipe closed before response` blockiert (auch nach Session-Reset). Sie wird nicht als bestanden gewertet.
-- Der angepasste Settings-Renderer-Harness kompiliert. Sein Lauf scheitert derzeit an der Vordergrund-/Key-Window-Voraussetzung (`Active=false, key=nil`); die nachfolgenden Live-Renderer-Prüfungen sind deshalb noch nicht als bestanden nachgewiesen.
+Beim ersten Settings-Harness-Lauf fehlte die aktive Key-Window-Voraussetzung. Nach korrektem Test-AppDelegate-/Launch-Lifecycle besteht der Harness. Dies war keine Änderung der Produktions-Fensterengine.
 
-## LiveDesktop-UI
+## Gemeinsame Gestaltung und offene Abnahmen
 
-- Gemeinsame Einstellungsnavigation: Hintergründe, Wechsellisten, Allgemein, Info. Das kleine Menüleisten-Popover bleibt eine spezialisierte Schnellsteuerung mit gemeinsamen Komponenten.
-- Die Einstellungen bleiben im bisherigen WallpaperController und `settings.v1`; keine neuen Produktions-Preferences-Domains.
-- Debug/Universal-Release erfolgreich. Vorhandene Core-Prüfungen inklusive 16 Wiedergabepolitik-Kombinationen, Katalog und Persistenz erfolgreich.
-- Interaktive UI-/VoiceOver-Abnahme weiterhin durch Computer-Use-Verbindung blockiert.
+Alle Apps verwenden die gemeinsame SettingsShell und tatsächlich dieselben Schalter-, Auswahl-, Regler-, Freigabe- und Statuskomponenten. Specialized Views bleiben für Fensterkarten, Effektdarstellung und Videobibliothek bestehen. Es gibt keine zweite gespeicherte App-Konfiguration.
 
-## DockPreview-UI
+Die interaktive Computersteuerung antwortet wiederholt mit `Sky Computer Use native pipe closed before response`, auch nach Session-Reset. Daher sind folgende Punkte ausdrücklich noch offen:
 
-- Gemeinsame Navigation (Allgemein/Berechtigungen/Info), Freigabezeilen, Statusanzeigen und Abstände. Spezialisierte nicht aktivierende Vorschauleiste bleibt erhalten.
-- Freigabeoperationen nutzen die gemeinsame Platform-Unterstützung; kein automatisches Anfordern/Zurücksetzen zusätzlicher Rechte.
-- Debug/Universal-Release und alle 16 Geometrie-/Fensterzuordnungschecks erfolgreich.
-- Der frühere echte Hover-/Klick-Nachweis bleibt historisch dokumentiert; die UI-migrierte Version ist noch interaktiv abzunehmen.
+- Vollständige visuelle Abnahme sämtlicher Seiten in Hell/Dunkel und mit erhöhtem Kontrast.
+- Tatsächliche Tastatur-/VoiceOver-Bedienung aller neuen Oberflächen.
+- Echte Dock-Hover-/Fensterfokus-Abnahme der UI-migrierten DockPreview-App; der vorherige Nachweis bleibt in dock-preview-validation.md als historisch erhalten.
+- Integration der drei migrierten Produktions-Apps mit dem echten MacFitKit-Menü unter den bestehenden Benutzerfreigaben. Die Bridge selbst ist mit nativen getrennten Testprozessen geprüft.
+- Hardware-/Versionsläufe auf Intel und macOS 14 sowie Spaces-/Mehrmonitor-Sonderfälle.
 
-## Wiedergabe-Laufzeittest
+Ein eigener NSView-Bitmap-Render-Versuch zeichnete SwiftUI-/Material-Inhalte unvollständig. Die Bilder wurden deshalb als ungeeignet verworfen und nicht als visuelle Nachweise aufgenommen. Drei unabhängige UI-Vorschau-Apps (FocusFrame/DockPreview hell, LiveDesktop dunkel) wurden für eine direkte Benutzerprüfung geöffnet; die Rückmeldung wird nach Eingang ergänzt. Ihre Bundle-IDs und Einstellungen sind getrennt, die normalen Engines/IPC werden im Vorschaumodus nicht gestartet.
 
-LiveDesktops unveränderter Playback-Harness wurde mit zwei künstlich erzeugten lokalen Farbvideos ausgeführt (keine Apple-Assets). Erfolgreich: erster Frame, Wechsel, Fehlerbeibehaltung, Wiederholung, Pause, klicktransparentes Desktop-Fenster, Fensterlevel und Decoder-Freigabe. Die historische Testausgabe nennt „Apple playback“; die verwendeten Eingaben dieses Laufs waren synthetische MP4-Dateien.
+Die PRs mit UI-/Menüänderungen bleiben bis zur interaktiven Abnahme Entwürfe. Es wurde nichts automatisch gemergt, veröffentlicht, notarisiert oder installiert. Vor einem späteren lokalen Austausch sind bestehende Bundles/Einstellungen zu sichern und der Rückweg zu prüfen.
+
+Zusätzlich ist der Strukturprüfer des vorhandenen FocusFrame-Xcode-Projekts an lokale Swift-Package-Produkte angepasst und erfolgreich: vollständige Quellenzuordnung, Core-Abhängigkeit, Shared-Produkte und geteilte Schemes bleiben geprüft. Die acht fertigen Debug-/Release-Bundles wurden nochmals auf Bundle-ID, Mindestversion, LSUIElement, Original-Icons, Signaturen und Universal-Architekturen geprüft.
