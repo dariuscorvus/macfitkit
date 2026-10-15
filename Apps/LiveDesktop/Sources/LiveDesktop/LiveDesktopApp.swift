@@ -6,7 +6,7 @@ import AVFoundation
 struct LiveDesktopApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     var body: some Scene {
-        Settings { BackgroundLibraryView(controller: WallpaperController.shared) }
+        Settings { LiveDesktopSettingsView(controller: WallpaperController.shared) }
     }
 }
 
@@ -27,8 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
         popover.behavior = .transient
         popover.animates = false
-        popover.contentSize = NSSize(width: 440, height: BackgroundLibraryView.panelHeight)
-        popover.contentViewController = NSHostingController(rootView: BackgroundLibraryView(controller: WallpaperController.shared))
+        popover.contentSize = NSSize(width: 400, height: 280)
+        popover.contentViewController = NSHostingController(rootView: LiveDesktopQuickView(controller: WallpaperController.shared, openSettings: { [weak self] in self?.showSettings() }))
     }
 
     @objc private func toggleLibrary() {
@@ -40,19 +40,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @objc func showSettings() {
+        popover.performClose(nil)
+        if libraryWindow == nil {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 680), styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+            window.title = "LiveDesktop – Einstellungen"; window.isReleasedWhenClosed = false
+            window.minSize = NSSize(width: 800, height: 540)
+            window.contentView = NSHostingView(rootView: LiveDesktopSettingsView(controller: WallpaperController.shared))
+            window.center(); libraryWindow = window
+        }
+        libraryWindow?.makeKeyAndOrderFront(nil); NSApp.activate()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) { WallpaperController.shared.shutdown() }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if CommandLine.arguments.contains("--ui-preview") {
+            NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
+            showSettings()
+            return
+        }
         NSApp.setActivationPolicy(.accessory)
         setupMenuBar()
-        if CommandLine.arguments.contains("--show-library") {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: BackgroundLibraryView.panelHeight), styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            window.title = "LiveDesktop – Hintergrundauswahl"
-            window.contentViewController = NSHostingController(rootView: BackgroundLibraryView(controller: WallpaperController.shared))
-            window.isReleasedWhenClosed = false
-            window.center()
-            libraryWindow = window
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate()
-        }
+        if CommandLine.arguments.contains("--show-library") || CommandLine.arguments.contains("--settings") { showSettings() }
         if CommandLine.arguments.contains("--show-menu") {
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(400))

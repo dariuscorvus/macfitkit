@@ -7,7 +7,7 @@ import LiveDesktopCore
 
 @MainActor
 final class WallpaperController: ObservableObject {
-    static let shared = WallpaperController(ephemeral: CommandLine.arguments.contains("--probe"))
+    static let shared = WallpaperController(ephemeral: CommandLine.arguments.contains("--probe") || CommandLine.arguments.contains("--ui-preview"))
     @Published var searchQuery = ""
     @Published var targetDisplayID = ""
     @Published var assets: [VideoAsset] = []

@@ -24,3 +24,10 @@ Stand: 15.10.2026. Ergebnisse werden je Migrationsstufe ergänzt.
 - Separater UI-Vorschaumodus nutzt eine eigene Preferences-Domain und startet keine globale Fensterbeobachtung.
 - Die interaktive Screenshot-/VoiceOver-Prüfung ist derzeit durch den Computer-Use-Fehler `native pipe closed before response` blockiert (auch nach Session-Reset). Sie wird nicht als bestanden gewertet.
 - Der angepasste Settings-Renderer-Harness kompiliert. Sein Lauf scheitert derzeit an der Vordergrund-/Key-Window-Voraussetzung (`Active=false, key=nil`); die nachfolgenden Live-Renderer-Prüfungen sind deshalb noch nicht als bestanden nachgewiesen.
+
+## LiveDesktop-UI
+
+- Gemeinsame Einstellungsnavigation: Hintergründe, Wechsellisten, Allgemein, Info. Das kleine Menüleisten-Popover bleibt eine spezialisierte Schnellsteuerung mit gemeinsamen Komponenten.
+- Die Einstellungen bleiben im bisherigen WallpaperController und `settings.v1`; keine neuen Produktions-Preferences-Domains.
+- Debug/Universal-Release erfolgreich. Vorhandene Core-Prüfungen inklusive 16 Wiedergabepolitik-Kombinationen, Katalog und Persistenz erfolgreich.
+- Interaktive UI-/VoiceOver-Abnahme weiterhin durch Computer-Use-Verbindung blockiert.
