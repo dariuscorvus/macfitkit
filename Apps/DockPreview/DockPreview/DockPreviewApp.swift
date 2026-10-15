@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import MacFitKitUI
 import MacFitKitCore
 import MacFitKitPlatform
 
@@ -25,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--ui-preview") {
             NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
             showSettings()
+            SettingsPreview.present(settingsWindow)
             return
         }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)

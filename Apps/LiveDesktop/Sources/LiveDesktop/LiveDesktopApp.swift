@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import AVFoundation
+import MacFitKitUI
 import MacFitKitCore
 import MacFitKitPlatform
 
@@ -61,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--ui-preview") {
             NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
             showSettings()
+            SettingsPreview.present(libraryWindow)
             return
         }
         NSApp.setActivationPolicy(.accessory)

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import MacFitKitUI
 import MacFitKitCore
 import MacFitKitPlatform
 
@@ -15,7 +16,7 @@ import MacFitKitPlatform
     func applicationDidFinishLaunching(_ notification: Notification) {
         if CommandLine.arguments.contains("--ui-preview") {
             NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
-            controller.refresh(); showSettings(); return
+            controller.refresh(); showSettings(); SettingsPreview.present(window); return
         }
         if NSRunningApplication.runningApplications(withBundleIdentifier: BridgeNames.hubBundleIdentifier).contains(where: { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier && !$0.isTerminated }) {
             NSApp.terminate(nil); return

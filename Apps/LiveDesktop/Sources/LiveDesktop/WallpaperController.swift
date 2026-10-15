@@ -402,6 +402,8 @@ final class WallpaperController: ObservableObject {
 
     func reconcileScreens() {
         screens = NSScreen.screens
+        // UI fixtures must never create desktop overlay windows.
+        guard !CommandLine.arguments.contains("--ui-preview") else { return }
         let active = Set(screens.map(screenID))
         if !targetDisplayID.isEmpty && !active.contains(targetDisplayID) { targetDisplayID = "" }
         for id in Array(surfaces.keys) where !active.contains(id) {

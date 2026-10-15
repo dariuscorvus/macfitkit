@@ -1,6 +1,7 @@
 import AppKit
 import OSLog
 import FocusFrameCore
+import MacFitKitUI
 import MacFitKitCore
 import MacFitKitPlatform
 
@@ -30,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if CommandLine.arguments.contains("--dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
             else { NSApp.appearance = NSAppearance(named: .aqua) }
             settings?.present()
+            SettingsPreview.present(settings?.window)
             return
         }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
