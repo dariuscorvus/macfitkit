@@ -21,6 +21,7 @@ import MacFitKitPlatform
     var settingsCount = 0
     var lastSequence = ""
     var timer: Timer?
+    var settingsWindow: NSWindow?
     var environment: BridgeEnvironment {
         BridgeEnvironment(namespace: channel, hubBundleIdentifier: channel + ".hub",
             toolBundleIdentifiers: Dictionary(uniqueKeysWithValues: ToolID.allCases.map { ($0, channel + "." + $0.rawValue) }))
@@ -29,14 +30,26 @@ import MacFitKitPlatform
         if role == "hub" {
             host = ToolBridgeHost(environment: environment); host?.start()
         } else if let tool = ToolID(rawValue: role) {
-            let item = NSStatusBar.system.statusItem(withLength: 24); item.button?.title = "T"; self.item = item
+            let item = NSStatusBar.system.statusItem(withLength: 24)
+            item.button?.image = NSImage(systemSymbolName: tool.symbol, accessibilityDescription: tool.name + " – Menü-Test")
+            item.button?.toolTip = tool.name + " – Menü-Test"; self.item = item
             client = ToolBridgeClient(tool: tool, environment: environment, state: { [weak self] in
-                (self?.enabled ?? false, "Fixture")
+                (self?.enabled ?? false, self?.enabled == true ? "Test-Tool aktiv" : "Test-Tool pausiert")
             }, command: { [weak self] command in
                 guard let self else { return }
                 switch command {
                 case .setEnabled(let enabled): self.enabled = enabled
-                case .openSettings: self.settingsCount += 1
+                case .openSettings:
+                    self.settingsCount += 1
+                    if self.settingsWindow == nil {
+                        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 180), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+                        window.title = tool.name + " – Menü-Test"
+                        window.isReleasedWhenClosed = false
+                        let label = NSTextField(wrappingLabelWithString: "Der Einstellungsbefehl ist bei " + tool.name + " angekommen. Dies ist ein isoliertes Test-Tool.")
+                        label.frame = NSRect(x: 24, y: 40, width: 392, height: 80)
+                        window.contentView?.addSubview(label); window.center(); self.settingsWindow = window
+                    }
+                    self.settingsWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
                 case .quit: NSApp.terminate(nil)
                 case .requestStatus: break
                 }

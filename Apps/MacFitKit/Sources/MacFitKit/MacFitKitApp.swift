@@ -14,11 +14,11 @@ import MacFitKitPlatform
     private var item: NSStatusItem?
     private var window: NSWindow?
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if CommandLine.arguments.contains("--ui-preview") {
+        if CommandLine.arguments.contains("--ui-preview") && !controller.isMenuPreview {
             NSApp.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
             controller.refresh(); showSettings(); SettingsPreview.present(window); return
         }
-        if NSRunningApplication.runningApplications(withBundleIdentifier: BridgeNames.hubBundleIdentifier).contains(where: { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier && !$0.isTerminated }) {
+        if NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? BridgeNames.hubBundleIdentifier).contains(where: { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier && !$0.isTerminated }) {
             NSApp.terminate(nil); return
         }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -26,7 +26,8 @@ import MacFitKitPlatform
         item.button?.toolTip = "MacFitKit"
         let menu = NSMenu(); menu.delegate = self; item.menu = menu; self.item = item
         controller.refresh(); controller.bridge.start()
-        if CommandLine.arguments.contains("--settings") { showSettings() }
+        if CommandLine.arguments.contains("--settings") || controller.isMenuPreview { showSettings() }
+        if controller.isMenuPreview { SettingsPreview.present(window) }
     }
     func menuNeedsUpdate(_ menu: NSMenu) {
         controller.refresh(); menu.removeAllItems()
@@ -35,7 +36,7 @@ import MacFitKitPlatform
             entry.image = NSImage(systemSymbolName: tool.symbol, accessibilityDescription: nil)
             let submenu = NSMenu(); submenu.autoenablesItems = false
             submenu.addItem(NSMenuItem(title: String(controller.description(tool).prefix(30)), action: nil, keyEquivalent: ""))
-            if ToolLocator.running(tool) == nil {
+            if controller.running(tool) == nil {
                 add("Starten", action: #selector(startTool(_:)), tool: tool, menu: submenu).isEnabled = controller.supported(tool)
             } else if let status = controller.bridge.statuses[tool] {
                 add(status.enabled ? "Pausieren" : "Aktivieren", action: #selector(toggleTool(_:)), tool: tool, menu: submenu)
