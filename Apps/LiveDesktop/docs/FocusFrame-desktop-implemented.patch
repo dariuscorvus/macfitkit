@@ -1,0 +1,138 @@
+diff --git a/Config/Version.xcconfig b/Config/Version.xcconfig
+index 17c0563..5acbe14 100644
+--- a/Config/Version.xcconfig
++++ b/Config/Version.xcconfig
+@@ -1,2 +1,2 @@
+-MARKETING_VERSION = 0.7.0
+-CURRENT_PROJECT_VERSION = 6
++MARKETING_VERSION = 0.7.1
++CURRENT_PROJECT_VERSION = 7
+diff --git a/README.md b/README.md
+index 06470f0..d2eb5f5 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+ 
+ Kleine native macOS-Menüleisten-App: markiert das fokussierte Fenster mit einem
+ klicktransparenten Rahmen. Swift 6 / AppKit, keine externen Paketabhängigkeiten.
+-Aktueller lokaler Entwicklungsstand: 0.7.0. Letzter Release: 0.6.0 als signierte
++Aktueller lokaler Entwicklungsstand: 0.7.1. Letzter Release: 0.6.0 als signierte
+ Universal-DMG, noch nicht notarisiert.
+ 
+ ## Start
+@@ -263,3 +263,11 @@ dauerhaft (Zyklus 2–30 s). Die Fokusvariante führt einen Durchlauf mit weiche
+ Ein-/Ausblenden aus. Pausieren, Ausblenden und Bewegung reduzieren stoppen ihn.
+ Jeder Zahlenwert hat einen Regler und eine direkte Eingabe; Oberfläche und
+ Lichtreflex besitzen eigene Zurücksetzen-Schaltflächen. Neue Effekte sind aus.
++
++### Finder-Desktop (0.7.1 lokal)
++
++Der Finder-Desktop erhält keinen FocusFrame-Rahmen. Normale Finder-Fenster,
++auch maximierte Fenster, werden weiterhin verfolgt. Die Erkennung verwendet
++AX-Rolle sowie übereinstimmende öffentliche WindowServer-Geometrie/-Ebenen,
++keine lokalisierten Fenstertitel oder privaten Fenster-ID-APIs.
++Die Ausnahme betrifft ausschließlich Finder; sie schließt nicht die gesamte App aus.
+diff --git a/Sources/FocusFrame/AccessibilityService.swift b/Sources/FocusFrame/AccessibilityService.swift
+index 7a2f66a..4f866c9 100644
+--- a/Sources/FocusFrame/AccessibilityService.swift
++++ b/Sources/FocusFrame/AccessibilityService.swift
+@@ -1,4 +1,5 @@
+ import AppKit
++import FocusFrameCore
+ @preconcurrency import ApplicationServices
+ import OSLog
+ 
+@@ -13,6 +14,7 @@ final class AccessibilityService: NSObject {
+     private var registrations: [(AXUIElement, String)] = []
+     private(set) var focusGeneration: UInt64 = 0
+     private var pid: pid_t?
++    private var isFinder = false
+ 
+     var isTrusted: Bool { AXIsProcessTrusted() }
+ 
+@@ -31,6 +33,7 @@ final class AccessibilityService: NSObject {
+         if pid == frontmost.processIdentifier, observer != nil { return }
+         stop()
+         pid = frontmost.processIdentifier
++        isFinder = frontmost.bundleIdentifier == "com.apple.finder"
+         let app = AXUIElementCreateApplication(frontmost.processIdentifier)
+         AXUIElementSetMessagingTimeout(app, 0.2)
+         application = app
+@@ -99,9 +102,31 @@ final class AccessibilityService: NSObject {
+         var position = CGPoint.zero
+         var size = CGSize.zero
+         guard AXValueGetValue(positionAX, .cgPoint, &position), AXValueGetValue(sizeAX, .cgSize, &size) else { return nil }
++        if isFinderDesktop(position: position, size: size) { return nil }
+         return (position, size)
+     }
+ 
++    /// Finder's desktop is an AX focus target too, but is not a document window.
++    /// Compare public WindowServer bounds/layers rather than localized titles.
++    private func isFinderDesktop(position: CGPoint, size: CGSize) -> Bool {
++        guard isFinder, let pid, let window else { return false }
++        let role = attribute(window, kAXRoleAttribute) as? String ?? ""
++        if role == kAXScrollAreaRole { return true }
++        let frame = CGRect(origin: position, size: size)
++        let windows = (CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]) ?? []
++        let layers = windows.compactMap { info -> Int? in
++            guard (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == pid,
++                  let bounds = info[kCGWindowBounds as String] as? NSDictionary,
++                  let rect = CGRect(dictionaryRepresentation: bounds as CFDictionary),
++                  abs(rect.minX - frame.minX) < 1, abs(rect.minY - frame.minY) < 1,
++                  abs(rect.width - frame.width) < 1, abs(rect.height - frame.height) < 1 else { return nil }
++            return (info[kCGWindowLayer as String] as? NSNumber)?.intValue
++        }
++        // Preserve a normal Finder window, including one covering the whole display.
++        return DesktopFocusPolicy.isDesktop(isFinder: isFinder, role: role,
++            matchingLayers: layers, desktopIconLevel: Int(CGWindowLevelForKey(.desktopIconWindow)))
++    }
++
+     var trackedWindowIsFullScreen: Bool {
+         guard let window else { return false }
+         return attribute(window, "AXFullScreen") as? Bool ?? false
+@@ -117,6 +142,7 @@ final class AccessibilityService: NSObject {
+         application = nil
+         window = nil
+         pid = nil
++        isFinder = false
+     }
+ 
+     private func observeWindow(_ next: AXUIElement?) {
+diff --git a/Sources/FocusFrameCore/VisibilityPolicy.swift b/Sources/FocusFrameCore/VisibilityPolicy.swift
+index f8cf362..358606b 100644
+--- a/Sources/FocusFrameCore/VisibilityPolicy.swift
++++ b/Sources/FocusFrameCore/VisibilityPolicy.swift
+@@ -19,3 +19,14 @@ public enum VisibilityPolicy {
+         return .show
+     }
+ }
++
++/// Only Finder desktop targets are excluded; regular and other apps' windows stay visible.
++public enum DesktopFocusPolicy {
++    public static func isDesktop(isFinder: Bool, role: String, matchingLayers: [Int], desktopIconLevel: Int) -> Bool {
++        guard isFinder else { return false }
++        if role == "AXScrollArea" { return true }
++        // A normal Finder window may have the exact same bounds as the desktop.
++        if matchingLayers.contains(where: { $0 >= 0 }) { return false }
++        return matchingLayers.contains { $0 <= desktopIconLevel }
++    }
++}
+diff --git a/Tests/FocusFrameCoreTests/VisibilityPolicyTests.swift b/Tests/FocusFrameCoreTests/VisibilityPolicyTests.swift
+index 6b486b6..4f11935 100644
+--- a/Tests/FocusFrameCoreTests/VisibilityPolicyTests.swift
++++ b/Tests/FocusFrameCoreTests/VisibilityPolicyTests.swift
+@@ -16,4 +16,14 @@ struct VisibilityPolicyTests {
+         #expect(VisibilityPolicy.decide(enabled: true, trusted: true, fullScreen: false, hideInFullScreen: true) == .show)
+         #expect(VisibilityPolicy.decide(enabled: true, trusted: true, fullScreen: true, hideInFullScreen: true, hasWindow: false) == .noWindow)
+     }
++    @Test func finderDesktopIsExcludedButNormalWindowsRemain() {
++        let icons = -2147483603
++        #expect(DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXScrollArea", matchingLayers: [], desktopIconLevel: icons))
++        #expect(DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [icons], desktopIconLevel: icons))
++        #expect(!DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [icons, 0], desktopIconLevel: icons))
++        #expect(!DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [0], desktopIconLevel: icons))
++        #expect(!DesktopFocusPolicy.isDesktop(isFinder: false, role: "AXScrollArea", matchingLayers: [icons], desktopIconLevel: icons))
++        #expect(!DesktopFocusPolicy.isDesktop(isFinder: true, role: "AXWindow", matchingLayers: [], desktopIconLevel: icons))
++    }
++
+ }
