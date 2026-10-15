@@ -9,11 +9,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let shortcut = ShortcutService()
     private var settings: SettingsWindowController?
     private var diagnostics: DiagnosticsWindowController?
+    private var previewDomain: String?
     private var statusItem: NSStatusItem?
     private let permissionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let enabledItem = NSMenuItem(title: "Rahmen aktiv", action: #selector(toggleEnabled), keyEquivalent: "")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if CommandLine.arguments.contains("--ui-preview") {
+            let domain = "MacFitKit.FocusFrame.UIPreview.\(UUID().uuidString)"
+            previewDomain = domain
+            let previewStore = PreferencesStore(defaults: UserDefaults(suiteName: domain)!)
+            settings = SettingsWindowController(store: previewStore)
+            if CommandLine.arguments.contains("--dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
+            else { NSApp.appearance = NSAppearance(named: .aqua) }
+            settings?.present()
+            return
+        }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(systemSymbolName: "viewfinder", accessibilityDescription: "FocusFrame")
         item.button?.toolTip = "FocusFrame – aktives Fenster markieren"
@@ -79,6 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         manager.stop()
         shortcut.stop()
+        if let previewDomain { UserDefaults.standard.removePersistentDomain(forName: previewDomain) }
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 

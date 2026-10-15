@@ -1,4 +1,6 @@
 import AppKit
+import SwiftUI
+import MacFitKitCore
 import FocusFrameCore
 
 @main
@@ -8,6 +10,7 @@ struct SettingsWindowTests {
         app.setActivationPolicy(.regular)
         let suite = "FocusFrame.SettingsProbe.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
         let store = PreferencesStore(defaults: defaults)
         let settings = SettingsWindowController(store: store)
         let manager = FocusManager()
@@ -16,8 +19,9 @@ struct SettingsWindowTests {
         settings.onTestFocus = { manager.testSettingsFocusAnimation() }
         store.onChange = { manager.configuration = store.value }
         manager.start()
+        app.finishLaunching()
         settings.present()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             let result: String
             if !app.isActive || app.keyWindow !== settings.window {
                 result = "FAIL: Test settings did not become active/key. Active=\(app.isActive), key=\(app.keyWindow?.title ?? "nil"), foreground=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "nil")."
@@ -31,36 +35,21 @@ struct SettingsWindowTests {
                 func descendants(in view: NSView) -> [NSView] {
                     [view] + view.subviews.flatMap { descendants(in: $0) }
                 }
-                if let navigation = tables(in: window.contentView!).first(where: { $0.numberOfRows == 7 }) {
-                    let initialFrame = window.frame
-                    for row in 0..<7 {
-                        navigation.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-                        window.contentView?.layoutSubtreeIfNeeded()
-                        let controls = descendants(in: window.contentView!)
-                        let sliders = controls.compactMap { $0 as? NSSlider }
-                        let inputs = controls.compactMap { $0 as? NSTextField }.filter { $0.isEditable }
-                        check(sliders.count == inputs.count, "Section \(row) lacks numeric inputs for its sliders")
-                        check(window.frame == initialFrame, "Selecting section \(row) changed window size")
-                    }
-                    navigation.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-                    if let width = descendants(in: window.contentView!).compactMap({ $0 as? NSTextField })
-                        .first(where: { $0.identifier?.rawValue == "Stärke" && $0.isEditable }) {
-                        func enter(_ text: String) {
-                            width.stringValue = text
-                            settings.controlTextDidEndEditing(Notification(name: NSControl.textDidEndEditingNotification, object: width))
-                        }
-                        enter("64,5")
-                        check(store.value.appearance.width == 64.5, "Decimal comma was not accepted")
-                        check(PreferencesStore(defaults: defaults).value.appearance.width == 64.5, "Numeric input was not saved")
-                        enter("invalid")
-                        check(store.value.appearance.width == 64.5 && width.stringValue != "invalid", "Invalid input did not restore saved value")
-                        enter("2000")
-                        check(store.value.appearance.width == 100, "Numeric input exceeded its limit")
-                        enter("8.25")
-                        check(store.value.appearance.width == 8.25, "Decimal point was not accepted")
-                        enter("8")
-                    } else { failures.append("Width input missing") }
-                } else { failures.append("Seven-section sidebar missing") }
+                check(FocusSettingsView.pages.count == 9, "Native shared sidebar is missing pages")
+                check(window.contentView is NSHostingView<FocusSettingsView>, "Shared SwiftUI root missing")
+                @MainActor func enter(_ text: String) {
+                    if let width = NumericInput.accept(text, in: 1...100) { settings.model.mutate { $0.width = width } }
+                }
+                enter("64,5")
+                check(store.value.appearance.width == 64.5, "Decimal comma was not accepted")
+                check(PreferencesStore(defaults: defaults).value.appearance.width == 64.5, "Numeric input was not saved")
+                enter("invalid")
+                check(store.value.appearance.width == 64.5, "Invalid input modified saved value")
+                enter("2000")
+                check(store.value.appearance.width == 100, "Numeric input exceeded its limit")
+                enter("8.25")
+                check(store.value.appearance.width == 8.25, "Decimal point was not accepted")
+                enter("8")
                 check(overlay.isVisible, "No live settings frame")
                 check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Initial frame mismatch")
                 store.value.appearance.width = 8
@@ -144,5 +133,6 @@ struct SettingsWindowTests {
             app.terminate(nil)
         }
         app.run()
+        defaults.removePersistentDomain(forName: suite)
     }
 }

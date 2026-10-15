@@ -9,14 +9,26 @@ TARGET="$(uname -m)-apple-macosx14.0"
 swiftc -target "$TARGET" -parse-as-library -emit-module -emit-library \
   -module-name FocusFrameCore Sources/FocusFrameCore/*.swift \
   -emit-module-path "$TEST_DIR/FocusFrameCore.swiftmodule" -o "$TEST_DIR/libFocusFrameCore.dylib"
+SHARED="$ROOT_DIR/../../Packages/MacFitKitShared/Sources"
+for MODULE in MacFitKitCore MacFitKitPlatform MacFitKitUI; do
+  DEPS=(-framework Foundation)
+  if [[ "$MODULE" != MacFitKitCore ]]; then DEPS+=(-lMacFitKitCore); fi
+  if [[ "$MODULE" == MacFitKitUI ]]; then DEPS+=(-lMacFitKitPlatform); fi
+  swiftc -swift-version 6 -target "$TARGET" -parse-as-library -emit-module -emit-library \
+    -I "$TEST_DIR" -L "$TEST_DIR" "${DEPS[@]}" -Xlinker -rpath -Xlinker "$TEST_DIR" \
+    -module-name "$MODULE" "$SHARED/$MODULE/"*.swift \
+    -emit-module-path "$TEST_DIR/$MODULE.swiftmodule" -o "$TEST_DIR/lib$MODULE.dylib"
+done
 APP="$TEST_DIR/SettingsWindowTests.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks"
 cp "$TEST_DIR/libFocusFrameCore.dylib" "$APP/Contents/Frameworks/"
 swiftc -target "$TARGET" -parse-as-library -I "$TEST_DIR" -L "$TEST_DIR" \
-  -lFocusFrameCore -Xlinker -rpath -Xlinker "$TEST_DIR" \
+  -lFocusFrameCore -lMacFitKitCore -lMacFitKitPlatform -lMacFitKitUI -Xlinker -rpath -Xlinker "$TEST_DIR" \
   Sources/FocusFrame/EffectRenderer.swift Sources/FocusFrame/OverlayWindow.swift \
   Sources/FocusFrame/AccessibilityService.swift Sources/FocusFrame/FocusManager.swift \
   Sources/FocusFrame/SettingsWindowController.swift Sources/FocusFrame/PreferencesStore.swift \
+  Sources/FocusFrame/FocusSettingsModel.swift Sources/FocusFrame/FocusSettingsView.swift \
+  Sources/FocusFrame/FocusEffectPages.swift Sources/FocusFrame/FocusAnimationPreview.swift \
   Sources/FocusFrame/Diagnostics.swift script/tests/SettingsWindowTests.swift \
   -o "$APP/Contents/MacOS/SettingsWindowTests"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
