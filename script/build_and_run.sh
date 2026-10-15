@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME=DockPreview
-case "${1:-}" in FocusFrame|LiveDesktop|DockPreview|MacFitKit) APP_NAME="$1"; shift;; esac
+case "${1:-}" in FocusFrame|LiveDesktop|DockPreview|MacFitKit|UniversalPiP) APP_NAME="$1"; shift;; esac
 MODE="${1:-run}"
 case "$MODE" in run|--build-only|--debug|--logs|--telemetry|--verify|--settings|--xcode) ;; *) echo "Usage: $0 [APP] [--build-only|--verify|--settings|--debug|--logs|--telemetry]" >&2; exit 2;; esac
 "$ROOT_DIR/script/build.sh" "$APP_NAME" Debug
@@ -16,6 +16,10 @@ BUILD_DIR="${MACFITKIT_BUILD_DIR:-$HOME/Library/Caches/MacFitKit/Monorepo}"
 APP_BUNDLE="$BUILD_DIR/Build/Products/Debug/$APP_NAME.app"
 case "$MODE" in
  --debug) exec lldb -- "$APP_BUNDLE/Contents/MacOS/$APP_NAME" ;;
+ --verify)
+   if [[ "$APP_NAME" == UniversalPiP ]]; then
+     open -n "$APP_BUNDLE" --args --diagnostics-report "$HOME/Library/Caches/MacFitKit/UniversalPiP-launch.json"
+   else open -n "$APP_BUNDLE"; fi ;;
  --settings) open -n "$APP_BUNDLE" --args --settings ;;
  *) open -n "$APP_BUNDLE" ;;
 esac

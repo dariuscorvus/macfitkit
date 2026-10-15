@@ -1,0 +1,231 @@
+// !$*UTF8*$!
+{
+    "classes" = {
+    };
+    "objectVersion" = "56";
+    "archiveVersion" = "1";
+    "objects" = {
+        "7153858DBE85203CC6DF992E" = {
+            "baseConfigurationReference" = "E64AEEF03F420FC09F98C008";
+            "isa" = "XCBuildConfiguration";
+            "buildSettings" = {
+                "SWIFT_OPTIMIZATION_LEVEL" = "-O";
+                "ONLY_ACTIVE_ARCH" = "NO";
+            };
+            "name" = "Release";
+        };
+        "65F0E2F1D8F385D107616175" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "3C1B6D640D000710A7036344";
+        };
+        "B7C4046F1F38E4DA7007D8BD" = {
+            "buildConfigurationList" = "6DC7ED2573F7275EF709FF4B";
+            "projectDirPath" = "";
+            "projectRoot" = "";
+            "knownRegions" = ( "de", "en", "Base" );
+            "isa" = "PBXProject";
+            "compatibilityVersion" = "Xcode 14.0";
+            "productRefGroup" = "7586E0AC15C51A85D43E6DB6";
+            "mainGroup" = "8BE775248FA46CDE880E5218";
+            "developmentRegion" = "de";
+            "attributes" = {
+                "LastUpgradeCheck" = "2700";
+            };
+            "targets" = ( "FEBFA55A41C5B7AF1D7CBE2D" );
+            "packageReferences" = ( "38F551E2A5A4C936F185259A", "AAAAAAAAAAAAAAAAAAAAAA01" );
+        };
+        "9CBAC6F1C3B33B06528091CA" = {
+            "isa" = "PBXSourcesBuildPhase";
+            "buildActionMask" = "2147483647";
+            "files" = ( "7C2159C70ABD8B8D413C43C0", "C7D772BA103B58080455DD2D", "65F0E2F1D8F385D107616175" );
+            "runOnlyForDeploymentPostprocessing" = "0";
+        };
+        "09B5647922C0E5BF22942E0D" = {
+            "baseConfigurationReference" = "E64AEEF03F420FC09F98C008";
+            "isa" = "XCBuildConfiguration";
+            "buildSettings" = {
+                "ONLY_ACTIVE_ARCH" = "YES";
+                "SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+                "CLANG_ENABLE_MODULES" = "YES";
+                "CODE_SIGN_IDENTITY" = "-";
+                "MACOSX_DEPLOYMENT_TARGET" = "14.0";
+                "ENABLE_TESTABILITY" = "YES";
+                "GENERATE_INFOPLIST_FILE" = "YES";
+                "SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+                "INFOPLIST_KEY_NSPrincipalClass" = "NSApplication";
+                "CODE_SIGN_STYLE" = "Manual";
+                "SDKROOT" = "macosx";
+                "SWIFT_VERSION" = "6.0";
+                "PRODUCT_NAME" = "$(TARGET_NAME)";
+                "PRODUCT_MODULE_NAME" = "UniversalPiPApp";
+                "PRODUCT_BUNDLE_IDENTIFIER" = "tech.highbyte.macfitkit.UniversalPiP";
+                "SWIFT_INCLUDE_PATHS" = ( "$(inherited)", "$(BUILT_PRODUCTS_DIR)" );
+                "INFOPLIST_KEY_LSUIElement" = "YES";
+                "ENABLE_APP_SANDBOX" = "NO";
+                "INFOPLIST_KEY_NSScreenCaptureUsageDescription" = "UniversalPiP zeigt das ausgewählte Fenster als lokale Live-Vorschau. Es werden keine Aufnahmen gespeichert.";
+            };
+            "name" = "Debug";
+        };
+        "A3B04326D49C5602E8AA5625" = {
+            "path" = "Sources/UniversalPiP/PiPSettingsView.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
+        "EC4E720EAA5B59336E1B3C60" = {
+            "path" = "Sources/UniversalPiP/PiPAppController.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
+        "D776BD23F5643453005AD9F8" = {
+            "isa" = "PBXGroup";
+            "name" = "UniversalPiP";
+            "children" = ( "EC4E720EAA5B59336E1B3C60", "A3B04326D49C5602E8AA5625", "3C1B6D640D000710A7036344" );
+            "sourceTree" = "<group>";
+        };
+        "7586E0AC15C51A85D43E6DB6" = {
+            "isa" = "PBXGroup";
+            "name" = "Products";
+            "children" = ( "BCFE1A5B8AF4A76A0ECD0D60" );
+            "sourceTree" = "<group>";
+        };
+        "C7D772BA103B58080455DD2D" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "A3B04326D49C5602E8AA5625";
+        };
+        "D5B3DC580ED3AEA400C71464" = {
+            "isa" = "PBXFrameworksBuildPhase";
+            "buildActionMask" = "2147483647";
+            "files" = ( "FCD202E054DF6F14481F3FE8", "ABC9A0668411CCCFB8DA31F9", "765E7E02A555406748835C27", "AAAAAAAAAAAAAAAAAAAAAA03" );
+            "runOnlyForDeploymentPostprocessing" = "0";
+        };
+        "7C2159C70ABD8B8D413C43C0" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "EC4E720EAA5B59336E1B3C60";
+        };
+        "8BE775248FA46CDE880E5218" = {
+            "isa" = "PBXGroup";
+            "sourceTree" = "<group>";
+            "children" = ( "E64AEEF03F420FC09F98C008", "D776BD23F5643453005AD9F8", "7586E0AC15C51A85D43E6DB6" );
+        };
+        "81D5C7949D72B0BD53D8D1F6" = {
+            "baseConfigurationReference" = "E64AEEF03F420FC09F98C008";
+            "isa" = "XCBuildConfiguration";
+            "buildSettings" = {
+                "SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+                "SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+                "ONLY_ACTIVE_ARCH" = "YES";
+                "ENABLE_TESTABILITY" = "YES";
+            };
+            "name" = "Debug";
+        };
+        "358A0848B5988BE01E935782" = {
+            "baseConfigurationReference" = "E64AEEF03F420FC09F98C008";
+            "isa" = "XCBuildConfiguration";
+            "buildSettings" = {
+                "ONLY_ACTIVE_ARCH" = "NO";
+                "CLANG_ENABLE_MODULES" = "YES";
+                "CODE_SIGN_IDENTITY" = "-";
+                "MACOSX_DEPLOYMENT_TARGET" = "14.0";
+                "GENERATE_INFOPLIST_FILE" = "YES";
+                "SWIFT_OPTIMIZATION_LEVEL" = "-O";
+                "INFOPLIST_KEY_NSPrincipalClass" = "NSApplication";
+                "CODE_SIGN_STYLE" = "Manual";
+                "SDKROOT" = "macosx";
+                "SWIFT_VERSION" = "6.0";
+                "PRODUCT_NAME" = "$(TARGET_NAME)";
+                "PRODUCT_MODULE_NAME" = "UniversalPiPApp";
+                "PRODUCT_BUNDLE_IDENTIFIER" = "tech.highbyte.macfitkit.UniversalPiP";
+                "SWIFT_INCLUDE_PATHS" = ( "$(inherited)", "$(BUILT_PRODUCTS_DIR)" );
+                "INFOPLIST_KEY_LSUIElement" = "YES";
+                "ENABLE_APP_SANDBOX" = "NO";
+                "INFOPLIST_KEY_NSScreenCaptureUsageDescription" = "UniversalPiP zeigt das ausgewählte Fenster als lokale Live-Vorschau. Es werden keine Aufnahmen gespeichert.";
+            };
+            "name" = "Release";
+        };
+        "3C1B6D640D000710A7036344" = {
+            "path" = "Sources/UniversalPiP/UniversalPiPApp.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
+        "E64AEEF03F420FC09F98C008" = {
+            "path" = "Config/Version.xcconfig";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "text.xcconfig";
+            "sourceTree" = "<group>";
+        };
+        "BCFE1A5B8AF4A76A0ECD0D60" = {
+            "path" = "UniversalPiP.app";
+            "isa" = "PBXFileReference";
+            "explicitFileType" = "wrapper.application";
+            "sourceTree" = "BUILT_PRODUCTS_DIR";
+        };
+        "FEBFA55A41C5B7AF1D7CBE2D" = {
+            "productReference" = "BCFE1A5B8AF4A76A0ECD0D60";
+            "productType" = "com.apple.product-type.application";
+            "buildConfigurationList" = "CE986890BEEAA5D5A2F097F9";
+            "productName" = "UniversalPiP";
+            "isa" = "PBXNativeTarget";
+            "buildPhases" = ( "9CBAC6F1C3B33B06528091CA", "D5B3DC580ED3AEA400C71464", "CC7EDD6FD2BC9371516CF37A" );
+            "dependencies" = (  );
+            "name" = "UniversalPiP";
+            "buildRules" = (  );
+            "packageProductDependencies" = ( "3613F307A63423256CB4BB03", "A0F76DD2DBBAFED359E42D8B", "5F3389E1DAB3F9BD18E9FB3A", "AAAAAAAAAAAAAAAAAAAAAA02" );
+        };
+        "CC7EDD6FD2BC9371516CF37A" = {
+            "isa" = "PBXResourcesBuildPhase";
+            "buildActionMask" = "2147483647";
+            "files" = (  );
+            "runOnlyForDeploymentPostprocessing" = "0";
+        };
+        "CE986890BEEAA5D5A2F097F9" = {
+            "isa" = "XCConfigurationList";
+            "defaultConfigurationIsVisible" = "0";
+            "defaultConfigurationName" = "Release";
+            "buildConfigurations" = ( "09B5647922C0E5BF22942E0D", "358A0848B5988BE01E935782" );
+        };
+        "6DC7ED2573F7275EF709FF4B" = {
+            "isa" = "XCConfigurationList";
+            "defaultConfigurationIsVisible" = "0";
+            "defaultConfigurationName" = "Release";
+            "buildConfigurations" = ( "81D5C7949D72B0BD53D8D1F6", "7153858DBE85203CC6DF992E" );
+        };
+        "38F551E2A5A4C936F185259A" = {
+            "isa" = "XCLocalSwiftPackageReference";
+            "relativePath" = "../../Packages/MacFitKitShared";
+        };
+        "3613F307A63423256CB4BB03" = {
+            "isa" = "XCSwiftPackageProductDependency";
+            "package" = "38F551E2A5A4C936F185259A";
+            "productName" = "MacFitKitCore";
+        };
+        "FCD202E054DF6F14481F3FE8" = {
+            "isa" = "PBXBuildFile";
+            "productRef" = "3613F307A63423256CB4BB03";
+        };
+        "A0F76DD2DBBAFED359E42D8B" = {
+            "isa" = "XCSwiftPackageProductDependency";
+            "package" = "38F551E2A5A4C936F185259A";
+            "productName" = "MacFitKitUI";
+        };
+        "ABC9A0668411CCCFB8DA31F9" = {
+            "isa" = "PBXBuildFile";
+            "productRef" = "A0F76DD2DBBAFED359E42D8B";
+        };
+        "5F3389E1DAB3F9BD18E9FB3A" = {
+            "isa" = "XCSwiftPackageProductDependency";
+            "package" = "38F551E2A5A4C936F185259A";
+            "productName" = "MacFitKitPlatform";
+        };
+        "765E7E02A555406748835C27" = {
+            "isa" = "PBXBuildFile";
+            "productRef" = "5F3389E1DAB3F9BD18E9FB3A";
+        };
+        "AAAAAAAAAAAAAAAAAAAAAA01" = { "isa" = "XCLocalSwiftPackageReference"; "relativePath" = "../../Packages/UniversalPiP"; };
+        "AAAAAAAAAAAAAAAAAAAAAA02" = { "isa" = "XCSwiftPackageProductDependency"; "package" = "AAAAAAAAAAAAAAAAAAAAAA01"; "productName" = "UniversalPiP"; };
+        "AAAAAAAAAAAAAAAAAAAAAA03" = { "isa" = "PBXBuildFile"; "productRef" = "AAAAAAAAAAAAAAAAAAAAAA02"; };
+    };
+    "rootObject" = "B7C4046F1F38E4DA7007D8BD";
+}

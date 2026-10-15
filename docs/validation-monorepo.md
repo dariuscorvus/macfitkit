@@ -80,3 +80,17 @@ Die Binärprüfsummen beider installierter Original-Apps blieben unverändert. D
 `script/preview_ui.sh` und `script/preview_menu.sh` bleiben als getrennte Prüfhilfen erhalten. Der interaktive Menü-Test verwendet den echten Debug-Hub mit isolierten Tool-Fixtures und einem getrennten Kanal; sein alternativer Finder ist nur im Debug-Build auswählbar. Die entscheidenden Menüaktionen wurden anschließend mit den echten Apps geprüft.
 
 Die Zusammenführung nach `main` ist eine Quellcode-Integration. Sie veröffentlicht keine Releases, ersetzt keine installierten Apps und archiviert keine ursprünglichen Repositories.
+
+
+## UniversalPiP Erweiterung am 15. Oktober 2026
+
+- Eigenständiges App-Scheme UniversalPiP, macOS 14+, eigene Bundle-ID und lokales Capture-Package. Kein Austausch installierter Apps und keine Änderung an Autostart oder bestehenden Freigaben.
+- 19 neue Modulprüfungen: Geometrie/Retina, Lifecycle, konkurrierende Starts, Quellen-/Rechteverlust, Resize-Debouncing, tatsächliches NSPanel, rahmenloser Hover-HUD, Titelleistenumschaltung und eindeutiger Fokusabgleich.
+- Vorhandene Checks bestehen weiterhin; die isolierte Bridge-Prüfung umfasst vier Tools und prüft zusätzlich UniversalPiP-Pause/Fortsetzung/Einstellungen und Menü-Host-Ausfall.
+- Alle fünf Release-Apps sind gebaut. UniversalPiP wurde nach dem HUD-Umbau erneut in Debug und Universal-Release gebaut und signaturgeprüft. Das lokale Menü kennt den neuen Tool-Fall; die installierte alte Menü-App wurde nicht ersetzt.
+- Echte Quelle: UTM 5.0.5 unter `~/Applications/UTM Baerim Test.app`, Fenster „Baerim2 – Windows ARM Test“. Capture-Lauf 600,18 s, 16.489 Frames, 16.462 veränderte Frames, mit kurzer absichtlicher Pause/Fortsetzung. Vollständiges Bild nach Retina-Korrektur visuell bestätigt; der Lauf endete mit gestopptem Stream.
+- HUD gesondert visuell geprüft: reines Bild ohne äußere Leisten, eingeblendete Steuerung im Bild, Verschieben, Breite 400 Punkte und Pause per Cmd-P. 240/800-Punkte-Geometrie und Titelleistenumschaltung sind automatisch geprüft; die vollständige manuelle Größen-/Tastatur-/VoiceOver-Matrix bleibt offen.
+- Kein neuer Bedienungshilfen-Zugriff erteilt. Der zusätzliche Fokus-Befehl ist optional und noch nicht mit echter AX-Freigabe abgenommen. Die Live-Vorschau läuft ohne sie.
+- P95 Ende-zu-Ende-Latenz, 30-Minuten-Speicherprüfung, systematische Spaces-/Vollbild-/Stage-Manager-Tests, echte Monitorwechsel, Intel-Lauf und macOS-14-Lauf bleiben offen. Der Capture-Lauf vor dem HUD-Umbau ersetzt keine vollständige Abnahme der abschließenden Oberfläche.
+
+Details und Testanleitung: [UniversalPiP](universal-pip.md).

@@ -1,20 +1,21 @@
 import Foundation
 
 public enum ToolID: String, Codable, CaseIterable, Identifiable, Sendable {
-    case focusFrame, liveDesktop, dockPreview
+    case focusFrame, liveDesktop, dockPreview, universalPiP
     public var id: String { rawValue }
     public var name: String {
-        switch self { case .focusFrame: "FocusFrame"; case .liveDesktop: "LiveDesktop"; case .dockPreview: "DockPreview" }
+        switch self { case .focusFrame: "FocusFrame"; case .liveDesktop: "LiveDesktop"; case .dockPreview: "DockPreview"; case .universalPiP: "UniversalPiP" }
     }
     public var bundleIdentifier: String {
         switch self {
         case .focusFrame: "de.highbytetech.FocusFrame"
         case .liveDesktop: "tech.highbyte.LiveDesktop.prototype"
         case .dockPreview: "tech.highbyte.macfitkit.DockPreview"
+        case .universalPiP: "tech.highbyte.macfitkit.UniversalPiP"
         }
     }
     public var symbol: String {
-        switch self { case .focusFrame: "viewfinder"; case .liveDesktop: "play.rectangle"; case .dockPreview: "macwindow.on.rectangle" }
+        switch self { case .focusFrame: "viewfinder"; case .liveDesktop: "play.rectangle"; case .dockPreview: "macwindow.on.rectangle"; case .universalPiP: "pip" }
     }
     public var minimumSystemMajor: Int { self == .liveDesktop ? 26 : 14 }
 }

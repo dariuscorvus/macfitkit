@@ -1,12 +1,13 @@
 # MacFitKit
 
-Drei eigenständige native macOS-Tools mit gemeinsamer Codebasis und Designsprache. Eine optionale vierte App bündelt ihre Menüleisteneinträge.
+Vier eigenständige native macOS-Tools mit gemeinsamer Codebasis und Designsprache. Eine optionale fünfte App bündelt ihre Menüleisteneinträge.
 
 | App | Aufgabe | Mindestversion |
 |---|---|---|
 | FocusFrame | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 |
 | LiveDesktop | Lokale Videohintergründe, Favoriten und Wechsellisten pro Bildschirm | macOS 26 |
 | DockPreview | Fenster am Dock voranzeigen und gezielt aktivieren | macOS 14 |
+| UniversalPiP | Ein ausgewähltes Fenster als proportionale Live-Vorschau im Vordergrund anzeigen | macOS 14 |
 | MacFitKit (optional) | Installierte Tools anzeigen, starten und steuern | macOS 14 |
 
 ## Entwicklung
@@ -71,3 +72,14 @@ Die Bridge-Prüfung verwendet eigene Bundle-IDs und einen zufälligen Kanal; sie
 - [Aktuelle Nachweise und offene Abnahmen](docs/validation-monorepo.md)
 - [Architektur und Komponenten](docs/architecture.md)
 - [Historische DockPreview-Laufzeittests](docs/dock-preview-validation.md)
+
+## UniversalPiP
+
+Die neue eigenständige App **UniversalPiP** (macOS 14+) ergänzt eine frei skalierbare Live-Vorschau eines ausgewählten Fensters. Sie verwendet ScreenCaptureKit/SCStream und eine standardmäßig rahmenlose Vorschau mit Hover-HUD. Titelleiste, Größenwahl und weitere Aktionen sind innerhalb der Vorschau erreichbar. Die App bleibt unabhängig von DockPreview und bindet das gemeinsame Menü ein. Das eigene Aufnahme-Recht wird separat geprüft; gezielter Original-Fokus benötigt optional Bedienungshilfen. Eine erste UTM-Live-Prüfung ist erfolgt; vollständige Plattform- und Leistungsabnahme bleiben offen.
+
+```sh
+./script/build_and_run.sh UniversalPiP --build-only
+./script/run_pip_fixture.sh
+```
+
+[Architektur, Bedienung, Testmatrix und Auslieferung](docs/universal-pip.md)

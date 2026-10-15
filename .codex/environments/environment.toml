@@ -19,3 +19,8 @@ command = "./script/build_and_run.sh LiveDesktop"
 name = "Run MacFitKit"
 icon = "run"
 command = "./script/build_and_run.sh MacFitKit"
+
+[[actions]]
+name = "Run UniversalPiP"
+icon = "run"
+command = "./script/build_and_run.sh UniversalPiP"

@@ -10,7 +10,7 @@ def wait(predicate, description, timeout=8):
     while time.monotonic()<end:
         if predicate(): return
         time.sleep(.1)
-    raise AssertionError(description + ': ' + repr({x:report(x) for x in ['hub','focusFrame','liveDesktop','dockPreview','legacy']}))
+    raise AssertionError(description + ': ' + repr({x:report(x) for x in ['hub','focusFrame','liveDesktop','dockPreview','universalPiP','legacy']}))
 def start(role, bundle_role=None):
     app = root/(role+'.app'); (app/'Contents/MacOS').mkdir(parents=True, exist_ok=True)
     executable=app/'Contents/MacOS/Probe'
@@ -29,17 +29,20 @@ try:
     wait(lambda:report('focusFrame').get('visible') is True,'standalone icon missing')
     hub=start('hub')
     wait(lambda:report('focusFrame').get('visible') is False,'handshake failed')
-    for role in ['liveDesktop','dockPreview']: start(role)
-    wait(lambda:all(report(x).get('visible') is False for x in ['focusFrame','liveDesktop','dockPreview']),'multiple-tool handshake failed')
+    for role in ['liveDesktop','dockPreview','universalPiP']: start(role)
+    wait(lambda:all(report(x).get('visible') is False for x in ['focusFrame','liveDesktop','dockPreview','universalPiP']),'multiple-tool handshake failed')
     command('disable');wait(lambda:report('focusFrame').get('enabled') is False,'pause failed')
     command('settings');wait(lambda:report('focusFrame').get('settingsCount',0)>0,'settings command failed')
     command('enable');wait(lambda:report('focusFrame').get('enabled') is True,'resume failed')
+    command('disable','universalPiP');wait(lambda:report('universalPiP').get('enabled') is False,'PiP pause failed')
+    command('settings','universalPiP');wait(lambda:report('universalPiP').get('settingsCount',0)>0,'PiP settings failed')
+    command('enable','universalPiP');wait(lambda:report('universalPiP').get('enabled') is True,'PiP resume failed')
     hub.kill();hub.wait()
-    wait(lambda:all(report(x).get('visible') is True for x in ['focusFrame','liveDesktop','dockPreview']),'crash did not restore icons',5)
+    wait(lambda:all(report(x).get('visible') is True for x in ['focusFrame','liveDesktop','dockPreview','universalPiP']),'crash did not restore icons',5)
     hub=start('hub')
     wait(lambda:report('focusFrame').get('visible') is False,'reconnection failed')
     command('stop');hub.wait(timeout=5)
-    wait(lambda:all(report(x).get('visible') is True for x in ['focusFrame','liveDesktop','dockPreview']),'graceful stop did not restore icons',3)
+    wait(lambda:all(report(x).get('visible') is True for x in ['focusFrame','liveDesktop','dockPreview','universalPiP']),'graceful stop did not restore icons',3)
     command('status')
     hub=start('hub')
     wait(lambda:report('focusFrame').get('visible') is False,'second reconnection failed')
@@ -53,7 +56,7 @@ try:
     command('settings','dockPreview')
     wait(lambda:bool(report('hub').get('error')),'legacy timeout was not reported',9)
     assert legacy.poll() is None
-    print('PASS: standalone, both launch orders, 3 tools, acknowledged hiding, pause/resume/settings/quit, crash fallback, graceful fallback, restart and legacy timeout; isolated notification channel and bundle IDs')
+    print('PASS: standalone, both launch orders, 4 tools, acknowledged hiding, pause/resume/settings/quit, crash fallback, graceful fallback, restart and legacy timeout; isolated notification channel and bundle IDs')
 finally:
     for p in processes:
         if p.poll() is None:
