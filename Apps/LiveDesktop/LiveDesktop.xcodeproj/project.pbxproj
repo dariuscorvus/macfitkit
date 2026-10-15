@@ -1,0 +1,326 @@
+// !$*UTF8*$!
+{
+    "archiveVersion" = 1;
+    "classes" = {
+    };
+    "objectVersion" = 56;
+    "objects" = {
+        "79B09D0E90B0F70EA4296C67" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "text.xcconfig";
+            "path" = "Config/Version.xcconfig";
+            "sourceTree" = "<group>";
+        };
+        "8EB459A085E30D62F52B7850" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "path" = "Sources/LiveDesktopCore/AssetCatalog.swift";
+            "sourceTree" = "<group>";
+        };
+        "DAD26595CD02907F415A4B6B" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "8EB459A085E30D62F52B7850";
+        };
+        "862CD9B86C9C2B34A4B728C4" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "path" = "Sources/LiveDesktopCore/Settings.swift";
+            "sourceTree" = "<group>";
+        };
+        "A561C0B8EDC2E2CA43473F97" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "862CD9B86C9C2B34A4B728C4";
+        };
+        "C55D93742C8843355EBAC0F7" = {
+            "isa" = "PBXGroup";
+            "name" = "LiveDesktopCore";
+            "children" = ( "8EB459A085E30D62F52B7850", "862CD9B86C9C2B34A4B728C4" );
+            "sourceTree" = "<group>";
+        };
+        "A7564568398A95E5671EFBDA" = {
+            "isa" = "PBXFileReference";
+            "explicitFileType" = "archive.ar";
+            "path" = "libLiveDesktopCore.a";
+            "sourceTree" = "BUILT_PRODUCTS_DIR";
+        };
+        "36988A66BDB5D1AE5058DB79" = {
+            "isa" = "PBXSourcesBuildPhase";
+            "buildActionMask" = 2147483647;
+            "files" = ( "DAD26595CD02907F415A4B6B", "A561C0B8EDC2E2CA43473F97" );
+            "runOnlyForDeploymentPostprocessing" = 0;
+        };
+        "A99C548CE6A4ABC06E8D6A7C" = {
+            "isa" = "PBXFrameworksBuildPhase";
+            "buildActionMask" = 2147483647;
+            "files" = (  );
+            "runOnlyForDeploymentPostprocessing" = 0;
+        };
+        "75E3CDF9AFC46BB997BB5E84" = {
+            "isa" = "PBXResourcesBuildPhase";
+            "buildActionMask" = 2147483647;
+            "files" = (  );
+            "runOnlyForDeploymentPostprocessing" = 0;
+        };
+        "25BE21C8370D1CD2137FC724" = {
+            "isa" = "XCBuildConfiguration";
+            "name" = "Debug";
+            "buildSettings" = {
+                "PRODUCT_NAME" = "$(TARGET_NAME)";
+                "SWIFT_VERSION" = "6.0";
+                "SDKROOT" = "macosx";
+                "MACOSX_DEPLOYMENT_TARGET" = "26.0";
+                "CODE_SIGN_IDENTITY" = "-";
+                "CODE_SIGN_STYLE" = "Manual";
+                "CLANG_ENABLE_MODULES" = "YES";
+                "DEFINES_MODULE" = "YES";
+                "SKIP_INSTALL" = "YES";
+                "SWIFT_INSTALL_OBJC_HEADER" = "NO";
+                "SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+                "ONLY_ACTIVE_ARCH" = "YES";
+                "ENABLE_TESTABILITY" = "YES";
+                "SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+            };
+            "baseConfigurationReference" = "79B09D0E90B0F70EA4296C67";
+        };
+        "FE1E1627E8E581131B238CE6" = {
+            "isa" = "XCBuildConfiguration";
+            "name" = "Release";
+            "buildSettings" = {
+                "PRODUCT_NAME" = "$(TARGET_NAME)";
+                "SWIFT_VERSION" = "6.0";
+                "SDKROOT" = "macosx";
+                "MACOSX_DEPLOYMENT_TARGET" = "26.0";
+                "CODE_SIGN_IDENTITY" = "-";
+                "CODE_SIGN_STYLE" = "Manual";
+                "CLANG_ENABLE_MODULES" = "YES";
+                "DEFINES_MODULE" = "YES";
+                "SKIP_INSTALL" = "YES";
+                "SWIFT_INSTALL_OBJC_HEADER" = "NO";
+                "SWIFT_OPTIMIZATION_LEVEL" = "-O";
+                "ONLY_ACTIVE_ARCH" = "NO";
+            };
+            "baseConfigurationReference" = "79B09D0E90B0F70EA4296C67";
+        };
+        "4353033375B4F05616B6B1E0" = {
+            "isa" = "XCConfigurationList";
+            "buildConfigurations" = ( "25BE21C8370D1CD2137FC724", "FE1E1627E8E581131B238CE6" );
+            "defaultConfigurationIsVisible" = 0;
+            "defaultConfigurationName" = "Release";
+        };
+        "1451534EEE19E8647C5CE4FD" = {
+            "isa" = "PBXNativeTarget";
+            "name" = "LiveDesktopCore";
+            "productName" = "LiveDesktopCore";
+            "productReference" = "A7564568398A95E5671EFBDA";
+            "productType" = "com.apple.product-type.library.static";
+            "buildConfigurationList" = "4353033375B4F05616B6B1E0";
+            "buildPhases" = ( "36988A66BDB5D1AE5058DB79", "A99C548CE6A4ABC06E8D6A7C", "75E3CDF9AFC46BB997BB5E84" );
+            "dependencies" = (  );
+            "buildRules" = (  );
+        };
+        "DE61C5D06688F53D2D795055" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "path" = "Sources/LiveDesktop/BackgroundLibraryView.swift";
+            "sourceTree" = "<group>";
+        };
+        "981C62A836B8865CBF3C09AB" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "DE61C5D06688F53D2D795055";
+        };
+        "05BF7CB5FC6506E8EEB387E7" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "path" = "Sources/LiveDesktop/DesktopSurface.swift";
+            "sourceTree" = "<group>";
+        };
+        "E5DAE29B7D5A85A3F72577C6" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "05BF7CB5FC6506E8EEB387E7";
+        };
+        "8B114E4D8EC874ABCE76C0C9" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "path" = "Sources/LiveDesktop/LiveDesktopApp.swift";
+            "sourceTree" = "<group>";
+        };
+        "CE6E0F8925226EFD442A287E" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "8B114E4D8EC874ABCE76C0C9";
+        };
+        "2C75C020DFD46C544B199EB5" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "path" = "Sources/LiveDesktop/WallpaperController.swift";
+            "sourceTree" = "<group>";
+        };
+        "D52FCD1BA8F5A589E4BFBB9A" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "2C75C020DFD46C544B199EB5";
+        };
+        "A1A762D8B242BFDAD05A1C90" = {
+            "isa" = "PBXGroup";
+            "name" = "LiveDesktop";
+            "children" = ( "DE61C5D06688F53D2D795055", "05BF7CB5FC6506E8EEB387E7", "8B114E4D8EC874ABCE76C0C9", "2C75C020DFD46C544B199EB5" );
+            "sourceTree" = "<group>";
+        };
+        "9AF750A84C0017998F087057" = {
+            "isa" = "PBXFileReference";
+            "explicitFileType" = "wrapper.application";
+            "path" = "LiveDesktop.app";
+            "sourceTree" = "BUILT_PRODUCTS_DIR";
+        };
+        "49D4E765A31E8C0A1F145DA3" = {
+            "isa" = "PBXSourcesBuildPhase";
+            "buildActionMask" = 2147483647;
+            "files" = ( "981C62A836B8865CBF3C09AB", "E5DAE29B7D5A85A3F72577C6", "CE6E0F8925226EFD442A287E", "D52FCD1BA8F5A589E4BFBB9A" );
+            "runOnlyForDeploymentPostprocessing" = 0;
+        };
+        "0EDEBB39AA80EEC82170C959" = {
+            "isa" = "PBXFrameworksBuildPhase";
+            "buildActionMask" = 2147483647;
+            "files" = ( "057BE89A902D8D05682D1FE1" );
+            "runOnlyForDeploymentPostprocessing" = 0;
+        };
+        "48CC9C86418B0FBD4AB8E580" = {
+            "isa" = "PBXResourcesBuildPhase";
+            "buildActionMask" = 2147483647;
+            "files" = ( "75793AC0BD23DF674E4B9910" );
+            "runOnlyForDeploymentPostprocessing" = 0;
+        };
+        "F2D9C5698A831BE8B2BD1C76" = {
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "image.icns";
+            "path" = "Resources/AppIcon.icns";
+            "sourceTree" = "<group>";
+        };
+        "75793AC0BD23DF674E4B9910" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "F2D9C5698A831BE8B2BD1C76";
+        };
+        "3F9DAEA0E4267DEED9B22D3E" = {
+            "isa" = "XCBuildConfiguration";
+            "name" = "Debug";
+            "buildSettings" = {
+                "PRODUCT_NAME" = "$(TARGET_NAME)";
+                "SWIFT_VERSION" = "6.0";
+                "SDKROOT" = "macosx";
+                "MACOSX_DEPLOYMENT_TARGET" = "26.0";
+                "CODE_SIGN_IDENTITY" = "-";
+                "CODE_SIGN_STYLE" = "Manual";
+                "CLANG_ENABLE_MODULES" = "YES";
+                "GENERATE_INFOPLIST_FILE" = "YES";
+                "PRODUCT_BUNDLE_IDENTIFIER" = "tech.highbyte.LiveDesktop.prototype";
+                "INFOPLIST_KEY_LSUIElement" = "YES";
+                "INFOPLIST_KEY_NSPrincipalClass" = "NSApplication";
+                "SWIFT_INCLUDE_PATHS" = ( "$(inherited)", "$(BUILT_PRODUCTS_DIR)" );
+                "INFOPLIST_KEY_CFBundleIconFile" = "AppIcon";
+                "SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+                "ONLY_ACTIVE_ARCH" = "YES";
+                "ENABLE_TESTABILITY" = "YES";
+                "SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+            };
+            "baseConfigurationReference" = "79B09D0E90B0F70EA4296C67";
+        };
+        "F1516F13E2700B374B9262A1" = {
+            "isa" = "XCBuildConfiguration";
+            "name" = "Release";
+            "buildSettings" = {
+                "PRODUCT_NAME" = "$(TARGET_NAME)";
+                "SWIFT_VERSION" = "6.0";
+                "SDKROOT" = "macosx";
+                "MACOSX_DEPLOYMENT_TARGET" = "26.0";
+                "CODE_SIGN_IDENTITY" = "-";
+                "CODE_SIGN_STYLE" = "Manual";
+                "CLANG_ENABLE_MODULES" = "YES";
+                "GENERATE_INFOPLIST_FILE" = "YES";
+                "PRODUCT_BUNDLE_IDENTIFIER" = "tech.highbyte.LiveDesktop.prototype";
+                "INFOPLIST_KEY_LSUIElement" = "YES";
+                "INFOPLIST_KEY_NSPrincipalClass" = "NSApplication";
+                "SWIFT_INCLUDE_PATHS" = ( "$(inherited)", "$(BUILT_PRODUCTS_DIR)" );
+                "INFOPLIST_KEY_CFBundleIconFile" = "AppIcon";
+                "SWIFT_OPTIMIZATION_LEVEL" = "-O";
+                "ONLY_ACTIVE_ARCH" = "NO";
+            };
+            "baseConfigurationReference" = "79B09D0E90B0F70EA4296C67";
+        };
+        "A9CCC20F8D2DFD29AF32082A" = {
+            "isa" = "XCConfigurationList";
+            "buildConfigurations" = ( "3F9DAEA0E4267DEED9B22D3E", "F1516F13E2700B374B9262A1" );
+            "defaultConfigurationIsVisible" = 0;
+            "defaultConfigurationName" = "Release";
+        };
+        "F3B927B90A3735575961A482" = {
+            "isa" = "PBXNativeTarget";
+            "name" = "LiveDesktop";
+            "productName" = "LiveDesktop";
+            "productReference" = "9AF750A84C0017998F087057";
+            "productType" = "com.apple.product-type.application";
+            "buildConfigurationList" = "A9CCC20F8D2DFD29AF32082A";
+            "buildPhases" = ( "49D4E765A31E8C0A1F145DA3", "0EDEBB39AA80EEC82170C959", "48CC9C86418B0FBD4AB8E580" );
+            "dependencies" = ( "9FF23FDD3FF394A89B9EE245" );
+            "buildRules" = (  );
+        };
+        "057BE89A902D8D05682D1FE1" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "A7564568398A95E5671EFBDA";
+        };
+        "9FF23FDD3FF394A89B9EE245" = {
+            "isa" = "PBXTargetDependency";
+            "target" = "1451534EEE19E8647C5CE4FD";
+        };
+        "93A18D89A77CDA3C1988101C" = {
+            "isa" = "PBXGroup";
+            "name" = "Products";
+            "children" = ( "A7564568398A95E5671EFBDA", "9AF750A84C0017998F087057" );
+            "sourceTree" = "<group>";
+        };
+        "566E7307F4F150F44F430C7A" = {
+            "isa" = "PBXGroup";
+            "children" = ( "79B09D0E90B0F70EA4296C67", "C55D93742C8843355EBAC0F7", "A1A762D8B242BFDAD05A1C90", "F2D9C5698A831BE8B2BD1C76", "93A18D89A77CDA3C1988101C" );
+            "sourceTree" = "<group>";
+        };
+        "A30BDBB35CA05723D5F6C349" = {
+            "isa" = "XCBuildConfiguration";
+            "name" = "Debug";
+            "buildSettings" = {
+                "SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+                "ONLY_ACTIVE_ARCH" = "YES";
+                "ENABLE_TESTABILITY" = "YES";
+                "SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+            };
+            "baseConfigurationReference" = "79B09D0E90B0F70EA4296C67";
+        };
+        "49452BD1413CEDDD21BFF76A" = {
+            "isa" = "XCBuildConfiguration";
+            "name" = "Release";
+            "buildSettings" = {
+                "SWIFT_OPTIMIZATION_LEVEL" = "-O";
+                "ONLY_ACTIVE_ARCH" = "NO";
+            };
+            "baseConfigurationReference" = "79B09D0E90B0F70EA4296C67";
+        };
+        "7C77E881E8F484E313FD0762" = {
+            "isa" = "XCConfigurationList";
+            "buildConfigurations" = ( "A30BDBB35CA05723D5F6C349", "49452BD1413CEDDD21BFF76A" );
+            "defaultConfigurationIsVisible" = 0;
+            "defaultConfigurationName" = "Release";
+        };
+        "9653983E513AFE6A2A96DF05" = {
+            "isa" = "PBXProject";
+            "attributes" = {
+                "LastUpgradeCheck" = "2700";
+            };
+            "buildConfigurationList" = "7C77E881E8F484E313FD0762";
+            "compatibilityVersion" = "Xcode 14.0";
+            "developmentRegion" = "de";
+            "knownRegions" = ( "de", "en", "Base" );
+            "mainGroup" = "566E7307F4F150F44F430C7A";
+            "productRefGroup" = "93A18D89A77CDA3C1988101C";
+            "projectDirPath" = "";
+            "projectRoot" = "";
+            "targets" = ( "1451534EEE19E8647C5CE4FD", "F3B927B90A3735575961A482" );
+        };
+    };
+    "rootObject" = "9653983E513AFE6A2A96DF05";
+}
