@@ -4,15 +4,15 @@ Native macOS-Tools für Fenstermarkierung, Videohintergründe, Dock-Vorschauen u
 
 ## Downloads
 
-Die aktuellen **Preview-3-Pakete** sind mit Developer ID signiert und von Apple notarisiert. DMG und ZIP enthalten dieselbe Universal-App für Apple Silicon und Intel, die MIT-Lizenz und Installationshinweise. Prüfsummen stehen jeweils im Release.
+Die aktuellen **Preview-4-Pakete** sind mit Developer ID signiert und von Apple notarisiert. DMG und ZIP enthalten dieselbe Universal-App für Apple Silicon und Intel, die MIT-Lizenz und Installationshinweise. Prüfsummen stehen jeweils im Release.
 
 | App | Wofür? | Mindestversion | Download |
 |---|---|---|---|
-| **FocusFrame** | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 | [FocusFrame 0.9.0 Preview 3](https://github.com/dariuscorvus/macfitkit/releases/tag/focusframe-v0.9.0-preview.3) |
-| **LiveDesktop** | Lokale Videos als Hintergrund, Favoriten und Wechsellisten | macOS 26 | [LiveDesktop 0.4.0 Preview 3](https://github.com/dariuscorvus/macfitkit/releases/tag/livedesktop-v0.4.0-preview.3) |
-| **DockPreview** | Beim Dock-Hover Fenstervorschauen anzeigen und Fenster auswählen | macOS 14 | [DockPreview 0.2.0 Preview 3](https://github.com/dariuscorvus/macfitkit/releases/tag/dockpreview-v0.2.0-preview.3) |
-| **UniversalPiP** | Ein ausgewähltes Fenster als skalierbare Live-Vorschau im Vordergrund behalten | macOS 14 | [UniversalPiP 0.1.0 Preview 3](https://github.com/dariuscorvus/macfitkit/releases/tag/universalpip-v0.1.0-preview.3) |
-| **MacFitKit** (optional) | Die installierten Tools gemeinsam starten, pausieren und öffnen | macOS 14 | [MacFitKit 0.1.0 Preview 3](https://github.com/dariuscorvus/macfitkit/releases/tag/macfitkit-v0.1.0-preview.3) |
+| **FocusFrame** | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 | [FocusFrame 0.9.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/focusframe-v0.9.0-preview.4) |
+| **LiveDesktop** | Lokale Videos als Hintergrund, Favoriten und Wechsellisten | macOS 26 | [LiveDesktop 0.4.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/livedesktop-v0.4.0-preview.4) |
+| **DockPreview** | Beim Dock-Hover Fenstervorschauen anzeigen und Fenster auswählen | macOS 14 | [DockPreview 0.2.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/dockpreview-v0.2.0-preview.4) |
+| **UniversalPiP** | Ein ausgewähltes Fenster als skalierbare Live-Vorschau im Vordergrund behalten | macOS 14 | [UniversalPiP 0.1.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/universalpip-v0.1.0-preview.4) |
+| **MacFitKit** (optional) | Die installierten Tools gemeinsam starten, pausieren und öffnen | macOS 14 | [MacFitKit 0.1.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/macfitkit-v0.1.0-preview.4) |
 
 [Alle Releases und ältere Versionen](https://github.com/dariuscorvus/macfitkit/releases)
 
@@ -64,7 +64,7 @@ Bitte entferne private Fenstertitel, Dateipfade, Kontodaten und andere persönli
 - Die Apps sind Vorabversionen. Vollständige VoiceOver-, Kontrast- und Tastaturprüfungen aller Ansichten sind noch offen.
 - Intel, ältere unterstützte macOS-Versionen sowie Mehrmonitor-, Spaces-, Vollbild- und Energie-Sonderfälle sind noch nicht vollständig auf echter Hardware geprüft.
 - UniversalPiP hat offene Langzeit-, Speicher- und Latenzprüfungen.
-- FocusFrames Rahmen kann über überlappenden Fenstern sichtbar bleiben. Eine Korrektur ist [im Quellcode umgesetzt und auf dem Mac mini mit überlappenden Fenstern und Kontextmenüs geprüft](docs/focusframe-occlusion-plan.md); die verlinkten Preview-3-Downloads enthalten sie noch nicht.
+- FocusFrame verdeckt Rahmen, Leuchten und Schatten bei davorliegenden Fenstern. Native transparente Menümaterialien können weiterhin weichgezeichnete Effektfarben zeigen; diese systemeigene Transparenz ist beabsichtigt. [Prüfungen und Grenzen](docs/focusframe-occlusion-plan.md).
 
 [Bestätigte Prüfungen und offene Abnahmen](docs/validation-monorepo.md) · [UniversalPiP-Testmatrix](docs/universal-pip.md)
 

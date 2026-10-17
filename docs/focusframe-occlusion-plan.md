@@ -1,6 +1,6 @@
 # FocusFrame: Rahmen bei überlappenden Fenstern
 
-Status: Im Quellcode umgesetzt am 17.10.2026; anschließend Dock-Regression korrigiert und auf dem Mac mini sichtbar geprüft. Die veröffentlichten Preview-3-Pakete enthalten diese Korrektur noch nicht. Der neue Fix wurde nur im gesicherten Testbundle auf dem Mac mini ausgeführt; die regulär installierte FocusFrame-App wurde nicht ersetzt.
+Status: PR #9 und #10 sind in `main` gemergt. Die korrigierte Version wurde am 17.10.2026 regulär installiert und auf diesem Mac sichtbar geprüft; zusätzlich wurde zuvor auf dem Mac mini geprüft. Preview 4 enthält die Korrektur, Preview 3 noch nicht. Die native Menütransparenz ist nach sichtbarer Prüfung ausdrücklich akzeptiert.
 
 ## Umgesetzte Lösung
 
@@ -13,6 +13,16 @@ Die Maske wird ohne implizite Animationen geändert. Vollständige Überdeckung 
 Der begrenzte native Versuch bestätigt, dass ein auf Normal-Level relativ zum fremden Ziel angeordnetes Overlay hinter dessen Floating-Panel bleibt. Das belegt keine allgemein zuverlässige Kopplung an fremde Fenster für alle App-/Space-/Level-Kombinationen; die Produktionslösung kombiniert daher die zusätzliche Verdeckungsmaske für niedrigere/gleiche Ebenen mit der nativen Komposition höherer Ebenen.
 
 Halbtransparente Fenster und abgerundete Ecken auf oder unter der Overlay-Ebene werden konservativ anhand rechteckiger Bounds verdeckt. Höhere Ebenen behalten ihre native Transparenz, etwa das Material eines macOS-Kontextmenüs. Änderungen nicht aktivierender fremder Fenster können bis zum nächsten Abgleich sichtbar werden (nominal ca. 33/100/250 ms je Modus, zuzüglich Systemlast). Das ist keine atomare Kopplung an den WindowServer-Compositor.
+
+## Sichttest der installierten Version und akzeptierte Menütransparenz
+
+Am 17.10.2026 wurde die tatsächlich installierte FocusFrame-App aus `main` (`07f220a`, Universal Release) unter macOS 27.2 auf dem lokalen Hauptbildschirm mit Skalierung 2 geprüft. Temporäre Testfarben unterschieden die orange Rahmenkontur, cyanfarbenes Leuchten und den magentafarbenen Schatten. Echte zusammengesetzte Desktopausschnitte wurden lokal aufgenommen und visuell sowie zusätzlich anhand der Farbwerte geprüft. Die native Fixture blieb dabei Vordergrundziel; die App verwendete ihre bestehenden Bedienungshilfen-Freigaben.
+
+Teilüberdeckung, zwei sich überlappende Abdeckungen, vollständige Überdeckung/Freilegen, ein normales Vordergrundfenster, eine weitgehend transparente höhere Ebene sowie ein eigenes opakes Kontextmenü verdeckten die Effekte korrekt. Geprüfte opake Abdeckungsinnenflächen waren exakt einfarbig. Bei Vollüberdeckung enthielt der Ausschnitt keine der drei Testfarbklassen; nach Freilegen entsprachen deren Pixelanzahlen exakt der Baseline.
+
+Ein natives NSMenu auf Ebene 101 ragte über den rechten Fensterrand. Es verdeckte die scharfe Rahmenkontur; sein transparentes Material zeigte weichgezeichnete Effektfarben von dahinter. Das ist native Komposition und wurde vom Benutzer ausdrücklich als sinnvoll und in Ordnung akzeptiert. Eine zusätzliche vollständig effektfreie/opaque Menüfläche ist daher kein offener Fehler und nicht Teil dieses Fixes.
+
+Anschließend wurden Fixture und Testinstanz beendet, ursprüngliche Konfiguration und Profile bytegleich wiederhergestellt und nach Neustart erneut verglichen. Das installierte Binary blieb unverändert. Die reguläre App lief danach wieder aktiv und mit verwaltetem Symbol im gemeinsamen MacFitKit-Menü. Freigaben und Autostart wurden nicht verändert. Diese konkrete Abnahme ersetzt weiterhin keine Mehrmonitor-, Mindestversions-, Spaces-/Vollbild- oder Langzeitprüfung.
 
 ## Dock-Korrektur und sichtbare Mac-mini-Prüfung
 
