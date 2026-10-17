@@ -45,11 +45,35 @@ Die Freigaben werden je App unter **Systemeinstellungen → Datenschutz & Sicher
 
 Starte zusätzlich zu deinen Tools die App **MacFitKit**. Sobald ein Tool verbunden ist, verschwindet dessen eigenes Menüleistensymbol. Im gemeinsamen Menü findest du Status, **Starten**, **Pausieren/Aktivieren**, **Einstellungen** und **Beenden**.
 
-MacFitKit installiert die anderen Tools nicht automatisch. Beendest du nur MacFitKit, laufen die Tools weiter und zeigen wieder ihre eigenen Symbole. Auch nach einem Ausfall des gemeinsamen Menüs kehren die Symbole zurück. Ältere, nicht kompatible Tool-Versionen behalten ihr Symbol und werden als nicht verbunden angezeigt.
+Ab MacFitKit 0.4.4 können die Tools über den Tool-Katalog installiert, aktualisiert und deinstalliert werden (siehe unten). Die oben verlinkten Preview-4-Pakete enthalten diese neue Verwaltung noch nicht. MacFitKit installiert die anderen Tools nicht automatisch. Beendest du nur MacFitKit, laufen die Tools weiter und zeigen wieder ihre eigenen Symbole. Auch nach einem Ausfall des gemeinsamen Menüs kehren die Symbole zurück. Ältere, nicht kompatible Tool-Versionen behalten ihr Symbol und werden als nicht verbunden angezeigt.
 
 Für den Anmeldestart aktiviere **Allgemein → Beim Anmelden starten** in jeder gewünschten App sowie gegebenenfalls in MacFitKit. Nur den Autostart des Menüs einzuschalten aktiviert nicht automatisch den Autostart aller Tools.
 
 Manuelle Aktivierung hebt automatische LiveDesktop-Pausen durch Stromsparmodus, Schlafzustand oder thermische Belastung nicht auf.
+
+## Tool-Verwaltung ab MacFitKit 0.4.4
+
+MacFitKit zeigt alle vier Tools an, auch wenn sie noch nicht installiert sind. „Installieren“ kopiert das mitgelieferte, signaturgeprüfte App-Paket nach `~/Applications`. Danach stehen „Starten“ und die bestehende Steuerung bereit. Die Installation benötigt weder Netzwerkzugriff noch Administratorrechte und startet das Tool nicht automatisch. Vorhandene Apps werden niemals überschrieben. Eine unterbrochene Kopie wird nicht als fertige App veröffentlicht; temporäre Dateien werden bei einem Fehler entfernt. LiveDesktop benötigt weiterhin macOS 26.
+
+`./script/build.sh MacFitKit Release` (bzw. `Debug` oder `all`) baut zuerst alle vier Tools, bündelt sie unter `MacFitKit.app/Contents/Resources/ToolPayloads` und signiert anschließend den Hub erneut. Für die Weitergabe muss dieses vollständige Bundle verwendet werden. Ein einzelner Xcode-Scheme-Build des Hubs erzeugt keine neuen Installationspakete; fehlen diese, zeigt die Oberfläche das an. Die UI-/Menü-Vorschauen deaktivieren Installationen.
+
+## Versionen und Updateprüfung
+
+Der Tool-Katalog zeigt für jedes Tool die frisch aus `Info.plist` gelesene installierte Version samt Buildnummer und die Version im mitgelieferten Installationspaket. „Nach Updates suchen“ fragt zusätzlich die öffentlichen GitHub-Releases von `dariuscorvus/macfitkit` ab und validiert `Release-info.json` gegen App-Namen und Bundle-ID. Vorabversionen sind als solche gekennzeichnet; für den Vergleich zählen die tatsächlichen Bundle-Versions- und Buildnummern statt des Release-Tags. Eine höhere Paket- oder Onlineversion wird als verfügbares Update angezeigt. „Release öffnen“ führt zur passenden Veröffentlichung. Diese Prüfung lädt oder ersetzt keine Apps automatisch. Bei einer neueren mitgelieferten Version oder einem Release mit prüfbarem ZIP zeigt MacFitKit „Update installieren“ an. Bei fehlenden Versionsdaten oder Netzwerkfehlern bleibt die Unsicherheit sichtbar.
+
+
+## Updates direkt installieren
+
+„Update installieren“ verwendet das neueste passende Paket aus MacFitKit oder dem geprüften GitHub-Release. Onlinepakete werden mit der SHA-256-Prüfsumme aus dem Release-Manifest, App-Identität, Versions-/Buildnummer, Mindestbetriebssystem und Codesignatur geprüft. Der Herausgeber muss zur bisherigen App bzw. zu MacFitKit passen. Archive mit unsicheren Pfaden oder nicht unterstützten Verknüpfungen werden abgelehnt.
+
+Nach der Vorbereitung beendet MacFitKit ein laufendes Tool regulär; antwortet es nicht, findet kein Austausch statt. Die vorherige App wird samt exportierten Einstellungen unter `~/Library/Application Support/MacFitKit/Backups/<Tool>-<Version>-build<Build>-<UUID>/` gesichert. Das ZIP-Backup wird vor dem Austausch entpackt und anhand sämtlicher Datei-Prüfsummen und Verknüpfungsziele mit dem Original verglichen. `Update.json` dokumentiert Versionen, Installationspfad und Datum. Scheitert die abschließende Prüfung, wird das Original wieder eingesetzt. Ein zuvor laufendes Tool wird anschließend neu gestartet. Es gibt keine automatischen Downgrades oder Aktualisierungen ohne Betätigung der Update-Schaltfläche.
+
+
+## Deinstallieren
+
+Als installiert gelten App-Kopien in `~/Applications` und `/Applications` sowie tatsächlich laufende Apps. Build-Produkte und entpackte Backups aus der Launch-Services-Datenbank werden nicht als Installation übernommen.
+
+„Deinstallieren …“ zeigt vor dem Ausführen die gefundenen App-Kopien und fragt nach Bestätigung. MacFitKit berücksichtigt die passenden Kopien in `~/Applications`, `/Applications` sowie die aktuell verwendete Kopie. Erst nach regulärem Beenden und vollständiger Prüfung aller ZIP-Backups werden die Apps in den Papierkorb verschoben. Einstellungen und Anwendungsdaten bleiben erhalten; exportierte Einstellungen und `Uninstall.json` liegen zusätzlich im Backupordner. Bei einem Fehler werden bereits verschobene Kopien nach Möglichkeit wieder eingesetzt. Eine Deinstallation wird nicht durch die Einrichtung dieser Funktion ausgelöst.
 
 ## Probleme und Wünsche
 

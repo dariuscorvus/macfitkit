@@ -31,7 +31,9 @@ import MacFitKitPlatform
         }
         panel.onFocusSource = { [weak self] in self?.focusOriginal() }
         panel.onChooseSource = { [weak self] in self?.focusTask?.cancel(); self?.showSettings?() }
-        panel.onClose = { [weak self] in self?.focusTask?.cancel(); self?.session.stop() }
+        panel.onClose = { [weak self] in
+            self?.focusTask?.cancel(); self?.session.stop(); self?.showSettings?()
+        }
         panel.onResize = { [weak session] size, scale in session?.updateTarget(size: size, scale: scale) }
     }
     func refresh() {
@@ -76,6 +78,10 @@ import MacFitKitPlatform
         if session.source != nil { session.resume() } else { showSettings?() }
     }
     func close() { focusTask?.cancel(); session.stop(); panel.close() }
+    func prepareForTermination() {
+        listing?.cancel(); listGeneration += 1; loading = false
+        close()
+    }
     func requestFocusPermission() { guard !isPreview else { return }; PrivacyAccess.requestAccessibility() }
     func focusOriginal() {
         guard !isPreview, let selected = session.source else { return }

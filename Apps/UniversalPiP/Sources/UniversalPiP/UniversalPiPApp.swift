@@ -1,4 +1,5 @@
 import AppKit
+import OSLog
 import SwiftUI
 import UniversalPiP
 import MacFitKitCore
@@ -92,7 +93,7 @@ import MacFitKitUI
         window?.makeKeyAndOrderFront(nil); NSApp.activate()
     }
     func menuNeedsUpdate(_ menu: NSMenu) {
-        menu.removeAllItems()
+        menu.removeAllItems(); menu.autoenablesItems = false
         menu.addItem(NSMenuItem(title: controller.session.state.label, action: nil, keyEquivalent: ""))
         let choose = NSMenuItem(title: "Fenster auswählen …", action: #selector(showSettings), keyEquivalent: ","); choose.target = self; menu.addItem(choose)
         if controller.session.source != nil {
@@ -101,14 +102,18 @@ import MacFitKitUI
             let stop = NSMenuItem(title: "Vorschau schließen", action: #selector(closePiP), keyEquivalent: "w"); stop.target = self; menu.addItem(stop)
         }
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "UniversalPiP beenden", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        let quit = NSMenuItem(title: "UniversalPiP beenden", action: #selector(quitApp), keyEquivalent: "q")
+        quit.target = self; quit.isEnabled = true; menu.addItem(quit)
     }
+    @objc private func quitApp() { NSApp.terminate(nil) }
     @objc private func toggle() { if controller.session.isEnabled { controller.session.pause() } else { controller.resume() } }
     @objc private func closePiP() { controller.close() }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        bridge?.stop(); controller.close()
-        Task { @MainActor in await controller.session.waitForOperations(); NSApp.reply(toApplicationShouldTerminate: true) }
-        return .terminateLater
+        bridge?.stop(); controller.prepareForTermination()
+        // This app has no recordings to flush. The OS releases capture resources on exit;
+        // waiting for ScreenCaptureKit here can leave all quit actions disabled indefinitely.
+        Logger(subsystem: "tech.highbyte.macfitkit.UniversalPiP", category: "lifecycle").info("App termination approved immediately")
+        return .terminateNow
     }
     func applicationWillTerminate(_ notification: Notification) {
         bridge?.stop(); controller.panel.dispose()

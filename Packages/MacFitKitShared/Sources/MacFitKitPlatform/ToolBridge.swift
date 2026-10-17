@@ -112,6 +112,12 @@ public final class ToolBridgeClient {
 
 @MainActor
 public enum ToolLocator {
+    static func existingApplication(_ url: URL, tool: ToolID) -> Bool {
+        FileManager.default.fileExists(atPath: url.path) &&
+        !url.path.contains("/.Trash/") && !url.path.contains("/.Trashes/") &&
+        !url.path.contains("/Contents/Resources/ToolPayloads/") &&
+        Bundle(url: url)?.bundleIdentifier == tool.bundleIdentifier
+    }
     public static func running(_ tool: ToolID) -> NSRunningApplication? {
         NSRunningApplication.runningApplications(withBundleIdentifier: tool.bundleIdentifier).first { !$0.isTerminated }
     }
@@ -120,10 +126,10 @@ public enum ToolLocator {
         let roots = [FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications"), URL(fileURLWithPath: "/Applications")]
         for root in roots {
             let url = root.appendingPathComponent(tool.name + ".app")
-            if Bundle(url: url)?.bundleIdentifier == tool.bundleIdentifier { return url }
+            if existingApplication(url, tool: tool) { return url }
         }
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: tool.bundleIdentifier),
-              Bundle(url: url)?.bundleIdentifier == tool.bundleIdentifier else { return nil }
-        return url
+        // Launch Services also returns build products and extracted backups. Those are
+        // not installed tools; use the application folders or an actually running app.
+        return nil
     }
 }

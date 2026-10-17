@@ -295,3 +295,34 @@ private let second = WindowSource(id: 2, processID: 10, appName: "UTM", title: "
     #expect(owner.state == .ready); #expect(owner.source == nil)
     #expect(capture.starts == 1); #expect(capture.stops == 1)
 }
+
+@Test @MainActor func closeButtonStaysVisibleAndRespondsWithoutHover() throws {
+    _ = NSApplication.shared
+    let suite = "PiPQuitTests-" + UUID().uuidString
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let panel = PiPPanelController(defaults: defaults)
+    defer { panel.dispose() }
+    var closed = 0
+    panel.onClose = { closed += 1 }
+    panel.show(source: first)
+    let window = try #require(panel.preview.window)
+    func buttons(_ view: NSView) -> [NSButton] {
+        (view as? NSButton).map { [$0] } ?? view.subviews.flatMap(buttons)
+    }
+    let root = try #require(window.contentView)
+    let button = try #require(buttons(root).first { $0.toolTip == "Vorschau schließen" })
+    for state: PiPState in [.starting, .live, .paused, .unavailable, .failed, .ended] {
+        panel.setState(state); panel.preview.onHoverChanged?(false)
+        #expect(!button.isHiddenOrHasHiddenAncestor)
+        #expect(button.acceptsFirstMouse(for: nil))
+        #expect(!button.mouseDownCanMoveWindow)
+    }
+    panel.setPreviewWidth(240)
+    window.contentView?.layoutSubtreeIfNeeded()
+    let center = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: window.contentView)
+    #expect(window.contentView?.hitTest(center) === button)
+    button.performClick(nil)
+    #expect(closed == 1)
+    #expect(!window.isVisible)
+}
