@@ -64,7 +64,7 @@ Bitte entferne private Fenstertitel, Dateipfade, Kontodaten und andere persönli
 - Die Apps sind Vorabversionen. Vollständige VoiceOver-, Kontrast- und Tastaturprüfungen aller Ansichten sind noch offen.
 - Intel, ältere unterstützte macOS-Versionen sowie Mehrmonitor-, Spaces-, Vollbild- und Energie-Sonderfälle sind noch nicht vollständig auf echter Hardware geprüft.
 - UniversalPiP hat offene Langzeit-, Speicher- und Latenzprüfungen.
-- FocusFrames Rahmen kann über überlappenden Fenstern sichtbar bleiben. Eine Korrektur ist [geplant](docs/focusframe-occlusion-plan.md); diese Ausgabe enthält sie noch nicht.
+- FocusFrames Rahmen kann über überlappenden Fenstern sichtbar bleiben. Eine Korrektur ist [im Quellcode umgesetzt](docs/focusframe-occlusion-plan.md); die verlinkten Preview-3-Downloads enthalten sie noch nicht.
 
 [Bestätigte Prüfungen und offene Abnahmen](docs/validation-monorepo.md) · [UniversalPiP-Testmatrix](docs/universal-pip.md)
 

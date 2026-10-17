@@ -59,6 +59,8 @@ struct SettingsWindowTests {
                 check(store.value.appearance.width == 8.25, "Decimal point was not accepted")
                 enter("8")
                 check(overlay.isVisible, "No live settings frame")
+                check((overlay.contentView?.layer?.mask as? CAShapeLayer)?.path?.isEmpty == false,
+                      "Known settings target unexpectedly hidden by occlusion")
                 check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Initial frame mismatch")
                 store.value.appearance.width = 8
                 store.value.appearance.gap = 5
