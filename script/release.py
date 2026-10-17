@@ -198,7 +198,12 @@ neben der App im DMG/ZIP. `LICENSE.txt` liegt außerdem direkt im Release.
 - Installation und Prüfsummen: `Installation.txt`, `Release-info.json`, `SHA256SUMS.txt`.
 
 Die README und GitHub-Formulare helfen bei Einrichtung, Fehlern und Wünschen.
-Die geplante FocusFrame-Korrektur für überdeckte Rahmen ist noch nicht implementiert.
+FocusFrame verdeckt Rahmen, Leuchten und Schatten bei davorliegenden Fenstern.
+Bildschirmgroße transparente Dock-Flächen blenden die Effekte nicht mehr aus.
+Native Kontextmenüs liegen vor den Effekten; ihre systemeigene Materialtransparenz
+kann weiterhin weichgezeichnete Effektfarben zeigen. Dieses Verhalten ist akzeptiert.
+Sichtbare Tests mit überlappenden Fenstern, Freilegen und nativen/eigenen Kontextmenüs
+sind [dokumentiert](https://github.com/{REPO}/blob/{revision}/docs/focusframe-occlusion-plan.md).
 Offene Plattform-/Barrierefreiheits- und UniversalPiP-Langzeitprüfungen bleiben
 [in der Validierungsdokumentation](https://github.com/{REPO}/blob/{revision}/docs/validation-monorepo.md)
 und [PiP-Testmatrix](https://github.com/{REPO}/blob/{revision}/docs/universal-pip.md) dokumentiert.
