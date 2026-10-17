@@ -11,6 +11,11 @@ final class FocusManager: NSObject {
     private var drag: WindowDrag?
     private var lastFocusGeneration: UInt64 = 0
     private var pendingFocusAnimation = false
+    private var occlusionTimer: Timer?
+    private var stackSnapshot: [WindowStackEntry]?
+    private var stackReadAt: TimeInterval = -.infinity
+    private var targetWindowID: UInt32?
+    private var targetGeneration: UInt64?
     private var windowFrame: CGRect?
     weak var settingsWindow: NSWindow? { didSet { refresh() } }
     private var tracksSettings = false
@@ -75,7 +80,7 @@ final class FocusManager: NSObject {
         dragMonitor = nil
         cancelDrag()
         accessibility.stop()
-        overlay.orderOut(nil)
+        hideOverlay()
     }
 
     func refresh() {
@@ -91,7 +96,7 @@ final class FocusManager: NSObject {
             Diagnostics.shared.trackingState = policy
             windowFrame = nil
             accessibility.stop()
-            overlay.orderOut(nil)
+            hideOverlay()
             return
         }
         accessibility.observeFrontmostApplication()
@@ -107,7 +112,7 @@ final class FocusManager: NSObject {
         if windowPolicy != .show {
             Diagnostics.shared.trackingState = windowPolicy
             windowFrame = nil
-            overlay.orderOut(nil)
+            hideOverlay()
         } else {
             showGeometry(geometry)
         }
@@ -134,7 +139,7 @@ final class FocusManager: NSObject {
         guard policy == .show, let settingsWindow else {
             tracksSettings = false
             Diagnostics.shared.trackingState = policy
-            overlay.orderOut(nil)
+            hideOverlay()
             return true
         }
         if !tracksSettings { pendingFocusAnimation = true }
@@ -163,7 +168,7 @@ final class FocusManager: NSObject {
               NSScreen.screens.contains(where: { $0.frame.intersects(rect) }) else {
             Diagnostics.shared.trackingState = .noWindow
             windowFrame = nil
-            overlay.orderOut(nil)
+            hideOverlay()
             return
         }
         windowFrame = rect
@@ -175,6 +180,67 @@ final class FocusManager: NSObject {
         Diagnostics.shared.trackingState = .show
         overlay.show(around: frame, appearance: configuration.renderedAppearance(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled), focusChanged: pendingFocusAnimation)
         pendingFocusAnimation = false
+        updateOcclusion()
+        startOcclusionTracking()
+    }
+
+    private func hideOverlay() {
+        stopOcclusionTracking()
+        overlay.orderOut(nil)
+    }
+
+    private func stopOcclusionTracking() {
+        occlusionTimer?.invalidate(); occlusionTimer = nil
+        stackSnapshot = nil; stackReadAt = -.infinity
+    }
+
+    private func startOcclusionTracking() {
+        guard occlusionTimer == nil else { return }
+        scheduleOcclusionTick()
+    }
+
+    private func scheduleOcclusionTick() {
+        // Interactive: 30 Hz; idle: 10 Hz; Low Power: 4 Hz. No pixel capture.
+        let interval: TimeInterval = ProcessInfo.processInfo.isLowPowerModeEnabled ? 0.25 :
+            (NSEvent.pressedMouseButtons != 0 ? 1.0 / 30.0 : 0.1)
+        let timer = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.occlusionTimer = nil
+                guard self.enabled, self.overlay.isVisible else { return }
+                self.updateOcclusion()
+                self.scheduleOcclusionTick()
+            }
+        }
+        timer.tolerance = interval * 0.1
+        occlusionTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func updateOcclusion() {
+        // Geometry callbacks and pointer prediction can arrive faster than the
+        // timer. Bound WindowServer reads across all callers to 30 Hz.
+        let now = ProcessInfo.processInfo.systemUptime
+        if (now - stackReadAt) >= (ProcessInfo.processInfo.isLowPowerModeEnabled ? 0.25 : 1.0 / 30.0) {
+            stackReadAt = now
+            stackSnapshot = WindowStackSnapshot.read(excluding: overlay.windowNumber)
+        }
+        if !tracksSettings, targetGeneration != accessibility.focusGeneration {
+            targetGeneration = accessibility.focusGeneration
+            targetWindowID = nil
+        }
+        guard let bounds = tracksSettings ? settingsWindow?.frame : windowFrame,
+              let pid = tracksSettings ? ProcessInfo.processInfo.processIdentifier : accessibility.trackedProcessIdentifier,
+              let stack = stackSnapshot,
+              let index = WindowOcclusion.target(in: stack, pid: pid, bounds: bounds,
+                  knownID: tracksSettings ? settingsWindow.map { UInt32($0.windowNumber) } : targetWindowID) else {
+            overlay.setOcclusion(nil)
+            return
+        }
+        if !tracksSettings { targetWindowID = stack[index].id }
+        // All windows above the target count, including same-app sheets and panels.
+        // Bounds conservatively cover translucent surfaces and rounded corners.
+        overlay.setOcclusion(Array(stack[..<index]).map(\.bounds))
     }
 
     private func handleMouse(_ event: NSEvent) {
@@ -218,7 +284,7 @@ final class FocusManager: NSObject {
         if policy != .show {
             Diagnostics.shared.trackingState = policy
             windowFrame = nil
-            overlay.orderOut(nil)
+            hideOverlay()
             return
         }
         showGeometry(accessibility.trackedWindowGeometry())
@@ -240,19 +306,19 @@ final class FocusManager: NSObject {
     @objc private func workspaceChanged(_ notification: Notification) {
         Diagnostics.shared.record("App-/Space-/Systemwechsel")
         cancelDrag()
-        overlay.orderOut(nil)
-        // A single delayed refresh lets a Space transition settle; no recurring timer.
+        hideOverlay()
+        // Let a Space transition settle before restoring tracking.
         scheduleRefresh(delay: notification.name == NSWorkspace.activeSpaceDidChangeNotification ? 0.15 : 0)
     }
 
     @objc private func displayChanged() {
         cancelDrag()
-        overlay.orderOut(nil)
+        hideOverlay()
         scheduleRefresh()
     }
     @objc private func suspend() {
         cancelDrag()
         pendingRefresh?.cancel()
-        overlay.orderOut(nil)
+        hideOverlay()
     }
 }

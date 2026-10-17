@@ -1,6 +1,33 @@
 # FocusFrame: Rahmen bei überlappenden Fenstern
 
-Status: Planung auf Benutzerwunsch, noch keine Änderung der Produktions-Fensterlogik.
+Status: Im Quellcode umgesetzt am 17.10.2026. Die veröffentlichten Preview-3-Pakete enthalten diese Korrektur noch nicht. Installierte Apps wurden nicht ersetzt.
+
+## Umgesetzte Lösung
+
+`FocusManager` ordnet das fokussierte AX-Fenster anhand von Prozess und eindeutiger Geometrie den öffentlichen WindowServer-Metadaten zu. Anschließend bleibt die Fenster-ID für dieselbe AX-Fokusgeneration erhalten, auch während zeitversetzter Move-/Resize-Meldungen. Eigene Einstellungen verwenden direkt ihre öffentliche AppKit-Fensternummer. Mehrdeutige oder fehlende Erstzuordnungen und verschwundene Ziele blenden sämtliche Effektpixel aus.
+
+Alle sichtbaren, nicht vollständig transparenten Fenster vor dem Ziel werden berücksichtigt, unabhängig von App und Fensterlevel. Das eigene Overlay wird ausgeschlossen. Eine Maske am Canvas-Elternlayer begrenzt den vollständigen Renderer einschließlich Rahmen, Leuchten und Schatten. Disjunkte Rechtecksubtraktion bildet die Vereinigung der Abdeckungen ohne doppelte Löcher. Ein Geräte-Pixel Sicherheitsrand vermeidet Effektreste an fractional/antialiasierten Grenzen. Die innere Effektmaske und die Bewegungskompensation bleiben erhalten.
+
+Die Maske wird ohne implizite Animationen geändert. Vollständige Überdeckung macht den Renderer transparent; Layer und Animationsphasen bleiben für das Freilegen erhalten. Pause, Schlaf, Space-Wechsel und fehlendes Ziel stoppen den Metadaten-Timer. Nur bei einem aktiven Ziel läuft der Abgleich: 10 Hz im Leerlauf, 30 Hz bei gedrückter Maustaste, 4 Hz im Stromsparmodus. Zusätzliche Geometrieereignisse teilen sich dieselbe Begrenzung auf maximal 30 bzw. 4 Metadatenabfragen pro Sekunde. Keine Pixelaufnahmen und keine zusätzlichen Freigaben.
+
+Der begrenzte native Versuch bestätigt, dass ein auf Normal-Level relativ zum fremden Ziel angeordnetes Overlay hinter dessen Floating-Panel bleibt. Das belegt keine allgemein zuverlässige Kopplung an fremde Fenster für alle App-/Space-/Level-Kombinationen; die Produktionslösung verwendet daher die vollständige Verdeckungsmaske.
+
+Halbtransparente Fenster und abgerundete Ecken werden konservativ anhand rechteckiger Bounds verdeckt. Änderungen nicht aktivierender fremder Fenster können bis zum nächsten Abgleich sichtbar werden (nominal ca. 33/100/250 ms je Modus, zuzüglich Systemlast). Das ist keine atomare Kopplung an den WindowServer-Compositor.
+
+## Prüfung am 17.10.2026
+
+- 38 Kerntests in sieben Suites bestanden, einschließlich Vereinigung überlappender Abdeckungen, vollständiger Überdeckung/Freilegung, fractional/negativer Koordinaten, eindeutiger Prozesszuordnung und ID-Stabilität während Bewegung.
+- `script/test_occlusion.sh` bestanden: zweiter nativer Prozess mit normalem sowie nicht aktivierendem Floating-Fenster; Verschieben, vollständige Überdeckung und Freilegen. Öffentliche Stapelmetadaten und tatsächliche Bitmap-Pixel des maskierten Renderers geprüft. Die Pixelprüfung verwendet ausschließlich die eigenen Fixture-Abdeckungen, damit private Desktopfenster das Ergebnis nicht beeinflussen; sie ist kein Screenshot fremder Apps. Alle drei Rahmenplatzierungen, doppelte Abdeckungen, kombinierter Rahmen/Glow/Schatten, unveränderte Effektlayer, Klickdurchlässigkeit und unveränderter Vordergrundprozess geprüft.
+- Stichprobe mit 100 Metadatenabfragen: beispielsweise ca. 1,58 ms Mittelwert und 8,93 ms P95 in einem Lauf auf diesem Mac. Das ist die Abfragedauer, keine gemessene Ende-zu-Ende-Reaktionszeit oder langfristige CPU-/Speichermessung.
+- Bestehender nativer Overlay-Test: 792 AppKit-Geometriefälle und neun Renderer-Pixelprüfungen sowie vorhandene Effekt-/Animationsprüfungen bestanden.
+- Xcode Debug und Universal Release (ARM64 + x86_64) bestanden; Projektstruktur und `git diff --check` bestanden. Intel wurde gebaut, nicht auf Intel ausgeführt.
+- Die bestehende Einstellungsfenster-Prüfung konnte ihr Fenster in dieser Sitzung nicht aktivieren (andere Vordergrund-Apps, `Active=false`, `key=nil`). Sie wird nicht als bestanden gewertet. Zusätzlicher Test prüft, dass ein eindeutig erkanntes Einstellungsziel keine leere Verdeckungsmaske erhält.
+
+Offen bleiben sichtbare Abnahme mit tatsächlichen Fremd-Apps/UniversalPiP, Fokuswechseln und Tastenkürzel, mehrere Monitore/Skalierungen, echte Spaces-/Vollbild-/Sleep-Wake-Abläufe, macOS 14, langfristige CPU-/Speichermessung und Ende-zu-Ende-P95. Die automatischen Fixture-Ergebnisse ersetzen diese Abnahme nicht.
+
+Reproduzierbar aus `Apps/FocusFrame`: `script/test.sh`, `script/test_overlay_geometry.sh`, `script/test_occlusion.sh`, `script/test_settings_window.sh`. Die drei nativen Skripte benötigen eine angemeldete Desktop-Sitzung; die Einstellungsprüfung benötigt ein aktivierbares Testfenster.
+
+Die folgenden Abschnitte bewahren den ursprünglichen Plan und seine Abnahmekriterien.
 
 ## Problem und belegter Ausgangspunkt
 
@@ -60,4 +87,4 @@ Zuerst reine Zuordnungs-/Geometrieprüfungen und native getrennte Testprozesse, 
 
 ## Abgrenzung
 
-Kein Umbau der gemeinsamen Einstellungen, keine Profile-Migration, kein neues dauerhaftes Einstellungsformat und keine Änderung installierter Apps im Rahmen dieser Planung. Die Umsetzung folgt erst auf einen entsprechenden Auftrag.
+Kein Umbau der gemeinsamen Einstellungen, keine Profile-Migration, kein neues dauerhaftes Einstellungsformat und keine Änderung installierter Apps im Rahmen dieser Planung. Die Umsetzung wurde anschließend ausdrücklich beauftragt; die Prüfungsergebnisse und verbleibenden Grenzen stehen oben.

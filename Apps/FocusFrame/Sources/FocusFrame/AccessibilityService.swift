@@ -18,6 +18,8 @@ final class AccessibilityService: NSObject {
     private var desktopClassification: Bool?
     private let queryTimeout: Float = 0.05
 
+    var trackedProcessIdentifier: pid_t? { window == nil ? nil : pid }
+
     var isTrusted: Bool { AXIsProcessTrusted() }
 
     func requestPermission() {

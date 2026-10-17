@@ -1,3 +1,10 @@
+# Unveröffentlicht
+
+- Rahmen, Leuchten und Schatten werden gemeinsam an davorliegenden Fenstern ausgeschnitten. Überlappende Abdeckungen erzeugen keine sichtbaren Inseln.
+- Eindeutige Zielzuordnung über Prozess, Geometrie und anschließend stabile öffentliche Fenster-ID; bei unklarer Zuordnung werden Effekte ausgeblendet.
+- Verdeckung wird auch bei nicht aktivierenden Panels begrenzt aktualisiert, ohne Effektanimationen neu aufzubauen. Keine neue Bildschirmaufnahme-Freigabe oder Änderung bestehender Profile.
+- Rechteckige Bounds werden konservativ maskiert; Reaktionszeit und offene Abnahme siehe [Verdeckungsprüfung](../../docs/focusframe-occlusion-plan.md).
+
 # 0.9.0 – 2026-10-11
 
 ## Schatten und Animationen (0.9.0)
