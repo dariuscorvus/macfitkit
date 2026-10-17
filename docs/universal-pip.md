@@ -93,3 +93,8 @@ Vor Installation bestehendes MacFitKit-Bundle und app-eigene Einstellungen siche
 Vier zusätzliche automatisierte Robustheitsprüfungen bestehen: Sleep/Wake startet dieselbe Quelle genau einmal neu und verwirft alte Frames; eine nach Wake fehlende Quelle beziehungsweise ein anderer Prozess mit wiederverwendeter Fenster-ID wird nicht übernommen und nicht endlos neu versucht; Quellgröße und Pixeldichte aktualisieren die proportionale Capture-Ausgabe; manueller Stop während Sleep verhindert Wiederanlauf und späte Callback-Wirkung. Insgesamt bestehen 23 Modulprüfungen.
 
 Dies sind Tests mit austauschbaren Capture-/Quelladaptern. Reales Sleep/Wake, Monitorwechsel und die sichtbare Wiedergabe bei Auflösungswechsel bleiben manuell abzunehmen. Die nächste manuelle Runde (Größenwahl, Titelleiste, synthetische Quelle) konnte nicht abgeschlossen werden: Die native UI-Testverbindung meldete beim Quellauswahlfenster wiederholt „Sky Computer Use native pipe closed before response“, auch nach Neuinitialisierung. Kein bestandener Live-Test wird daraus abgeleitet. Produktivcode und Auslieferungs-ZIPs wurden in dieser Runde nicht verändert.
+
+
+## Vorschau schließen und App beenden (0.1.2)
+
+Das dauerhaft sichtbare X und der native rote Schließen-Knopf schließen nur die Vorschau und stoppen die Aufnahme. UniversalPiP bleibt für eine neue Auswahl verfügbar; das Auswahlfenster öffnet sich wieder. „UniversalPiP beenden“ im Menü oder im Auswahlfenster beendet die gesamte App. Die Menüaktion hat ein explizites Ziel und bleibt aktiviert. Die App bestätigt die Beendigung unmittelbar mit `terminateNow` und wartet nicht auf suspendierte ScreenCaptureKit-Operationen. Es gibt keine Aufnahmedateien zu sichern; macOS gibt Capture-Ressourcen beim Prozessende frei.

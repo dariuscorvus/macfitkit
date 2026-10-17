@@ -67,6 +67,8 @@ struct PiPSettingsView: View {
                 }
             default: AppInfoSection("UniversalPiP")
             }
+            Button("UniversalPiP beenden") { NSApp.terminate(nil) }
+                .keyboardShortcut("q")
             if !controller.message.isEmpty { StatusMessage(controller.message, error: true) }
         }.onAppear { controller.refresh() }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in controller.refresh() }

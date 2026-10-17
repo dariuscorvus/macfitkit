@@ -48,6 +48,11 @@ import QuartzCore
     public func clear() { imageLayer.contents = nil; retainedFrame = nil }
 }
 
+private final class PiPControlButton: NSButton {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override var mouseDownCanMoveWindow: Bool { false }
+}
+
 private final class PiPPanel: NSPanel {
     var onKeyboardHUD: (() -> Void)?
     override var canBecomeKey: Bool { true }
@@ -89,6 +94,7 @@ private final class PiPPanel: NSPanel {
     public var onResize: ((CGSize, CGFloat) -> Void)?
     private let panel: PiPPanel
     private let hud = NSVisualEffectView()
+    private let closeControl = NSVisualEffectView()
     private let grip = ResizeGrip()
     private let overlay = NSTextField(wrappingLabelWithString: PiPState.starting.label)
     private let pause = NSButton()
@@ -128,7 +134,15 @@ private final class PiPPanel: NSPanel {
         let resize = iconButton("arrow.up.left.and.arrow.down.right", label: "Größe der Vorschau ändern", action: #selector(resizeClicked(_:)))
         let options = iconButton("ellipsis", label: "Optionen der Vorschau", action: #selector(optionsClicked(_:)))
         let close = iconButton("xmark", label: "Vorschau schließen", action: #selector(closeClicked))
-        let bar = NSStackView(views: [focus, pause, choose, resize, options, close]); bar.spacing = 4
+        close.keyEquivalent = "w"; close.keyEquivalentModifierMask = .command
+        closeControl.material = .hudWindow; closeControl.blendingMode = .withinWindow; closeControl.state = .active
+        closeControl.wantsLayer = true; closeControl.layer?.cornerRadius = 8
+        close.translatesAutoresizingMaskIntoConstraints = false; closeControl.addSubview(close)
+        NSLayoutConstraint.activate([
+            close.leadingAnchor.constraint(equalTo: closeControl.leadingAnchor), close.trailingAnchor.constraint(equalTo: closeControl.trailingAnchor),
+            close.topAnchor.constraint(equalTo: closeControl.topAnchor), close.bottomAnchor.constraint(equalTo: closeControl.bottomAnchor)
+        ])
+        let bar = NSStackView(views: [focus, pause, choose, resize, options]); bar.spacing = 4
         bar.translatesAutoresizingMaskIntoConstraints = false; hud.addSubview(bar)
         for button in [focus, pause, choose, resize, options, close] {
             button.widthAnchor.constraint(equalToConstant: 28).isActive = true
@@ -145,11 +159,14 @@ private final class PiPPanel: NSPanel {
             self?.trackingResize = active; self?.updateHUD()
             if !active { self?.keepVisible() }
         }
-        [preview, overlay, hud, grip].forEach { $0.translatesAutoresizingMaskIntoConstraints = false; root.addSubview($0) }
+        [preview, overlay, hud, grip, closeControl].forEach { $0.translatesAutoresizingMaskIntoConstraints = false; root.addSubview($0) }
         NSLayoutConstraint.activate([
             preview.leadingAnchor.constraint(equalTo: root.leadingAnchor), preview.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             preview.topAnchor.constraint(equalTo: root.topAnchor), preview.bottomAnchor.constraint(equalTo: root.bottomAnchor),
-            hud.topAnchor.constraint(equalTo: root.topAnchor, constant: 8), hud.centerXAnchor.constraint(equalTo: root.centerXAnchor),
+            hud.topAnchor.constraint(equalTo: root.topAnchor, constant: 8), hud.centerXAnchor.constraint(equalTo: root.centerXAnchor, constant: 8),
+            closeControl.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 8),
+            closeControl.topAnchor.constraint(equalTo: root.topAnchor, constant: 12),
+            closeControl.widthAnchor.constraint(equalToConstant: 28), closeControl.heightAnchor.constraint(equalToConstant: 28),
             overlay.centerYAnchor.constraint(equalTo: root.centerYAnchor), overlay.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 12),
             overlay.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -12),
             grip.widthAnchor.constraint(equalToConstant: 22), grip.heightAnchor.constraint(equalToConstant: 22),
@@ -161,7 +178,7 @@ private final class PiPPanel: NSPanel {
         applyTitleBar(); setState(.starting); setHUDVisible(false)
     }
     private func iconButton(_ symbol: String, label: String, action: Selector) -> NSButton {
-        let button = NSButton(image: NSImage(systemSymbolName: symbol, accessibilityDescription: label) ?? NSImage(size: CGSize(width: 16, height: 16)), target: self, action: action)
+        let button = PiPControlButton(image: NSImage(systemSymbolName: symbol, accessibilityDescription: label) ?? NSImage(size: CGSize(width: 16, height: 16)), target: self, action: action)
         button.imagePosition = .imageOnly; button.bezelStyle = .inline; button.isBordered = false
         button.toolTip = label; button.setAccessibilityLabel(label)
         return button

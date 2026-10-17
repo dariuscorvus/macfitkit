@@ -31,22 +31,37 @@ import MacFitKitPlatform
     }
     func menuNeedsUpdate(_ menu: NSMenu) {
         controller.refresh(); menu.removeAllItems()
-        for tool in controller.available {
+        for tool in controller.catalog {
             let entry = NSMenuItem(title: tool.name, action: nil, keyEquivalent: "")
             entry.image = NSImage(systemSymbolName: tool.symbol, accessibilityDescription: nil)
             let submenu = NSMenu(); submenu.autoenablesItems = false
+            submenu.addItem(NSMenuItem(title: String(("Installiert: " + (controller.installedVersions[tool]?.display ?? "–")).prefix(30)), action: nil, keyEquivalent: ""))
+            submenu.addItem(NSMenuItem(title: String(("Paket: " + (controller.bundledVersions[tool]?.display ?? "–")).prefix(30)), action: nil, keyEquivalent: ""))
+            let update = controller.updateDescription(tool)
+            if !update.isEmpty { submenu.addItem(NSMenuItem(title: String(update.prefix(30)), action: nil, keyEquivalent: "")) }
             submenu.addItem(NSMenuItem(title: String(controller.description(tool).prefix(30)), action: nil, keyEquivalent: ""))
-            if controller.running(tool) == nil {
+            if !controller.installed(tool) {
+                add(controller.installing == tool ? "Wird installiert …" : "Installieren", action: #selector(installTool(_:)), tool: tool, menu: submenu).isEnabled = controller.canInstall(tool)
+            } else if controller.running(tool) == nil {
                 add("Starten", action: #selector(startTool(_:)), tool: tool, menu: submenu).isEnabled = controller.supported(tool)
             } else if let status = controller.bridge.statuses[tool] {
                 add(status.enabled ? "Pausieren" : "Aktivieren", action: #selector(toggleTool(_:)), tool: tool, menu: submenu)
                 add("Einstellungen …", action: #selector(settingsTool(_:)), tool: tool, menu: submenu)
                 add("Beenden", action: #selector(quitTool(_:)), tool: tool, menu: submenu)
             } else { add("Status erneut prüfen", action: #selector(refreshTool(_:)), tool: tool, menu: submenu) }
+            if let version = controller.updateVersion(tool) {
+                submenu.addItem(.separator())
+                add(String(("Update " + version.version + " installieren").prefix(30)), action: #selector(updateTool(_:)), tool: tool, menu: submenu).isEnabled = controller.canUpdate(tool)
+            }
+            if controller.installed(tool) {
+                add("Deinstallieren …", action: #selector(uninstallTool(_:)), tool: tool, menu: submenu).isEnabled = !controller.installationDisabled && controller.installing == nil
+            }
             entry.submenu = submenu; menu.addItem(entry)
         }
-        if controller.available.isEmpty { menu.addItem(NSMenuItem(title: "Keine Tools gefunden", action: nil, keyEquivalent: "")) }
+
         menu.addItem(.separator())
+        let updates = NSMenuItem(title: controller.checkingUpdates ? "Updates werden geprüft …" : "Nach Updates suchen …", action: #selector(checkUpdates), keyEquivalent: "")
+        updates.target = self; updates.isEnabled = !controller.checkingUpdates && !controller.installationDisabled; menu.addItem(updates)
         let settings = NSMenuItem(title: "MacFitKit öffnen …", action: #selector(showSettings), keyEquivalent: ","); settings.target = self; menu.addItem(settings)
         let quit = NSMenuItem(title: "MacFitKit beenden", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"); menu.addItem(quit)
     }
@@ -55,6 +70,13 @@ import MacFitKitPlatform
         menu.addItem(item); return item
     }
     private func tool(_ sender: NSMenuItem) -> ToolID? { (sender.representedObject as? String).flatMap(ToolID.init(rawValue:)) }
+    @objc private func checkUpdates() { showSettings(); controller.checkForUpdates() }
+    @objc private func uninstallTool(_ sender: NSMenuItem) { showSettings(); if let id = tool(sender) { controller.requestUninstall(id) } }
+    @objc private func updateTool(_ sender: NSMenuItem) { showSettings(); if let id = tool(sender) { controller.update(id) } }
+    @objc private func installTool(_ sender: NSMenuItem) {
+        showSettings()
+        if let id = tool(sender) { controller.install(id) }
+    }
     @objc private func startTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.start(id) } }
     @objc private func toggleTool(_ sender: NSMenuItem) { if let id = tool(sender), let status = controller.bridge.statuses[id] { controller.bridge.send(.setEnabled(!status.enabled), to: id) } }
     @objc private func settingsTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.bridge.send(.openSettings, to: id) } }
