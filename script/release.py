@@ -85,11 +85,17 @@ def verify_app(app, name, license_bytes, metadata, logs):
     signature = command(['codesign', '-d', '--verbose=4', app], logs)
     assert 'Authority=Developer ID Application:' in signature.stderr and '(runtime)' in signature.stderr
     command(['xcrun', 'stapler', 'validate', app], logs)
+    if name == 'MacFitKit':
+        nested = metadata.get('bundledTools', [])
+        assert {item['app'] for item in nested} == set(APPS) - {'MacFitKit'}
+        for item in nested:
+            verify_app(app / 'Contents/Resources/ToolPayloads' / (item['app'] + '.app'),
+                       item['app'], license_bytes, item, logs)
     gate = command(['spctl', '--assess', '--type', 'execute', '--verbose=4', app], logs)
     assert 'source=Notarized Developer ID' in gate.stderr
 
 
-def package(name, args, output, build_dir, identity, revision, license_bytes):
+def package(name, args, output, build_dir, identity, revision, license_bytes, tool_metadata=None):
     folder = output / name
     folder.mkdir()
     logs = folder / '.logs'
@@ -111,6 +117,24 @@ def package(name, args, output, build_dir, identity, revision, license_bytes):
         resources.mkdir(exist_ok=True)
         (resources / 'LICENSE').write_bytes(license_bytes)
         (resources / 'SourceRevision.txt').write_text(revision + '\n')
+        if name == 'MacFitKit':
+            assert tool_metadata and {item['app'] for item in tool_metadata} == set(APPS) - {'MacFitKit'}
+            payloads = resources / 'ToolPayloads'
+            # Embed the finalized, stapled packages, not the raw Xcode build products.
+            if payloads.exists():
+                shutil.rmtree(payloads)
+            payloads.mkdir()
+            for item in tool_metadata:
+                archive = next(output / item['app'] / file for file in item['files'] if file.endswith('.zip'))
+                assert digest(archive) == item['files'][archive.name]
+                extracted_tool = temp / ('payload-' + item['app'])
+                command(['ditto', '-x', '-k', archive, extracted_tool], logs)
+                source_tool = extracted_tool / (item['app'] + '.app')
+                verify_app(source_tool, item['app'], license_bytes, item, logs)
+                embedded = payloads / source_tool.name
+                command(['ditto', source_tool, embedded], logs)
+                verify_app(embedded, item['app'], license_bytes, item, logs)
+            metadata['bundledTools'] = tool_metadata
         (zip_root / 'LICENSE').write_bytes(license_bytes)
         (folder / 'LICENSE.txt').write_bytes(license_bytes)
         installation = f"""{name} {metadata['version']} – Preview {args.preview}
@@ -123,6 +147,12 @@ Installation: Die App nach Programme oder in den eigenen Programme-Ordner kopier
 Update: Vorhandene App und Einstellungen sichern, die App beenden und am bisherigen
 Ort ersetzen. Keine zweite Kopie installieren. Ein Wechsel der lokalen Signatur
 kann eine erneute Freigabe durch macOS erfordern. Gatekeeper nicht global abschalten.
+
+Ab MacFitKit 0.4.4 können alle vier Tools im Tool-Katalog installiert, aktualisiert
+und deinstalliert werden. Updates und Deinstallationen sichern die alte App samt
+exportierten Einstellungen; vorhandene Daten bleiben erhalten. Die Wiederherstellung
+aus einem Backup ist derzeit manuell. Die App-Versionen entscheiden über Updates,
+nicht die Preview-Nummer; gleich versionierte Tools werden nicht erneut angeboten.
 
 Die Apps sind über ihre Menüleistensymbole erreichbar. MacFitKit ist optional;
 die anderen Tools bleiben eigenständig nutzbar. Autostart wird je App unter
@@ -197,6 +227,16 @@ neben der App im DMG/ZIP. `LICENSE.txt` liegt außerdem direkt im Release.
 - Herkunft: [`{revision[:12]}`](https://github.com/{REPO}/commit/{revision}).
 - Installation und Prüfsummen: `Installation.txt`, `Release-info.json`, `SHA256SUMS.txt`.
 
+Neu in Preview 5:
+- MacFitKit 0.4.4 (Build 8): alle vier Tools direkt installieren, Versionen anzeigen,
+  Releases prüfen, Updates mit geprüftem Backup installieren und Apps deinstallieren.
+- Der Hub enthält dieselben fertig notarisierten Tools wie die Einzelpakete.
+- UniversalPiP 0.1.2 (Build 3): dauerhaftes X zum Schließen der Vorschau;
+  die App bleibt zur Fensterauswahl geöffnet. Explizites Beenden hängt nicht mehr.
+- FocusFrame 0.9.0 (Build 9), LiveDesktop 0.4.0 (Build 5) und DockPreview 0.2.0
+  (Build 2) behalten ihre bisherigen Bundle-Versionen. Eine neue Preview-Nummer
+  allein löst kein Update aus. MacFitKit selbst wird über seinen Download aktualisiert.
+
 Die README und GitHub-Formulare helfen bei Einrichtung, Fehlern und Wünschen.
 FocusFrame verdeckt Rahmen, Leuchten und Schatten bei davorliegenden Fenstern.
 Bildschirmgroße transparente Dock-Flächen blenden die Effekte nicht mehr aus.
@@ -263,13 +303,19 @@ if __name__ == '__main__':
     output.mkdir(parents=True, mode=0o700, exist_ok=False)
     env = dict(os.environ, MACFITKIT_SIGNING_IDENTITY=identity, MACFITKIT_BUILD_DIR=str(ARGS.build_dir.resolve()))
     command(['bash', ROOT / 'script/build.sh', ARGS.app, 'Release'], output / '.logs', env)
-    names = list(APPS) if ARGS.app == 'all' else [ARGS.app]
+    names = list(APPS) if ARGS.app in ['all', 'MacFitKit'] else [ARGS.app]
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
-        metadata = list(pool.map(lambda name: package(name, ARGS, output, ARGS.build_dir.resolve(), identity, revision, license_bytes), names))
+        metadata = list(pool.map(lambda name: package(name, ARGS, output, ARGS.build_dir.resolve(), identity, revision, license_bytes),
+                                 [name for name in names if name != 'MacFitKit']))
+    if 'MacFitKit' in names:
+        metadata.append(package('MacFitKit', ARGS, output, ARGS.build_dir.resolve(), identity, revision, license_bytes,
+                                tool_metadata=list(metadata)))
     (output / 'manifest.json').write_text(json.dumps(metadata, indent=2))
     if ARGS.publish:
         published = []
         for item in metadata:
+            if ARGS.app != 'all' and item['app'] != ARGS.app:
+                continue
             published.append(publish(item, output))
             (output / 'published.json').write_text(json.dumps(published, indent=2))
     print('Release output: ' + str(output), flush=True)

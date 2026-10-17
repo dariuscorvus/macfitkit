@@ -3,7 +3,7 @@
 `script/release.py` baut Apps aus einem sauberen Git-Stand und erstellt signierte, Apple-notarisierte Universal-Pakete. Benötigt werden Xcode, ein gültiges Developer-ID-Application-Zertifikat und ein zuvor eingerichtetes notarytool-Schlüsselbundprofil. Für `--publish` zusätzlich die authentifizierte GitHub CLI.
 
 ```sh
-python3 script/release.py all --preview 4 --notary-profile DEIN_PROFIL
+python3 script/release.py all --preview 5 --notary-profile DEIN_PROFIL
 ```
 
 Optional `--publish` anhängen, um nach erfolgreicher Prüfung GitHub-Vorab-Releases anzulegen. Einzelne Apps sind ebenfalls auswählbar. Die Ausgabe liegt standardmäßig im Benutzer-Cache; `--output` wählt einen neuen, noch nicht vorhandenen Ordner. `--build-dir` und `--signing-identity` überschreiben die Build-/Signaturvorgaben.
@@ -21,3 +21,5 @@ Vor einer Veröffentlichung werden die tatsächlichen DMG- und ZIP-Dateien geöf
 Eine neue Preview-Nummer erzeugt neue Tags und Dateien. Ältere Ausgaben bleiben unverändert, damit bestehende Prüfsummen und Notarisierungsnachweise nachvollziehbar bleiben. Die Preview-3-Ausgabe ergänzt gegenüber Preview 2 die MIT-Texte in den Paketen; die geplante FocusFrame-Verdeckungskorrektur ist darin noch nicht implementiert.
 
 Preview 4 enthält die FocusFrame-Verdeckungskorrektur einschließlich Dock-Regression aus PR #9/#10 und die sichtbare Abnahme der installierten Version. Die übrigen Apps bleiben funktional unverändert und werden aus demselben Collection-Stand erneut paketiert. Die transparente Darstellung nativer Kontextmenüs ist akzeptiert; bestehende offene Plattform- und Langzeitprüfungen bleiben dokumentiert.
+
+Preview 5 veröffentlicht MacFitKit 0.4.4 (Build 8) und UniversalPiP 0.1.2 (Build 3). Die anderen Tool-Versionen bleiben unverändert. Vor der Paketierung des Hubs werden alle vier Einzelpakete fertig signiert, notarisiert und angeheftet. Der Hub übernimmt diese geprüften Apps; seine Prüfungen aus DMG und ZIP umfassen auch die eingebetteten Tools und deren Versionen, Architekturen, Lizenztexte, Binärprüfsummen, Signaturen und Tickets. `Release-info.json` dokumentiert sie unter `bundledTools`. Gleich versionierte neue Preview-Pakete werden nicht als Update angeboten.

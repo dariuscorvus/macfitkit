@@ -4,15 +4,15 @@ Native macOS-Tools für Fenstermarkierung, Videohintergründe, Dock-Vorschauen u
 
 ## Downloads
 
-Die aktuellen **Preview-4-Pakete** sind mit Developer ID signiert und von Apple notarisiert. DMG und ZIP enthalten dieselbe Universal-App für Apple Silicon und Intel, die MIT-Lizenz und Installationshinweise. Prüfsummen stehen jeweils im Release.
+Die aktuellen **Preview-5-Pakete** sind mit Developer ID signiert und von Apple notarisiert. DMG und ZIP enthalten dieselbe Universal-App für Apple Silicon und Intel, die MIT-Lizenz und Installationshinweise. Prüfsummen stehen jeweils im Release.
 
 | App | Wofür? | Mindestversion | Download |
 |---|---|---|---|
-| **FocusFrame** | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 | [FocusFrame 0.9.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/focusframe-v0.9.0-preview.4) |
-| **LiveDesktop** | Lokale Videos als Hintergrund, Favoriten und Wechsellisten | macOS 26 | [LiveDesktop 0.4.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/livedesktop-v0.4.0-preview.4) |
-| **DockPreview** | Beim Dock-Hover Fenstervorschauen anzeigen und Fenster auswählen | macOS 14 | [DockPreview 0.2.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/dockpreview-v0.2.0-preview.4) |
-| **UniversalPiP** | Ein ausgewähltes Fenster als skalierbare Live-Vorschau im Vordergrund behalten | macOS 14 | [UniversalPiP 0.1.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/universalpip-v0.1.0-preview.4) |
-| **MacFitKit** (optional) | Die installierten Tools gemeinsam starten, pausieren und öffnen | macOS 14 | [MacFitKit 0.1.0 Preview 4](https://github.com/dariuscorvus/macfitkit/releases/tag/macfitkit-v0.1.0-preview.4) |
+| **FocusFrame** | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 | [FocusFrame 0.9.0 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/focusframe-v0.9.0-preview.5) |
+| **LiveDesktop** | Lokale Videos als Hintergrund, Favoriten und Wechsellisten | macOS 26 | [LiveDesktop 0.4.0 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/livedesktop-v0.4.0-preview.5) |
+| **DockPreview** | Beim Dock-Hover Fenstervorschauen anzeigen und Fenster auswählen | macOS 14 | [DockPreview 0.2.0 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/dockpreview-v0.2.0-preview.5) |
+| **UniversalPiP** | Ein ausgewähltes Fenster als skalierbare Live-Vorschau im Vordergrund behalten | macOS 14 | [UniversalPiP 0.1.2 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/universalpip-v0.1.2-preview.5) |
+| **MacFitKit** (optional) | Tools installieren, aktualisieren, deinstallieren und steuern | macOS 14 | [MacFitKit 0.4.4 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/macfitkit-v0.4.4-preview.5) |
 
 [Alle Releases und ältere Versionen](https://github.com/dariuscorvus/macfitkit/releases)
 
@@ -37,7 +37,7 @@ Die Downloads sind notarisiert; Gatekeeper muss dafür nicht global abgeschaltet
 | LiveDesktop | In **Hintergründe** ein vorhandenes Video wählen oder eigene Videos hinzufügen. Die App benötigt Dateizugriff auf die verwendeten Videos und Ordner. |
 | DockPreview | Bedienungshilfen für Erkennung/Fensterwahl und Bildschirmaufnahme für Miniaturen freigeben. Danach den Zeiger über ein App-Symbol im Dock bewegen. |
 | UniversalPiP | Bildschirmaufnahme freigeben und ein Fenster aus der Auswahlliste wählen. Bedienungshilfen werden zusätzlich für die optionale Aktivierung des Originalfensters benötigt. |
-| MacFitKit | Die gewünschten Tools separat installieren. Das gemeinsame Menü benötigt selbst keine Bildschirmaufnahme- oder Bedienungshilfen-Freigabe. |
+| MacFitKit | Die gewünschten Tools direkt im Tool-Katalog installieren oder die Einzelpakete verwenden. Das gemeinsame Menü benötigt selbst keine Bildschirmaufnahme- oder Bedienungshilfen-Freigabe. |
 
 Die Freigaben werden je App unter **Systemeinstellungen → Datenschutz & Sicherheit** erteilt. Je nach macOS-Version heißt die Aufnahmefreigabe **Bildschirmaufnahme** oder **Bildschirm- & Systemaudioaufnahme**. Folge einem von macOS verlangten App-Neustart. Freigaben werden beim Update nicht automatisch zurückgesetzt.
 
@@ -45,7 +45,7 @@ Die Freigaben werden je App unter **Systemeinstellungen → Datenschutz & Sicher
 
 Starte zusätzlich zu deinen Tools die App **MacFitKit**. Sobald ein Tool verbunden ist, verschwindet dessen eigenes Menüleistensymbol. Im gemeinsamen Menü findest du Status, **Starten**, **Pausieren/Aktivieren**, **Einstellungen** und **Beenden**.
 
-Ab MacFitKit 0.4.4 können die Tools über den Tool-Katalog installiert, aktualisiert und deinstalliert werden (siehe unten). Die oben verlinkten Preview-4-Pakete enthalten diese neue Verwaltung noch nicht. MacFitKit installiert die anderen Tools nicht automatisch. Beendest du nur MacFitKit, laufen die Tools weiter und zeigen wieder ihre eigenen Symbole. Auch nach einem Ausfall des gemeinsamen Menüs kehren die Symbole zurück. Ältere, nicht kompatible Tool-Versionen behalten ihr Symbol und werden als nicht verbunden angezeigt.
+Ab MacFitKit 0.4.4 können die Tools über den Tool-Katalog installiert, aktualisiert und deinstalliert werden (siehe unten). MacFitKit installiert die anderen Tools nicht automatisch. Beendest du nur MacFitKit, laufen die Tools weiter und zeigen wieder ihre eigenen Symbole. Auch nach einem Ausfall des gemeinsamen Menüs kehren die Symbole zurück. Ältere, nicht kompatible Tool-Versionen behalten ihr Symbol und werden als nicht verbunden angezeigt.
 
 Für den Anmeldestart aktiviere **Allgemein → Beim Anmelden starten** in jeder gewünschten App sowie gegebenenfalls in MacFitKit. Nur den Autostart des Menüs einzuschalten aktiviert nicht automatisch den Autostart aller Tools.
 
@@ -68,6 +68,8 @@ Der Tool-Katalog zeigt für jedes Tool die frisch aus `Info.plist` gelesene inst
 
 Nach der Vorbereitung beendet MacFitKit ein laufendes Tool regulär; antwortet es nicht, findet kein Austausch statt. Die vorherige App wird samt exportierten Einstellungen unter `~/Library/Application Support/MacFitKit/Backups/<Tool>-<Version>-build<Build>-<UUID>/` gesichert. Das ZIP-Backup wird vor dem Austausch entpackt und anhand sämtlicher Datei-Prüfsummen und Verknüpfungsziele mit dem Original verglichen. `Update.json` dokumentiert Versionen, Installationspfad und Datum. Scheitert die abschließende Prüfung, wird das Original wieder eingesetzt. Ein zuvor laufendes Tool wird anschließend neu gestartet. Es gibt keine automatischen Downgrades oder Aktualisierungen ohne Betätigung der Update-Schaltfläche.
 
+
+Die Wiederherstellung aus ZIP-Backup und `Settings.plist` ist derzeit manuell; eine Wiederherstellen-Schaltfläche gibt es noch nicht. MacFitKit selbst wird über seinen eigenen Download aktualisiert.
 
 ## Deinstallieren
 
@@ -126,7 +128,7 @@ Die Menükommunikation verwendet feste, versionierte Befehle über `DistributedN
 Notarisierte Pakete mit eingebettetem MIT-Lizenztext erzeugen:
 
 ```sh
-python3 script/release.py all --preview 3 --notary-profile DEIN_PROFIL
+python3 script/release.py all --preview 5 --notary-profile DEIN_PROFIL
 ```
 
 Mit `--publish` werden erst nach bestandener Paketprüfung GitHub-Vorab-Releases angelegt. Vorhandene Tags und Downloads werden nicht überschrieben. Der Vorgang installiert keine Apps. Das Profil muss zuvor mit `notarytool store-credentials` im lokalen Schlüsselbund eingerichtet sein; Zugangsdaten gehören nicht ins Repository.
