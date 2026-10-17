@@ -100,11 +100,12 @@ enum WindowStackSnapshot {
         for row in rows {
             guard let id = row[kCGWindowNumber as String] as? UInt32, id != UInt32(overlayID),
                   let pid = row[kCGWindowOwnerPID as String] as? Int32,
+                  let layer = row[kCGWindowLayer as String] as? Int,
                   let alpha = row[kCGWindowAlpha as String] as? Double, alpha > 0,
                   let dict = row[kCGWindowBounds as String] as? [String: Any],
                   let bounds = CGRect(dictionaryRepresentation: dict as CFDictionary),
                   let rect = WindowGeometry.appKitRect(position: bounds.origin, size: bounds.size, mainDisplayTop: top) else { continue }
-            result.append(WindowStackEntry(id: id, pid: pid, bounds: rect))
+            result.append(WindowStackEntry(id: id, pid: pid, bounds: rect, layer: layer))
         }
         return result
     }

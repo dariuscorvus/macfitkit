@@ -77,3 +77,40 @@ struct WindowOcclusionTests {
         #expect(WindowOcclusion.target(in: stack, pid: 34, bounds: area.offsetBy(dx: 3, dy: 0)) == nil)
     }
 }
+
+
+struct CompositorOcclusionTests {
+    @Test func screenSizedDockDoesNotEraseVisibleBaseline() {
+        let screen = CGRect(x: 0, y: 0, width: 1920, height: 1080)
+        let target = CGRect(x: 180, y: 220, width: 700, height: 532)
+        let stack = [WindowStackEntry(id: 7, pid: 100, bounds: screen, layer: 20),
+                     WindowStackEntry(id: 10, pid: 200, bounds: target)]
+        let index = WindowOcclusion.target(in: stack, pid: 200, bounds: target)!
+        let covers = WindowOcclusion.maskingBounds(in: stack, before: index, overlayLayer: 3)
+        #expect(WindowOcclusion.visibleRegions(in: target, coveredBy: covers) == [target])
+    }
+
+    @Test func normalAndFloatingOccludersStillMaskButBehindWindowsDoNot() {
+        let target = CGRect(x: -500, y: 100, width: 700, height: 532)
+        let left = CGRect(x: -500, y: 100, width: 100, height: 532)
+        let right = CGRect(x: 100, y: 100, width: 100, height: 532)
+        let stack = [WindowStackEntry(id: 1, pid: 1, bounds: target, layer: 20),
+                     WindowStackEntry(id: 2, pid: 2, bounds: left, layer: 0),
+                     WindowStackEntry(id: 3, pid: 3, bounds: right, layer: 3),
+                     WindowStackEntry(id: 4, pid: 4, bounds: target),
+                     WindowStackEntry(id: 5, pid: 5, bounds: target)]
+        let covers = WindowOcclusion.maskingBounds(in: stack, before: 3, overlayLayer: 3)
+        #expect(covers == [left, right])
+        #expect(WindowOcclusion.visibleRegions(in: target, coveredBy: covers) ==
+                [CGRect(x: -400, y: 100, width: 500, height: 532)])
+    }
+
+    @Test func higherLayerTargetsRemainResolvableAndPolicyFollowsOverlayLevel() {
+        let rect = CGRect(x: 10, y: 10, width: 300, height: 200)
+        let stack = [WindowStackEntry(id: 1, pid: 1, bounds: rect, layer: 24),
+                     WindowStackEntry(id: 2, pid: 2, bounds: rect, layer: 20)]
+        #expect(WindowOcclusion.target(in: stack, pid: 2, bounds: rect) == 1)
+        #expect(WindowOcclusion.maskingBounds(in: stack, before: 1, overlayLayer: 3).isEmpty)
+        #expect(WindowOcclusion.maskingBounds(in: stack, before: 1, overlayLayer: 24) == [rect])
+    }
+}

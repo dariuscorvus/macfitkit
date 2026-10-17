@@ -23,8 +23,9 @@ public struct WindowStackEntry: Sendable {
     public var id: UInt32
     public var pid: Int32
     public var bounds: CGRect
-    public init(id: UInt32, pid: Int32, bounds: CGRect) {
-        self.id = id; self.pid = pid; self.bounds = bounds
+    public var layer: Int
+    public init(id: UInt32, pid: Int32, bounds: CGRect, layer: Int = 0) {
+        self.id = id; self.pid = pid; self.bounds = bounds; self.layer = layer
     }
 }
 
@@ -42,6 +43,16 @@ public enum WindowOcclusion {
                 abs(w.bounds.width - bounds.width) <= 1 && abs(w.bounds.height - bounds.height) <= 1
         }
         return matches.count == 1 ? matches[0] : nil
+    }
+
+    /// Higher WindowServer levels already composite above the overlay, including
+    /// their real transparency/shape. Masking their coarse bounds would erase
+    /// effects under invisible surfaces such as the screen-sized Dock window.
+    /// Keep those entries in the stack so they can still be resolved as targets.
+    public static func maskingBounds(in stack: [WindowStackEntry], before target: Int,
+                                     overlayLayer: Int) -> [CGRect] {
+        precondition(stack.indices.contains(target))
+        return stack[..<target].filter { $0.layer <= overlayLayer }.map(\.bounds)
     }
 
     /// Disjoint rectangles avoid even-odd holes reappearing where occluders overlap.
