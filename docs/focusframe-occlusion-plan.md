@@ -1,20 +1,49 @@
 # FocusFrame: Rahmen bei überlappenden Fenstern
 
-Status: Im Quellcode umgesetzt am 17.10.2026. Die veröffentlichten Preview-3-Pakete enthalten diese Korrektur noch nicht. Installierte Apps wurden nicht ersetzt.
+Status: Im Quellcode umgesetzt am 17.10.2026; anschließend Dock-Regression korrigiert und auf dem Mac mini sichtbar geprüft. Die veröffentlichten Preview-3-Pakete enthalten diese Korrektur noch nicht. Der neue Fix wurde nur im gesicherten Testbundle auf dem Mac mini ausgeführt; die regulär installierte FocusFrame-App wurde nicht ersetzt.
 
 ## Umgesetzte Lösung
 
 `FocusManager` ordnet das fokussierte AX-Fenster anhand von Prozess und eindeutiger Geometrie den öffentlichen WindowServer-Metadaten zu. Anschließend bleibt die Fenster-ID für dieselbe AX-Fokusgeneration erhalten, auch während zeitversetzter Move-/Resize-Meldungen. Eigene Einstellungen verwenden direkt ihre öffentliche AppKit-Fensternummer. Mehrdeutige oder fehlende Erstzuordnungen und verschwundene Ziele blenden sämtliche Effektpixel aus.
 
-Alle sichtbaren, nicht vollständig transparenten Fenster vor dem Ziel werden berücksichtigt, unabhängig von App und Fensterlevel. Das eigene Overlay wird ausgeschlossen. Eine Maske am Canvas-Elternlayer begrenzt den vollständigen Renderer einschließlich Rahmen, Leuchten und Schatten. Disjunkte Rechtecksubtraktion bildet die Vereinigung der Abdeckungen ohne doppelte Löcher. Ein Geräte-Pixel Sicherheitsrand vermeidet Effektreste an fractional/antialiasierten Grenzen. Die innere Effektmaske und die Bewegungskompensation bleiben erhalten.
+Alle sichtbaren, nicht vollständig transparenten Fenster vor dem Ziel bleiben für die Zielzuordnung erhalten. Für die zusätzliche Rechteckmaske werden nur Fenster auf oder unter der tatsächlichen Overlay-Ebene berücksichtigt. Höhere Ebenen verdeckt der WindowServer bereits nativ, einschließlich ihrer tatsächlichen Form und Transparenz. Das eigene Overlay wird ausgeschlossen. Eine Maske am Canvas-Elternlayer begrenzt den vollständigen Renderer einschließlich Rahmen, Leuchten und Schatten. Disjunkte Rechtecksubtraktion bildet die Vereinigung der Abdeckungen ohne doppelte Löcher. Ein Geräte-Pixel Sicherheitsrand vermeidet Effektreste an fractional/antialiasierten Grenzen. Die innere Effektmaske und die Bewegungskompensation bleiben erhalten.
 
 Die Maske wird ohne implizite Animationen geändert. Vollständige Überdeckung macht den Renderer transparent; Layer und Animationsphasen bleiben für das Freilegen erhalten. Pause, Schlaf, Space-Wechsel und fehlendes Ziel stoppen den Metadaten-Timer. Nur bei einem aktiven Ziel läuft der Abgleich: 10 Hz im Leerlauf, 30 Hz bei gedrückter Maustaste, 4 Hz im Stromsparmodus. Zusätzliche Geometrieereignisse teilen sich dieselbe Begrenzung auf maximal 30 bzw. 4 Metadatenabfragen pro Sekunde. Keine Pixelaufnahmen und keine zusätzlichen Freigaben.
 
-Der begrenzte native Versuch bestätigt, dass ein auf Normal-Level relativ zum fremden Ziel angeordnetes Overlay hinter dessen Floating-Panel bleibt. Das belegt keine allgemein zuverlässige Kopplung an fremde Fenster für alle App-/Space-/Level-Kombinationen; die Produktionslösung verwendet daher die vollständige Verdeckungsmaske.
+Der begrenzte native Versuch bestätigt, dass ein auf Normal-Level relativ zum fremden Ziel angeordnetes Overlay hinter dessen Floating-Panel bleibt. Das belegt keine allgemein zuverlässige Kopplung an fremde Fenster für alle App-/Space-/Level-Kombinationen; die Produktionslösung kombiniert daher die zusätzliche Verdeckungsmaske für niedrigere/gleiche Ebenen mit der nativen Komposition höherer Ebenen.
 
-Halbtransparente Fenster und abgerundete Ecken werden konservativ anhand rechteckiger Bounds verdeckt. Änderungen nicht aktivierender fremder Fenster können bis zum nächsten Abgleich sichtbar werden (nominal ca. 33/100/250 ms je Modus, zuzüglich Systemlast). Das ist keine atomare Kopplung an den WindowServer-Compositor.
+Halbtransparente Fenster und abgerundete Ecken auf oder unter der Overlay-Ebene werden konservativ anhand rechteckiger Bounds verdeckt. Höhere Ebenen behalten ihre native Transparenz, etwa das Material eines macOS-Kontextmenüs. Änderungen nicht aktivierender fremder Fenster können bis zum nächsten Abgleich sichtbar werden (nominal ca. 33/100/250 ms je Modus, zuzüglich Systemlast). Das ist keine atomare Kopplung an den WindowServer-Compositor.
 
-## Prüfung am 17.10.2026
+## Dock-Korrektur und sichtbare Mac-mini-Prüfung
+
+Die erste Maskenversion berücksichtigte auch ein bildschirmgroßes Dock-Fenster mit gemeldetem Alpha 1 auf Ebene 20. Seine überwiegend transparenten Pixel ließen sich aus den öffentlichen Bounds nicht erkennen. Dadurch wurde selbst ohne echte Abdeckung die gesamte Effektfläche ausgeschnitten. Die Korrektur prüft die tatsächliche Overlay-Ebene (derzeit 3), ohne Dock-Prozessnamen oder Bundle-IDs auszunehmen: Höhere Ebenen werden vom Compositor verdeckt und erzeugen keine zusätzlichen Rechtecklöcher. Normale Fenster auf Ebene 0 und Panels auf Ebene 3 bleiben maskiert, wenn sie vor dem Ziel liegen.
+
+Am 17.10.2026 auf dem Mac mini, ARM64, macOS 26.6.2, einem Display mit 1920 × 1080 Punkten/Pixeln geprüft. Die reguläre App-Identität und Signaturanforderung bleiben erhalten. Eine gesicherte Kopie des bisherigen Testbundles wurde vor dem Austausch angelegt. Bedienungshilfen waren im stabilen Testpfad freigegeben; keine TCC-Einträge wurden zurückgesetzt oder neue Bildschirmaufnahme-Freigaben verlangt.
+
+Die native Desktop-Fixture verwendet ausschließlich eigene Fenster und einen neutralen Hintergrund. Der echte FocusManager beobachtet ihr fokussiertes Fenster; Rahmen, cyanfarbenes Leuchten und magentafarbener Schatten stammen aus dem echten FocusFrame-Testbundle. Bildschirmbelege wurden aus der Remote-Desktop-Verbindung gesichert, zusätzlich Fokus, öffentliche Stapelmetadaten und tatsächlicher Canvas-Maskenzustand geprüft.
+
+| Fall | Ergebnis |
+| --- | --- |
+| Baseline trotz bildschirmgroßem transparentem Dock-Fenster | Alle drei Effekte sichtbar |
+| Teilweise Abdeckung durch nicht aktivierendes Floating-Panel | Alle Effekte im abgedeckten Bereich verdeckt; außen sichtbar |
+| Zwei sich gegenseitig überlappende Abdeckungen | Keine Effektinseln in den Abdeckungen |
+| Vollständig verdecken, anschließend freilegen | Alle drei Effektfarben verschwinden; Farbanzahlen nach Freilegen identisch zur Baseline |
+| Abdeckung verschieben | Ausschnitt folgt der neuen Position |
+| Normales Fenster auf Ebene 0 vor dem fokussierten Ziel | Maske verdeckt Effekte trotz höherer Overlay-Ebene |
+| Bildschirmgroße transparente Ebene 20 mit einer sichtbaren grünen Fläche | Nur die tatsächliche Fläche verdeckt; außerhalb bleiben die Effekte sichtbar |
+| Natives NSMenu ragt über den rechten Fensterrand | Menü auf Ebene 101 liegt vor den Effekten; native Materialtransparenz bleibt erhalten |
+| Eigenes Menüfenster auf Ebene 0 ragt über denselben Rand | Rahmen, Leuchten und Schatten werden im Menübereich ausgeschnitten |
+| Zielfenster verschieben und vergrößern | Alle drei Effekte folgen; Ziel-ID bleibt erhalten |
+
+Die opaken Abdeckungsinnenflächen wurden zusätzlich auf Farbreste geprüft (12/255 Farbtoleranz für die Remote-Bildübertragung). Die native Menütransparenz ist eine sichtbare Kompositionsprüfung, kein Nachweis vollständiger Opazität. Die Testszenen behalten das Zielfenster als Key Window und die Fixture als Vordergrundprozess. Das belegt diese konkreten Fälle; es ersetzt keine Prüfung sämtlicher Fremd-Apps oder ihrer Menüimplementierungen.
+
+Weitere Prüfungen: 41 Core-Tests in acht Suites, Xcode Debug und Universal Release, Projektstrukturprüfung und native Geometrie-/Renderer-/Überdeckungsprüfungen bestanden. Auf dem Mac mini zusätzlich 792 AppKit-Geometriefälle, neun Renderer-Pixelprüfungen, vorhandene Effekt-/Animationsprüfungen sowie der getrennte native Überdeckungsprozess bestanden. Eine Stichprobe mit 100 Metadatenabfragen ergab dort rund 1,49 ms Mittelwert und 1,87 ms P95; das misst ausschließlich die Abfrage, keine Ende-zu-Ende-Latenz.
+
+Nach dem Test wurden die Testprozesse beendet und die ursprünglichen Konfigurations- und Profildaten bytegleich wiederhergestellt. Autostart und Freigaben wurden nicht geändert. Die korrigierte Test-App bleibt gestoppt, ihr Vorgänger ist gesichert. Die reguläre Installation auf dem ursprünglichen Mac bleibt unverändert.
+
+Reproduktion: `script/probe_occlusion_desktop.sh` aus `Apps/FocusFrame` baut und öffnet die native Fixture. Die beschrifteten Schaltflächen setzen die Testszenen. Die Fixture ändert keine FocusFrame-Einstellungen; für sichtbare Belege müssen Rahmen, Leuchten und Schatten im separaten Testlauf aktiviert sein. Optional liest `--commands /absoluter/pfad/phase-request.json` ausschließlich lokale Fixture-Kommandos `{ "phase": 0, "token": "eindeutiger-wert" }` (Phasen 0–9 gemäß Schaltflächen) und schreibt `phase-ready.json`. Bei Phase 8 erscheint das native Menü nach einer Sekunde und schließt nach 25 Sekunden; neue Kommandos werden nach Ende des Menütrackings verarbeitet. Der Start benötigt ein aktivierbares Fixture-Fenster und ein bereits für Bedienungshilfen freigegebenes FocusFrame-Bundle.
+
+## Frühere Prüfungen der ersten Maskenversion am 17.10.2026
 
 - 38 Kerntests in sieben Suites bestanden, einschließlich Vereinigung überlappender Abdeckungen, vollständiger Überdeckung/Freilegung, fractional/negativer Koordinaten, eindeutiger Prozesszuordnung und ID-Stabilität während Bewegung.
 - `script/test_occlusion.sh` bestanden: zweiter nativer Prozess mit normalem sowie nicht aktivierendem Floating-Fenster; Verschieben, vollständige Überdeckung und Freilegen. Öffentliche Stapelmetadaten und tatsächliche Bitmap-Pixel des maskierten Renderers geprüft. Die Pixelprüfung verwendet ausschließlich die eigenen Fixture-Abdeckungen, damit private Desktopfenster das Ergebnis nicht beeinflussen; sie ist kein Screenshot fremder Apps. Alle drei Rahmenplatzierungen, doppelte Abdeckungen, kombinierter Rahmen/Glow/Schatten, unveränderte Effektlayer, Klickdurchlässigkeit und unveränderter Vordergrundprozess geprüft.

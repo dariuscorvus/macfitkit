@@ -18,4 +18,4 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 PLIST
 codesign --force --sign - "$APP"
 # The fixture changes only its own windows, never FocusFrame preferences or permissions.
-if [[ "${1:-}" != --build-only ]]; then open "$APP"; fi
+if [[ "${1:-}" != --build-only ]]; then open -n "$APP" --args "$@"; fi
