@@ -156,7 +156,7 @@ keine Voraussetzung für normale Nutzung. Der zeitlich begrenzte Desktop-Test:
 
 Der Test speichert keine Wallpaper-Zuordnungen. `probe.txt.progress` enthält
 Player-Zustand und beobachtete Fensterreihenfolge. Keine Videos mitgeliefert.
-Noch keine Release-Lizenz festgelegt. Nächste Schritte: macOS-26-/Spaces-/Hotplug-
+Die [MIT-Lizenz des Monorepos](../../LICENSE) gilt auch für LiveDesktop. Nächste Schritte: macOS-26-/Spaces-/Hotplug-
 Abnahme, Energieprofil mit Apple-Videos, optional Autostart und Release-Signing.
 
 ## Private Download-Releases

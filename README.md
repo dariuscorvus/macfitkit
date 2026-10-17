@@ -83,3 +83,7 @@ Die neue eigenständige App **UniversalPiP** (macOS 14+) ergänzt eine frei skal
 ```
 
 [Architektur, Bedienung, Testmatrix und Auslieferung](docs/universal-pip.md)
+
+## Lizenz
+
+MacFitKit einschließlich der Apps und gemeinsamen Swift-Packages steht unter der [MIT-Lizenz](LICENSE).
