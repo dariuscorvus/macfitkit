@@ -1,0 +1,46 @@
+name: Funktion wünschen
+description: Schlage eine Verbesserung für eine MacFitKit-App vor.
+title: "[Wunsch]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Beschreibe bitte zuerst die Aufgabe, die du lösen möchtest.
+        Suche nach ähnlichen Wünschen, damit die Diskussion zusammenbleibt.
+  - type: dropdown
+    id: app
+    attributes:
+      label: Betroffene App oder Bereich
+      options:
+        - FocusFrame
+        - LiveDesktop
+        - DockPreview
+        - UniversalPiP
+        - MacFitKit-Menü
+        - Gemeinsame Oberfläche
+        - Mehrere Apps oder allgemein
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welche Aufgabe oder welches Problem soll die Verbesserung lösen?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Gewünschtes Verhalten
+      description: Beschreibe möglichst konkret, wie du die Funktion nutzen würdest.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Bisherige Lösung oder Alternativen
+  - type: textarea
+    id: context
+    attributes:
+      label: Zusätzlicher Kontext oder Beispiele
+      description: Bitte keine privaten Inhalte oder Daten anderer Personen hochladen.

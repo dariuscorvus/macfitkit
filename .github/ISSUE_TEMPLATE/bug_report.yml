@@ -1,0 +1,75 @@
+name: Fehler melden
+description: Melde ein nachvollziehbares Problem mit einer MacFitKit-App.
+title: "[Fehler]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für deine Meldung. Bitte suche zunächst nach einem ähnlichen Issue.
+        Dieses Issue ist öffentlich. Entferne private Inhalte aus Screenshots und Protokollen.
+  - type: dropdown
+    id: app
+    attributes:
+      label: Betroffene App
+      options:
+        - FocusFrame
+        - LiveDesktop
+        - DockPreview
+        - UniversalPiP
+        - MacFitKit-Menü
+        - Mehrere Apps
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App- und Release-Version
+      description: Aus Info beziehungsweise dem verwendeten GitHub-Release; bitte auch die Preview-Nummer nennen.
+      placeholder: "FocusFrame 0.9.0, Preview 3"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS-Version
+      placeholder: "macOS 26.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: processor
+    attributes:
+      label: Mac-Typ
+      options:
+        - Apple Silicon (M-Serie)
+        - Intel
+        - Unbekannt
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zum Nachstellen
+      placeholder: |
+        1. App öffnen
+        2. Einstellung ändern oder Aktion ausführen
+        3. Problem beobachten
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Erwartetes Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Tatsächliches Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Zusätzlicher Kontext, Screenshots oder Protokolle
+      description: "Optional: z. B. mehrere Monitore, Vollbild, gemeinsames Menü oder Freigabestatus. Bitte keine Zugangsdaten oder privaten Fensterinhalte teilen."
