@@ -1,5 +1,7 @@
 # Unveröffentlicht
 
+- Bildschirmgroße transparente Dock-/Systemfenster blenden die Effekte nicht mehr vollständig aus. Höhere Fensterebenen und native Kontextmenüs verdecken sie durch die systemeigene Komposition; niedrigere und gleiche Ebenen bleiben zusätzlich maskiert. Auf dem Mac mini einschließlich herausragender nativer und eigener Kontextmenüs geprüft.
+
 - Rahmen, Leuchten und Schatten werden gemeinsam an davorliegenden Fenstern ausgeschnitten. Überlappende Abdeckungen erzeugen keine sichtbaren Inseln.
 - Eindeutige Zielzuordnung über Prozess, Geometrie und anschließend stabile öffentliche Fenster-ID; bei unklarer Zuordnung werden Effekte ausgeblendet.
 - Verdeckung wird auch bei nicht aktivierenden Panels begrenzt aktualisiert, ohne Effektanimationen neu aufzubauen. Keine neue Bildschirmaufnahme-Freigabe oder Änderung bestehender Profile.

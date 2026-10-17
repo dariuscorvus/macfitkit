@@ -238,9 +238,10 @@ final class FocusManager: NSObject {
             return
         }
         if !tracksSettings { targetWindowID = stack[index].id }
-        // All windows above the target count, including same-app sheets and panels.
-        // Bounds conservatively cover translucent surfaces and rounded corners.
-        overlay.setOcclusion(Array(stack[..<index]).map(\.bounds))
+        // Higher levels already cover us through native compositing. Only cut
+        // bounds for windows our floating overlay could incorrectly paint over.
+        overlay.setOcclusion(WindowOcclusion.maskingBounds(in: stack, before: index,
+            overlayLayer: overlay.level.rawValue))
     }
 
     private func handleMouse(_ event: NSEvent) {
