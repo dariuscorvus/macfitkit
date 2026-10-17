@@ -142,6 +142,8 @@ Revision: {revision}
                     command(['codesign', '--force', '--timestamp', '--options', 'runtime', '--sign', identity, child], logs)
         command(['codesign', '--force', '--timestamp', '--options', 'runtime', '--sign', identity, app], logs)
         command(['codesign', '--verify', '--deep', '--strict', app], logs)
+        # Signing updates the Mach-O signature blob; compare the finalized binary.
+        metadata['binarySHA256'] = digest(app / 'Contents/MacOS' / name)
         upload = temp / 'app-notary.zip'
         command(['ditto', '-c', '-k', '--sequesterRsrc', zip_root, upload], logs)
         metadata['appNotarizationID'] = notarize(upload, 'app', folder, args.notary_profile)
