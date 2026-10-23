@@ -20,6 +20,7 @@ APPS = {
     'LiveDesktop': 'tech.highbyte.LiveDesktop.prototype',
     'DockPreview': 'tech.highbyte.macfitkit.DockPreview',
     'UniversalPiP': 'tech.highbyte.macfitkit.UniversalPiP',
+    'FolderIconer': 'tech.highbyte.macfitkit.FolderIconer',
     'MacFitKit': 'tech.highbyte.macfitkit.Menu',
 }
 REPO = 'dariuscorvus/macfitkit'

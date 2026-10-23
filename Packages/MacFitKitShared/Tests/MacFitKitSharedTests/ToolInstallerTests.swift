@@ -32,7 +32,7 @@ private struct InstallFixture {
         await #expect(throws: (any Error).self) { try await installer.install(tool, systemMajor: 26) }
         #expect(try String(contentsOf: marker, encoding: .utf8) == "preserve")
     }
-    #expect(try FileManager.default.contentsOfDirectory(atPath: fixture.applications.path).count == 4)
+    #expect(try FileManager.default.contentsOfDirectory(atPath: fixture.applications.path).count == ToolID.allCases.count)
 }
 
 @Test func rejectsUnsupportedSystemAndInvalidPayload() async throws {

@@ -24,7 +24,7 @@ public final class ToolBridgeHost {
             }
             self.onChange?()
         }
-        for tool in ToolID.allCases { ToolTransport.post(ToolCommand.requestStatus, name: environment.command(tool)) }
+        for tool in ToolID.allCases where tool.kind == .background { ToolTransport.post(ToolCommand.requestStatus, name: environment.command(tool)) }
         beat()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in Task { @MainActor in self?.beat() } }
         RunLoop.main.add(timer, forMode: .common); self.timer = timer

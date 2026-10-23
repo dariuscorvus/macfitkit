@@ -35,12 +35,15 @@ struct HubSettingsView: View {
                                 Button(controller.installing == tool ? "Wird installiert …" : "Installieren") { controller.install(tool) }
                                     .disabled(!controller.canInstall(tool))
                                 if controller.installing == tool { ProgressView().controlSize(.small) }
+                            } else if tool.kind == .app {
+                                Button("Öffnen") { controller.open(tool) }.disabled(!controller.supported(tool))
+                                if controller.running(tool) != nil { Button("Beenden") { controller.quit(tool) } }
                             } else if controller.running(tool) == nil {
                                 Button("Starten") { controller.start(tool) }.disabled(!controller.supported(tool))
                             } else if let status = controller.bridge.statuses[tool] {
                                 Button(status.enabled ? "Pausieren" : "Aktivieren") { controller.bridge.send(.setEnabled(!status.enabled), to: tool) }
                                 Button("Einstellungen …") { controller.bridge.send(.openSettings, to: tool) }
-                                Button("Beenden") { controller.bridge.send(.quit, to: tool) }
+                                Button("Beenden") { controller.quit(tool) }
                             } else { Button("Status erneut prüfen") { controller.bridge.send(.requestStatus, to: tool) } }
                             if controller.installed(tool) {
                                 Button("Deinstallieren …", role: .destructive) { controller.requestUninstall(tool) }
