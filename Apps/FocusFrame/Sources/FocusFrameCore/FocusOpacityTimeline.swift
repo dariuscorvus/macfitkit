@@ -7,11 +7,9 @@ public struct FocusOpacityTimeline: Sendable {
     public let times: [Double]
     public let duration: Double
 
-    public init(effect: OpacityEffect, startingMultiplier: Double = 1) {
-        let e = effect.normalized
-        duration = e.focusDuration
-        let period = e.mode == .blink ? e.blinkPeriod : e.pulsePeriod
-        let minimum = e.mode == .blink ? e.blinkMinimum : e.pulseMinimum
+    public init(blink: Bool, period: Double, minimum: Double, maximum: Double, duration total: Double, startingMultiplier: Double = 1) {
+        let period = bounded(period, 0.2...30, 2), maximum = bounded(maximum, 0...1, 1), minimum = min(maximum, bounded(minimum, 0...1, 0.4))
+        duration = bounded(total, 0.1...300, 1.5)
         let start = bounded(startingMultiplier, 0...1, 1)
         let count = max(2, Int(ceil(duration * 60)))
         let entrance = min(period / 4, duration / 4)
@@ -24,16 +22,15 @@ public struct FocusOpacityTimeline: Sendable {
             let time = position * duration
             let phase = (time / period).truncatingRemainder(dividingBy: 1)
             let wave: Double
-            if e.mode == .off { wave = 1 }
-            else if e.mode == .pulse {
-                wave = minimum + (e.maximum - minimum) * (1 + cos(2 * .pi * phase)) / 2
+            if !blink {
+                wave = minimum + (maximum - minimum) * (1 + cos(2 * .pi * phase)) / 2
             } else {
                 let brightness: Double
                 if phase < 0.1 { brightness = 1 }
                 else if phase < 0.2 { brightness = 1 - ease((phase - 0.1) / 0.1) }
                 else if phase < 0.8 { brightness = 0 }
                 else { brightness = ease((phase - 0.8) / 0.2) }
-                wave = minimum + (e.maximum - minimum) * brightness
+                wave = minimum + (maximum - minimum) * brightness
             }
             let incoming = ease(time / entrance)
             let outgoing = ease((time - (duration - exit)) / exit)

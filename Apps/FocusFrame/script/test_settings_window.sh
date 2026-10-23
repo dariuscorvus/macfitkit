@@ -24,11 +24,12 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks"
 cp "$TEST_DIR/libFocusFrameCore.dylib" "$APP/Contents/Frameworks/"
 swiftc -target "$TARGET" -parse-as-library -I "$TEST_DIR" -L "$TEST_DIR" \
   -lFocusFrameCore -lMacFitKitCore -lMacFitKitPlatform -lMacFitKitUI -Xlinker -rpath -Xlinker "$TEST_DIR" \
-  Sources/FocusFrame/EffectRenderer.swift Sources/FocusFrame/OverlayWindow.swift \
+  Sources/FocusFrame/EffectRenderer.swift "Sources/FocusFrame/EffectRenderer+Animations.swift" Sources/FocusFrame/OverlayWindow.swift \
   Sources/FocusFrame/AccessibilityService.swift Sources/FocusFrame/FocusManager.swift \
   Sources/FocusFrame/SettingsWindowController.swift Sources/FocusFrame/PreferencesStore.swift \
   Sources/FocusFrame/FocusSettingsModel.swift Sources/FocusFrame/FocusSettingsView.swift \
   Sources/FocusFrame/FocusEffectPages.swift Sources/FocusFrame/GradientStopEditor.swift Sources/FocusFrame/FocusAnimationPreview.swift \
+  Sources/FocusFrame/AnimationEntriesPage.swift Sources/FocusFrame/TimingCurveEditor.swift \
   Sources/FocusFrame/Diagnostics.swift script/tests/SettingsWindowTests.swift \
   -o "$APP/Contents/MacOS/SettingsWindowTests"
 cat > "$APP/Contents/Info.plist" <<'PLIST'

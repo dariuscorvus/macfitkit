@@ -30,6 +30,9 @@ extension FocusSettingsView {
                 effectChoice("Oberfläche", \.material.mode, [("Farbe / Farbverlauf",.standard),("Gold",.gold),("Chrom",.chrome)]),
                 conditional([effectSlider("Glanz", \.material.gloss, 0...100, percent: true),
                     effectSlider("Lichtwinkel", \.material.angle, 0...360, unit: "°"),
+                    effectSlider("Reflexstärke", \.material.reflectionStrength, 0...100, percent: true),
+                    effectSlider("Reflexbreite", \.material.reflectionWidth, 5...60, percent: true),
+                    note("Bewegt wird der Reflex mit der Animation ‘Metall-Lichtreflex’."),
                     note("Gold und Chrom verwenden eigene Metallfarben. Rahmenfarbe und Farbverläufe bleiben gespeichert.")]) { $0.material.mode != .standard },
                 resetEffect("Oberfläche zurücksetzen") { $0.material = MaterialEffect() }
             ])
@@ -82,81 +85,21 @@ extension FocusSettingsView {
     }
 
     func animationPage() -> AnyView {
-        let trigger: [(String,AnimationTrigger)] = [("Nur beim Fokuswechsel",.focus),("Dauerhaft",.continuous)]
+        var shown = store.value.normalized.renderedAppearance(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
+        if let only = model.previewEntry { shown.animations = shown.animations.filter { $0.id == only } }
         return page([
-            section("Vorschau und Presets", [AnyView(FocusAnimationPreview(appearance: store.value.normalized.renderedAppearance(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled), playToken: model.playToken).frame(height: 190)),
-                actionButton("Animation abspielen") { model.playToken += 1 },
+            section("Vorschau und Presets", [AnyView(FocusAnimationPreview(appearance: shown, playToken: model.playToken).frame(height: 190)),
+                actionButton("Alle Animationen abspielen") { model.previewEntry = nil; model.playToken += 1 },
                 resetEffect("Dezent") { $0 = MotionPreset.subtle.applying(to: $0) },
                 resetEffect("Lichtläufer") { $0 = MotionPreset.runner.applying(to: $0) },
                 resetEffect("Atmender Schatten") { $0 = MotionPreset.breathingShadow.applying(to: $0) },
-                resetEffect("Farbfluss") { $0 = MotionPreset.colorFlow.applying(to: $0) }
+                resetEffect("Farbfluss") { $0 = MotionPreset.colorFlow.applying(to: $0) },
+                note("Presets ersetzen die Animationsliste.")
             ]),
-            section("Bewegung", [
-                effectChoice("Effekt", \.motion.mode, [("Aus",.off),("Fokusimpuls",.impulse),("Lichtläufer",.runner),("Rahmen zeichnen",.draw),("Atmen",.breathe),("Farbfluss",.flow)]),
-                conditional([
-                    effectChoice("Auslöser", \.motion.trigger, trigger),
-                    effectSlider("Dauer je Durchlauf", \.motion.duration, 0.5...30, unit: "s"),
-                    conditional([effectSlider("Durchläufe", \.motion.cycles, 1...6)]) { $0.motion.trigger == .focus },
-                    effectSlider("Stärke", \.motion.strength, 0...100, percent: true),
-                    effectChoice("Bewegungsverlauf", \.motion.curve, [("Sanft",.smooth),("Gleichmäßig",.linear),("Federnd (Impuls)",.spring)]),
-                    conditional([effectChoice("Animieren", \.motion.target, [("Schatten",.shadow),("Rahmen",.frame),("Leuchten",.light),("Alles",.all)])]) { $0.motion.mode == .breathe },
-                    note( "Farbfluss braucht einen aktiven Farbverlauf. Atmen wirkt auf das gewählte Element; ein Schatten oder Leuchten muss eingeschaltet sein.")
-                ]) { $0.motion.mode != .off },
-                effectCheck("Dauer und Auslöser für weitere Effekte übernehmen", \.motion.synchronize),
-                note( "Bei gemeinsamer Steuerung gelten Dauer und Auslöser oben auch für Deckkraft, Rotation und Metallreflex. Die Einzelwerte bleiben gespeichert."),
-                resetEffect("Bewegung zurücksetzen") { $0.motion = MotionEffect() }
-            ]),
-            section("Deckkraft", [
-                effectChoice("Animieren", \.opacityAnimation.target, [("Alles",.all),("Rahmen",.frame),("Leuchten",.light),("Schatten",.shadow)]),
-                effectChoice("Animation", \.opacityAnimation.mode, [("Aus",.off),("Pulsieren",.pulse),("Blinken",.blink)]),
-                conditional([
-                    conditional([
-                        effectSlider("Zyklusdauer", \.opacityAnimation.pulsePeriod, 0.5...10, unit: "s"),
-                        effectSlider("Minimum", \.opacityAnimation.pulseMinimum, 0...100, percent: true)
-                    ]) { $0.opacityAnimation.mode == .pulse },
-                    conditional([
-                        effectSlider("Zyklusdauer", \.opacityAnimation.blinkPeriod, 0.5...5, unit: "s"),
-                        effectSlider("Minimum", \.opacityAnimation.blinkMinimum, 0...100, percent: true)
-                    ]) { $0.opacityAnimation.mode == .blink },
-                    effectSlider("Maximum", \.opacityAnimation.maximum, 0...100, percent: true),
-                    effectChoice("Auslöser", \.opacityAnimation.trigger, trigger),
-                    conditional([effectSlider("Fokusdauer", \.opacityAnimation.focusDuration, 0.5...5, unit: "s")]) {
-                        $0.opacityAnimation.trigger == .focus
-                    }
-                ]) { $0.opacityAnimation.mode != .off },
-                resetEffect("Deckkraftanimation zurücksetzen") { $0.opacityAnimation = OpacityEffect() }
-            ]),
-            section("Verlaufsrotation", [
-                effectCheck("Farbverlauf rotieren", \.rotation.enabled),
-                conditional([
-                    effectSlider("Umlaufdauer", \.rotation.period, 2...30, unit: "s"),
-                    effectCheck("Im Uhrzeigersinn", \.rotation.clockwise),
-                    effectChoice("Auslöser", \.rotation.trigger, trigger),
-                    conditional([effectSlider("Fokusdauer", \.rotation.focusDuration, 0.5...5, unit: "s")]) {
-                        $0.rotation.trigger == .focus
-                    },
-                    note( "Rotation benötigt einen eingeschalteten Farbverlauf und die Oberfläche ‘Farbe / Farbverlauf’.")
-                ]) { $0.rotation.enabled },
-                resetEffect("Verlaufsrotation zurücksetzen") { $0.rotation = RotationEffect() }
-            ]),
-            section("Metall-Lichtreflex", [
-                conditional([note( "Für den Lichtreflex Gold oder Chrom unter Darstellung wählen.")]) { $0.material.mode == .standard },
-                conditional([
-                    effectCheck("Lichtreflex bewegen", \.material.reflectionEnabled),
-                    conditional([
-                        effectSlider("Reflexstärke", \.material.reflectionStrength, 0...100, percent: true),
-                        effectSlider("Reflexbreite", \.material.reflectionWidth, 5...60, percent: true),
-                        effectChoice("Auslöser", \.material.trigger, trigger),
-                        conditional([effectSlider("Zyklusdauer", \.material.period, 2...30, unit: "s")]) { $0.material.trigger == .continuous },
-                        conditional([effectSlider("Fokusdauer", \.material.focusDuration, 0.5...5, unit: "s")]) { $0.material.trigger == .focus }
-                    ]) { $0.material.reflectionEnabled }
-                ]) { $0.material.mode != .standard },
-                resetEffect("Lichtreflex zurücksetzen") { a in
-                    let d = MaterialEffect()
-                    a.material.reflectionEnabled = d.reflectionEnabled
-                    a.material.reflectionStrength = d.reflectionStrength; a.material.reflectionWidth = d.reflectionWidth
-                    a.material.period = d.period; a.material.trigger = d.trigger; a.material.focusDuration = d.focusDuration
-                }
+            section("Animationen", [
+                AnyView(AnimationEntryList(entries: store.value.appearance.animations,
+                    set: { entries in model.previewEntry = nil; model.mutate { $0.animations = entries } },
+                    preview: { entry in model.previewEntry = entry.id; model.playToken += 1 }))
             ]),
             actionButton("Fokuswechsel testen") { model.testFocus?() },
             note( "Bei macOS ‘Bewegung reduzieren’ bleiben Effekte statisch.")

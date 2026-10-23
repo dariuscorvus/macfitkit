@@ -75,10 +75,10 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
   zurückgesetzt werden.
 - **Leuchten:** Glow/Neon mit Intensität, Leuchtweite, eigener oder übernommener
   Rahmenfarbe und Neon-Kern. **Schatten:** Farbe, Deckkraft, Weichheit, Ausbreitung
-  und X-/Y-Versatz. **Farbverlauf:** linearer oder umlaufender Zweifarbenverlauf.
-- **Animationen:** Pulsieren oder Blinken mit Zyklusdauer und Deckkraftgrenzen;
-  unabhängige Verlaufsrotation mit Richtung und Umlaufdauer. Für beide separat
-  „nur beim Fokuswechsel“ oder „dauerhaft“, mit einstellbarer Fokusdauer.
+  und X-/Y-Versatz. **Farbverlauf:** linear oder umlaufend, mit beliebig vielen
+  Farbpunkten.
+- **Animationen:** eine Liste unabhängiger Animationen, die gleichzeitig laufen
+  (siehe „Animationsliste“).
 - Der echte Rahmen um das aktive Einstellungsfenster ersetzt die separate
   Vorschau. „Fokuswechsel testen“ spielt die Fokusanimationen dort ab.
   Verschieben und Resize folgen lokalen AppKit-Ereignissen ohne AX-Abfragen.
@@ -269,6 +269,29 @@ dauerhaft (Zyklus 2–30 s). Die Fokusvariante führt einen Durchlauf mit weiche
 Ein-/Ausblenden aus. Pausieren, Ausblenden und Bewegung reduzieren stoppen ihn.
 Jeder Zahlenwert hat einen Regler und eine direkte Eingabe; Oberfläche und
 Lichtreflex besitzen eigene Zurücksetzen-Schaltflächen. Neue Effekte sind aus.
+
+### Animationsliste
+
+Unter **Animationen** stehen beliebig viele Einträge, jeder mit eigenem Effekt,
+Auslöser (Fokuswechsel oder dauerhaft), Dauer, Verzögerung, Durchläufen, Stärke und
+Bewegungsverlauf. Effekte: Fokusimpuls (optional mit Nachschwingen), Lichtläufer,
+Rahmen zeichnen, Atmen, Farbfluss, Verlaufsrotation, Deckkraft pulsieren/blinken und
+Metall-Lichtreflex. Einträge lassen sich ein- und ausschalten, einzeln abspielen,
+duplizieren, verschieben und entfernen. Der Bewegungsverlauf wählt aus Linear,
+Ease In/Out, Sine bis Circ, Back, Elastic, Bounce, einer Feder oder einer eigenen
+Bézier-Kurve. Ab mehr als acht Einträgen erscheint ein Hinweis auf die Rechenlast.
+
+Treffen mehrere Einträge dieselbe Eigenschaft, multiplizieren sich Deckkraft und
+Stärke, Rotationen addieren sich, und bei Farben gilt der untere Eintrag. Dauerhafte
+Animationen behalten ihren Takt beim Fokuswechsel; Fokusanimationen starten neu.
+Deckkraftanimationen setzen beim erneuten Auslösen beim sichtbaren Wert an.
+
+Bestehende Einstellungen werden beim Laden in Einträge übersetzt: Bewegung,
+Deckkraftanimation, Verlaufsrotation und Metallreflex, mit gemeinsamer Steuerung
+übernommenen Dauern und Auslösern. „Federnd“ wird zum Fokusimpuls mit
+Nachschwingen. Fokusanimationen mit mehreren Durchläufen spielen jetzt genau so oft
+wie eingestellt; zuvor lief einer weniger. Reflexstärke und -breite stehen unter
+**Darstellung → Oberfläche**.
 
 ### Finder-Desktop (0.7.1 lokal)
 

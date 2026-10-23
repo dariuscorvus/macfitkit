@@ -6,30 +6,40 @@ import FocusFrameCore
 @MainActor
 final class EffectRenderer {
     let root = CALayer()
-    private var gradients: [CAGradientLayer] = []
-    private var reflections: [(layer: CAGradientLayer, travel: CGSize)] = []
-    private var frameGroup = CALayer()
-    private var shadowLayers: [CALayer] = []
-    private var tightShadows: [(CALayer, Double)] = []
-    private var lightLayers: [CALayer] = []
-    private var drawMasks: [CAShapeLayer] = []
-    private var accent: CAShapeLayer?
-    private var perimeter = 1.0
-    private var epoch: CFTimeInterval = 0
-    private var focusUntil: CFTimeInterval = 0
+    // Animated layers; `EffectRenderer+Animations.swift` drives them.
+    var gradients: [CAGradientLayer] = []
+    var reflections: [(layer: CAGradientLayer, travel: CGSize)] = []
+    var frameGroup = CALayer()
+    /// Everything inside `root`; opacity stages for the "Alles" target wrap it.
+    var content = CALayer()
+    var shadowLayers: [CALayer] = []
+    var tightShadows: [(CALayer, Double)] = []
+    var lightLayers: [CALayer] = []
+    var drawMasks: [CAShapeLayer] = []
+    /// One highlight line per pulse, runner or draw entry.
+    var accents: [UUID: CAShapeLayer] = [:]
+    /// One opacity stage per target layer and opacity entry. Nested stages multiply.
+    var stages: [UUID: [CALayer]] = [:]
+    var perimeter = 1.0
+    /// Continuous entries keep this clock across focus changes; focus entries start at `focusEpoch`.
+    var continuousEpoch: CFTimeInterval = 0
+    var focusEpoch: CFTimeInterval = 0
+    var focusUntil: CFTimeInterval = 0
     private let imageContext = CIContext(options: [.cacheIntermediates: false])
-    private var style = Appearance()
-    private var visible = false
+    var style = Appearance()
+    var visible = false
 
     func update(bounds: CGRect, target: CGRect, style: Appearance, scale: CGFloat) {
         stop()
-        if self.style != style.normalized { focusUntil = 0; epoch = 0 }
+        if self.style != style.normalized { focusUntil = 0; focusEpoch = 0; continuousEpoch = 0 }
         self.style = style.normalized
-        let a = self.style
+        let a = self.style, entries = a.animations.active
+        func uses(_ kind: AnimationKind) -> Bool { entries.contains { $0.kind == kind } }
         CATransaction.begin(); CATransaction.setDisableActions(true)
         root.transform = CATransform3DIdentity
         root.frame = bounds; root.contentsScale = scale; root.opacity = Float(a.opacity)
-        root.sublayers?.forEach { $0.removeFromSuperlayer() }; gradients.removeAll(); reflections.removeAll(); shadowLayers.removeAll(); lightLayers.removeAll(); tightShadows.removeAll(); drawMasks.removeAll(); accent = nil
+        root.sublayers?.forEach { $0.removeFromSuperlayer() }; gradients.removeAll(); reflections.removeAll(); shadowLayers.removeAll(); lightLayers.removeAll(); tightShadows.removeAll(); drawMasks.removeAll(); accents.removeAll(); stages.removeAll()
+        content = CALayer(); content.frame = bounds; root.addSublayer(content)
         frameGroup = CALayer(); frameGroup.frame = bounds
         let geometry = EffectGeometry.contour(for: target, appearance: a)
         let contour = CGPath(roundedRect: geometry.rect, cornerWidth: geometry.radius,
@@ -43,12 +53,12 @@ final class EffectRenderer {
         exteriorMask.contentsScale = scale
         exteriorMask.fillRule = .evenOdd; exteriorMask.fillColor = NSColor.black.cgColor
         let effects = CALayer(); effects.frame = bounds; effects.mask = exteriorMask
-        root.addSublayer(effects)
+        content.addSublayer(effects)
         if a.shadow.enabled {
             let offset = CGSize(width: a.shadow.offsetX, height: -a.shadow.offsetY)
             if a.shadow.colorSource == .gradient && (a.gradient.mode != .off || a.material.mode != .standard) {
                 shadowLayers.append(addGradientShadow(to: effects, geometry: geometry, target: target, offset: offset, scale: scale))
-                if a.motion.mode == .breathe && a.motion.target == .shadow {
+                if entries.contains(where: { $0.kind == .breathe && $0.target == .shadow }) {
                     let tight = addGradientShadow(to: effects, geometry: geometry, target: target, offset: offset, scale: scale, blur: a.shadow.blur*0.5)
                     tight.opacity = 0; tightShadows.append((tight, a.shadow.opacity))
                 }
@@ -66,27 +76,28 @@ final class EffectRenderer {
                 color: a.light.followsFrame ? inherited : a.light.color,
                 opacity: a.light.intensity, radius: a.light.extent, offset: .zero, scale: scale))
         }
-        root.addSublayer(frameGroup)
+        content.addSublayer(frameGroup)
         let ring = CGMutablePath()
         ring.addRoundedRect(in: geometry.outerRect, cornerWidth: geometry.outerRadius, cornerHeight: geometry.outerRadius)
         ring.addRoundedRect(in: geometry.innerRect, cornerWidth: geometry.innerRadius, cornerHeight: geometry.innerRadius)
         addBorder(contour: contour, ring: ring, width: geometry.width, target: target, bounds: bounds, whitening: 0, scale: scale)
-        if a.material.mode != .standard && a.material.reflectionEnabled {
+        if a.material.mode != .standard && uses(.metalReflection) {
             addReflection(ring: ring, target: target, bounds: bounds, scale: scale)
         }
         if a.light.mode == .neon {
             addBorder(contour: contour, ring: nil, width: geometry.width * a.light.coreWidth, target: target,
                 bounds: bounds, whitening: a.light.whitening, scale: scale)
         }
-        if a.motion.mode == .impulse || a.motion.mode == .runner || a.motion.mode == .draw {
+        perimeter = max(1, 2*(geometry.rect.width + geometry.rect.height - 4*geometry.radius) + 2 * .pi * geometry.radius)
+        for entry in entries where [.focusPulse, .runner, .draw].contains(entry.kind) {
             let line = CAShapeLayer(); line.frame = bounds; line.path = contour
             line.fillColor = nil; line.strokeColor = NSColor.white.cgColor
             line.lineWidth = geometry.width; line.lineCap = .round; line.contentsScale = scale
             line.opacity = 0
-            perimeter = max(1, 2*(geometry.rect.width + geometry.rect.height - 4*geometry.radius) + 2 * .pi * geometry.radius)
-            if a.motion.mode == .runner { line.lineDashPattern = [NSNumber(value: perimeter*0.12), NSNumber(value: perimeter*0.88)] }
-            frameGroup.addSublayer(line); accent = line
+            if entry.kind == .runner { line.lineDashPattern = [NSNumber(value: perimeter*0.12), NSNumber(value: perimeter*0.88)] }
+            frameGroup.addSublayer(line); accents[entry.id] = line
         }
+        buildStages(for: entries)
         CATransaction.commit()
     }
 
@@ -118,7 +129,7 @@ final class EffectRenderer {
         mask.fillColor = ring == nil ? nil : NSColor.black.cgColor
         mask.strokeColor = ring == nil ? NSColor.black.cgColor : nil
         mask.contentsScale = scale
-        if style.motion.mode == .draw {
+        if style.animations.active.contains(where: { $0.kind == .draw }) {
             mask.path = contour; mask.fillColor = nil; mask.strokeColor = NSColor.black.cgColor
             drawMasks.append(mask)
         }
@@ -207,154 +218,6 @@ final class EffectRenderer {
         holder.addSublayer(reflection)
         reflections.append((reflection, CGSize(width: cos(angle)*side, height: sin(angle)*side)))
     }
-
-    func setVisible(_ visible: Bool, focusChanged: Bool = false) {
-        self.visible = visible
-        if !visible { stop(); epoch = 0; focusUntil = 0; return }
-        animate(focusChanged: focusChanged)
-    }
-    func motionPreferenceChanged() { stop(); if visible { animate(focusChanged: false) } }
-    func stop() {
-        root.removeAllAnimations(); frameGroup.removeAllAnimations(); accent?.removeAllAnimations(); drawMasks.forEach { $0.removeAllAnimations() }
-        (shadowLayers + lightLayers + tightShadows.map { $0.0 }).forEach { $0.removeAllAnimations() }
-        gradients.forEach { $0.removeAllAnimations() }
-        reflections.forEach { $0.layer.removeAllAnimations() }
-    }
-    func animate(focusChanged: Bool) {
-        let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        let a = style; var o = a.opacityAnimation
-        let now = CACurrentMediaTime()
-        if focusChanged || epoch == 0 { epoch = now }
-        if focusChanged { focusUntil = now + max(a.motion.duration*a.motion.cycles, max(o.focusDuration, max(a.rotation.focusDuration,a.material.focusDuration))) }
-        let focusChanged = focusChanged || now < focusUntil
-        if a.motion.synchronize { o.trigger = a.motion.trigger; o.focusDuration = a.motion.duration*a.motion.cycles; o.pulsePeriod = a.motion.duration; o.blinkPeriod = a.motion.duration }
-        if o.mode != .off && EffectAnimationPolicy.shouldAnimate(visible: visible, reducedMotion: reduced,
-            trigger: o.trigger, focusChanged: focusChanged) {
-            let period = o.mode == .pulse ? o.pulsePeriod : o.blinkPeriod
-            let minimum = o.mode == .pulse ? o.pulseMinimum : o.blinkMinimum
-            let animation = CAKeyframeAnimation(keyPath: "opacity")
-            if o.trigger == .focus {
-                let source = layers(for: o.target).first ?? root
-                let current = Double(source.presentation()?.opacity ?? source.opacity) / max(0.001, Double(source.opacity))
-                let timeline = FocusOpacityTimeline(effect: o, startingMultiplier: current)
-                animation.values = timeline.values.map { $0 * a.opacity }
-                animation.keyTimes = timeline.times.map { NSNumber(value: $0) }
-                animation.duration = timeline.duration
-                animation.calculationMode = .linear
-            } else if o.mode == .pulse {
-                animation.values = [o.maximum*a.opacity, minimum*a.opacity, o.maximum*a.opacity]
-                animation.keyTimes = [0,0.5,1]
-                animation.timingFunctions = [.init(name: .easeInEaseOut),.init(name: .easeInEaseOut)]
-            } else {
-                animation.values = [o.maximum*a.opacity,o.maximum*a.opacity,minimum*a.opacity,minimum*a.opacity,o.maximum*a.opacity]
-                animation.keyTimes = [0,0.1,0.2,0.8,1]
-            }
-            if o.trigger == .continuous {
-                animation.duration = period
-                animation.repeatDuration = .infinity
-            }
-            animation.beginTime = epoch
-            let targets = layers(for: o.target)
-            for target in targets {
-                let targeted = animation.copy() as! CAKeyframeAnimation
-                if o.target != .all { targeted.values = (animation.values as? [Double])?.map { $0 / a.opacity * Double(target.opacity) } }
-                target.add(targeted, forKey: "opacityEffect")
-            }
-        }
-        var r = a.rotation
-        if a.motion.synchronize { r.trigger = a.motion.trigger; r.period = a.motion.duration; r.focusDuration = a.motion.duration*a.motion.cycles }
-        if r.enabled && a.material.mode == .standard && a.gradient.mode != .off && EffectAnimationPolicy.shouldAnimate(visible: visible,
-            reducedMotion: reduced, trigger: r.trigger, focusChanged: focusChanged) {
-            for gradient in gradients {
-                let animation = CABasicAnimation(keyPath: "transform.rotation.z")
-                let angle = a.gradient.angle * .pi / 180
-                animation.fromValue = angle; animation.toValue = angle + (r.clockwise ? -2 : 2) * .pi
-                animation.duration = r.period
-                animation.repeatDuration = r.trigger == .continuous ? .infinity : r.focusDuration
-                animation.beginTime = epoch
-                gradient.add(animation, forKey: "rotationEffect")
-            }
-        }
-        var m = a.material
-        if a.motion.synchronize { m.trigger = a.motion.trigger; m.period = a.motion.duration; m.focusDuration = a.motion.duration*a.motion.cycles }
-        if m.mode != .standard && m.reflectionEnabled && EffectAnimationPolicy.shouldAnimate(visible: visible,
-            reducedMotion: reduced, trigger: m.trigger, focusChanged: focusChanged) {
-            for reflection in reflections {
-                let layer = reflection.layer
-                let position = CABasicAnimation(keyPath: "position")
-                let center = layer.position
-                position.fromValue = NSValue(point: CGPoint(x: center.x-reflection.travel.width/2, y: center.y-reflection.travel.height/2))
-                position.toValue = NSValue(point: CGPoint(x: center.x+reflection.travel.width/2, y: center.y+reflection.travel.height/2))
-                let opacity = CAKeyframeAnimation(keyPath: "opacity")
-                opacity.values = [0,1,1,0]; opacity.keyTimes = [0,0.15,0.85,1]
-                opacity.timingFunctions = [.init(name: .easeInEaseOut),.init(name: .linear),.init(name: .easeInEaseOut)]
-                let duration = m.trigger == .focus ? (a.motion.synchronize ? a.motion.duration : m.focusDuration) : m.period
-                position.duration = duration; opacity.duration = duration
-                let group = CAAnimationGroup(); group.animations = [position,opacity]; group.duration = duration
-                group.beginTime = epoch
-                group.repeatCount = m.trigger == .continuous ? .infinity : (a.motion.synchronize ? Float(a.motion.cycles-1) : 0)
-                layer.add(group, forKey: "metalReflection")
-            }
-        }
-        animateMotion(reduced: reduced, focusChanged: focusChanged)
-    }
-    private func layers(for target: AnimationTarget) -> [CALayer] {
-        switch target { case .all: [root]; case .frame: [frameGroup]; case .light: lightLayers; case .shadow: shadowLayers }
-    }
-    private func animateMotion(reduced: Bool, focusChanged: Bool) {
-        let m = style.motion
-        guard m.mode != .off, EffectAnimationPolicy.shouldAnimate(visible: visible, reducedMotion: reduced, trigger: m.trigger, focusChanged: focusChanged) else { return }
-        let timing = CAMediaTimingFunction(name: m.curve == .linear ? .linear : .easeInEaseOut)
-        func add(_ animation: CAAnimation, to layer: CALayer, key: String) {
-            animation.duration = m.duration; animation.beginTime = epoch
-            animation.repeatCount = m.trigger == .continuous ? .infinity : Float(m.cycles - 1)
-            animation.timingFunction = timing
-            if let frames = animation as? CAKeyframeAnimation, let values = frames.values { frames.timingFunctions = Array(repeating: timing, count: max(0, values.count-1)) }
-            layer.add(animation, forKey: key)
-        }
-        if m.mode == .runner || m.mode == .draw || m.mode == .impulse, let accent {
-            let fade = CAKeyframeAnimation(keyPath: "opacity")
-            fade.values = [0,m.strength,m.strength,0]; fade.keyTimes = [0,0.12,0.85,1]
-            if m.mode == .impulse { fade.values = m.curve == .spring ? [0,m.strength,m.strength*0.3,m.strength*0.6,0] : [0,m.strength,0]; fade.keyTimes = m.curve == .spring ? [0,0.15,0.45,0.65,1] : [0,0.2,1] }
-            add(fade, to: accent, key: "motionVisibility")
-            if m.mode == .runner {
-                let travel = CABasicAnimation(keyPath: "lineDashPhase"); travel.fromValue = 0; travel.toValue = -perimeter
-                add(travel, to: accent, key: "motionRunner")
-            } else if m.mode == .draw {
-                let draw = CABasicAnimation(keyPath: "strokeEnd"); draw.fromValue = 0; draw.toValue = 1
-                add(draw, to: accent, key: "motionDraw")
-                for mask in drawMasks { add(draw, to: mask, key: "motionTrace") }
-            }
-        } else if m.mode == .breathe {
-            for layer in layers(for: m.target) {
-                let fade = CAKeyframeAnimation(keyPath: "opacity"); let base = Double(layer.opacity)
-                fade.values = [base,base*(1-m.strength),base]; fade.keyTimes = [0,0.5,1]
-                add(fade, to: layer, key: "motionBreathe")
-                if m.target == .shadow && layer.shadowPath != nil {
-                    let blur = CAKeyframeAnimation(keyPath: "shadowRadius"); blur.values = [style.shadow.blur,style.shadow.blur*0.5,style.shadow.blur]; blur.keyTimes = [0,0.5,1]
-                    add(blur, to: layer, key: "motionBlur")
-                }
-            }
-            for (tight, base) in tightShadows {
-                let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0,base*m.strength,0]; fade.keyTimes = [0,0.5,1]
-                add(fade, to: tight, key: "motionTightShadow")
-            }
-        } else if m.mode == .flow && style.material.mode == .standard && style.gradient.mode != .off {
-            for gradient in gradients {
-                let order = style.gradient.flowOrder()
-                guard let colors = gradient.colors, colors.count >= 2, order.count == colors.count else { continue }
-                let flow = CAKeyframeAnimation(keyPath: "colors")
-                let swapped = order.map { colors[$0] }
-                let blended: [Any] = zip(colors,swapped).map { original, changed in
-                    guard let first = NSColor(cgColor: original as! CGColor), let second = NSColor(cgColor: changed as! CGColor) else { return original }
-                    return first.blended(withFraction: m.strength, of: second)?.cgColor ?? original
-                }
-                flow.values = [colors,blended,colors]; flow.keyTimes = [0,0.5,1]
-                add(flow, to: gradient, key: "motionFlow")
-            }
-        }
-    }
-
 }
 
 extension EffectColor {

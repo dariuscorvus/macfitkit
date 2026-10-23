@@ -82,6 +82,12 @@
             "lastKnownFileType" = "sourcecode.swift";
             "sourceTree" = "<group>";
         };
+        "DBAE9E0A414A45C7E837331F" = {
+            "path" = "Tests/FocusFrameCoreTests/AnimationTests.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
         "4B48CA9557C6E1A8685CDCBC" = {
             "path" = "Tests/FocusFrameCoreTests/EffectTests.swift";
             "isa" = "PBXFileReference";
@@ -130,7 +136,7 @@
         "44FA57600B59180803269F35" = {
             "isa" = "PBXSourcesBuildPhase";
             "buildActionMask" = "2147483647";
-            "files" = ( "E5F2DD0F6EC66F31F579A6C5", "6A7FE36D44BD171762A4F124", "0144E7C217D9FF159C36937D", "D6F294965E2BD18E6C7B95A6", "9A778F12680B8707BF1BB866", "3F54DFF65EA7FEBFB7C5534C", "9080E5C48F1BC6D55EDEBA6F", "97C71BBAE7020447DE8C02B0", "B70199B67379B50FA8481372", "CFB36299AE5D0B8ABDFFDEDE", "D7956A0E8BB0E41B68E46B44", "0351758BC90CF188FED6ECBE", "07124BB4C1C0CE575785CCD6", "1EC0CFF97603EF281A27F648", "A15334B33D1079909AF5137A", "3E82BB78101A60C6BDCE9154" );
+            "files" = ( "E5F2DD0F6EC66F31F579A6C5", "6A7FE36D44BD171762A4F124", "0144E7C217D9FF159C36937D", "D6F294965E2BD18E6C7B95A6", "36AD322EDFEB9D3760E5B00B", "9A778F12680B8707BF1BB866", "3F54DFF65EA7FEBFB7C5534C", "9080E5C48F1BC6D55EDEBA6F", "97C71BBAE7020447DE8C02B0", "B70199B67379B50FA8481372", "CFB36299AE5D0B8ABDFFDEDE", "D7956A0E8BB0E41B68E46B44", "0351758BC90CF188FED6ECBE", "07124BB4C1C0CE575785CCD6", "1EC0CFF97603EF281A27F648", "F306D389BB423925A7D39C68", "A15334B33D1079909AF5137A", "3E82BB78101A60C6BDCE9154" );
             "runOnlyForDeploymentPostprocessing" = "0";
         };
         "AA312B35A0CAC17FFDE684B0" = {
@@ -161,7 +167,7 @@
         "FC807B32B398FA026B81B1DD" = {
             "isa" = "PBXSourcesBuildPhase";
             "buildActionMask" = "2147483647";
-            "files" = ( "993E7DE32176E44FD7422AE5", "8B6490A5F89F20643CB71824", "3EF716F1677B7540A64E20EA", "9F63C873A4649782309F41EA", "0DB7B2CD6F229C166DEA9C03", "0B83C717A06EF3F9ECD9EEE7", "40899B613CEB6AB04BB617A6", "68AF5EB7AAED5047ED208761" );
+            "files" = ( "993E7DE32176E44FD7422AE5", "8B6490A5F89F20643CB71824", "8A2E81AA80FB13FECF8F5DA6", "3EF716F1677B7540A64E20EA", "9F63C873A4649782309F41EA", "0DB7B2CD6F229C166DEA9C03", "0B83C717A06EF3F9ECD9EEE7", "40899B613CEB6AB04BB617A6", "68AF5EB7AAED5047ED208761" );
             "runOnlyForDeploymentPostprocessing" = "0";
         };
         "4701C4937114C4B603B9DD02" = {
@@ -172,6 +178,18 @@
         };
         "E7E48439D65872F23BFD1746" = {
             "path" = "Sources/FocusFrameCore/TimingCurve.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
+        "ADAAEF3E448AFD42097E70ED" = {
+            "path" = "Sources/FocusFrameCore/Animations.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
+        "55CCE76ACF3515B6A5794347" = {
+            "path" = "Sources/FocusFrameCore/AnimationTracks.swift";
             "isa" = "PBXFileReference";
             "lastKnownFileType" = "sourcecode.swift";
             "sourceTree" = "<group>";
@@ -292,6 +310,10 @@
         "3EF716F1677B7540A64E20EA" = {
             "isa" = "PBXBuildFile";
             "fileRef" = "D7C3A2CCEB9E20CD3E4D28C4";
+        };
+        "8A2E81AA80FB13FECF8F5DA6" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "DBAE9E0A414A45C7E837331F";
         };
         "8B6490A5F89F20643CB71824" = {
             "isa" = "PBXBuildFile";
@@ -428,7 +450,13 @@
         "FC4447FCDC20DBB107954726" = {
             "isa" = "PBXGroup";
             "name" = "Sources/FocusFrame";
-            "children" = ( "8E11BA846DABEF1F33E37EC5", "036041EE3B021DE7D970DBCB", "451BDFB0C1DBE314FEBED783", "01C448F7CB27DBF28FFF0607", "4237324131F58B0A97735B1E", "DD94D4A4E1B2EC1AE2EED0E6", "C24C40633712388F19E713E2", "4445C907EF4CA2E8B0C9219E", "E91CF68E90EA0B37945972AB", "32E7744319BB8A4BB0D09C2B", "9A8D0F31F49EDB9E0A48214D", "CF680AA8F34C621065C62130", "4F5BFB9E0D08AEECDB1CE29D", "BCE3E400CCBCD8B4490E7831", "80E363FFDFAAADA4867CCF56", "354F8F9648AEB1B6CAB7FDEF" );
+            "children" = ( "8E11BA846DABEF1F33E37EC5", "036041EE3B021DE7D970DBCB", "451BDFB0C1DBE314FEBED783", "01C448F7CB27DBF28FFF0607", "9541F9555370BE5FBEEA95C9", "4237324131F58B0A97735B1E", "DD94D4A4E1B2EC1AE2EED0E6", "C24C40633712388F19E713E2", "4445C907EF4CA2E8B0C9219E", "E91CF68E90EA0B37945972AB", "32E7744319BB8A4BB0D09C2B", "9A8D0F31F49EDB9E0A48214D", "CF680AA8F34C621065C62130", "4F5BFB9E0D08AEECDB1CE29D", "BCE3E400CCBCD8B4490E7831", "E9C665FBE2EF65B0A16AE4CC", "80E363FFDFAAADA4867CCF56", "354F8F9648AEB1B6CAB7FDEF" );
+            "sourceTree" = "<group>";
+        };
+        "9541F9555370BE5FBEEA95C9" = {
+            "path" = "Sources/FocusFrame/EffectRenderer+Animations.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
             "sourceTree" = "<group>";
         };
         "01C448F7CB27DBF28FFF0607" = {
@@ -437,6 +465,10 @@
             "lastKnownFileType" = "sourcecode.swift";
             "sourceTree" = "<group>";
         };
+        "36AD322EDFEB9D3760E5B00B" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "9541F9555370BE5FBEEA95C9";
+        };
         "D6F294965E2BD18E6C7B95A6" = {
             "isa" = "PBXBuildFile";
             "fileRef" = "01C448F7CB27DBF28FFF0607";
@@ -444,7 +476,7 @@
         "514F2FFF90B0C506CBDA37C3" = {
             "isa" = "PBXSourcesBuildPhase";
             "buildActionMask" = "2147483647";
-            "files" = ( "FFE8E44752BFA18D2229C302", "2B9910AADA7E815EAF8A8A5C", "9B17BB84EB1BF902D8A83EFB", "050D9B6E4C905DAABADDF4DB", "D4BC19994A8D6AD3601752D7", "9CABAAE2EBF6C1936B6A89D6", "81C26217EA254C851B001949", "E916182CA0465DDE7ECFA6A1" );
+            "files" = ( "FFE8E44752BFA18D2229C302", "2B9910AADA7E815EAF8A8A5C", "5D6B817CC066091F55718111", "27EDBD94A69301038B62624A", "9B17BB84EB1BF902D8A83EFB", "050D9B6E4C905DAABADDF4DB", "D4BC19994A8D6AD3601752D7", "9CABAAE2EBF6C1936B6A89D6", "81C26217EA254C851B001949", "E916182CA0465DDE7ECFA6A1" );
             "runOnlyForDeploymentPostprocessing" = "0";
         };
         "380B3E26825F5B999133F412" = {
@@ -499,6 +531,14 @@
             "isa" = "PBXBuildFile";
             "fileRef" = "E7E48439D65872F23BFD1746";
         };
+        "27EDBD94A69301038B62624A" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "ADAAEF3E448AFD42097E70ED";
+        };
+        "5D6B817CC066091F55718111" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "55CCE76ACF3515B6A5794347";
+        };
         "2B9910AADA7E815EAF8A8A5C" = {
             "isa" = "PBXBuildFile";
             "fileRef" = "BE18C80370C90F2EB3AD8297";
@@ -506,13 +546,13 @@
         "26EF4E51002AEECF448CC7C7" = {
             "isa" = "PBXGroup";
             "name" = "Sources/FocusFrameCore";
-            "children" = ( "25AEE05CFB55585146EF8FEF", "BE18C80370C90F2EB3AD8297", "E7E48439D65872F23BFD1746", "4701C4937114C4B603B9DD02", "BD4871C020911784A0CB1347", "16A924A0B4C4629C9F928A8F", "A41CA37A595B2A411A572F31", "B60B98DF5B8F0E50B95D1096" );
+            "children" = ( "25AEE05CFB55585146EF8FEF", "BE18C80370C90F2EB3AD8297", "55CCE76ACF3515B6A5794347", "ADAAEF3E448AFD42097E70ED", "E7E48439D65872F23BFD1746", "4701C4937114C4B603B9DD02", "BD4871C020911784A0CB1347", "16A924A0B4C4629C9F928A8F", "A41CA37A595B2A411A572F31", "B60B98DF5B8F0E50B95D1096" );
             "sourceTree" = "<group>";
         };
         "5E9EECD75B0A9EC075D64844" = {
             "isa" = "PBXGroup";
             "name" = "Tests/FocusFrameCoreTests";
-            "children" = ( "45636F9EF80F78F3168342B7", "4B48CA9557C6E1A8685CDCBC", "D7C3A2CCEB9E20CD3E4D28C4", "CC62B90F9250A1E94285ED3A", "C51F67A85ECF06C546B848BA", "36EA694DBE41B6416E5DC4C6", "A9B88160DC0642386FA3540E", "994DFE14E4BDE1B861841B45" );
+            "children" = ( "45636F9EF80F78F3168342B7", "4B48CA9557C6E1A8685CDCBC", "DBAE9E0A414A45C7E837331F", "D7C3A2CCEB9E20CD3E4D28C4", "CC62B90F9250A1E94285ED3A", "C51F67A85ECF06C546B848BA", "36EA694DBE41B6416E5DC4C6", "A9B88160DC0642386FA3540E", "994DFE14E4BDE1B861841B45" );
             "sourceTree" = "<group>";
         };
         "32E7744319BB8A4BB0D09C2B" = {
@@ -613,6 +653,12 @@
             "lastKnownFileType" = "sourcecode.swift";
             "sourceTree" = "<group>";
         };
+        "E9C665FBE2EF65B0A16AE4CC" = {
+            "path" = "Sources/FocusFrame/AnimationEntriesPage.swift";
+            "isa" = "PBXFileReference";
+            "lastKnownFileType" = "sourcecode.swift";
+            "sourceTree" = "<group>";
+        };
         "BCE3E400CCBCD8B4490E7831" = {
             "path" = "Sources/FocusFrame/FocusEffectPages.swift";
             "isa" = "PBXFileReference";
@@ -661,6 +707,10 @@
         "A15334B33D1079909AF5137A" = {
             "isa" = "PBXBuildFile";
             "fileRef" = "80E363FFDFAAADA4867CCF56";
+        };
+        "F306D389BB423925A7D39C68" = {
+            "isa" = "PBXBuildFile";
+            "fileRef" = "E9C665FBE2EF65B0A16AE4CC";
         };
         "1EC0CFF97603EF281A27F648" = {
             "isa" = "PBXBuildFile";

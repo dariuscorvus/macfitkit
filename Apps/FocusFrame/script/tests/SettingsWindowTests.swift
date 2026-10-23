@@ -65,39 +65,38 @@ struct SettingsWindowTests {
                 store.value.appearance.width = 8
                 store.value.appearance.gap = 5
                 check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Appearance did not update live")
-                store.value.appearance.opacityAnimation.mode = .pulse
-                store.value.appearance.opacityAnimation.trigger = .continuous
-                let canvas = overlay.contentView as! EffectCanvas
-                if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-                    check((canvas.renderer.root.animationKeys() ?? []).isEmpty, "Reduced-motion settings animated")
-                } else {
-                    check(!(canvas.renderer.root.animationKeys() ?? []).isEmpty, "Settings animation not running")
-                }
-                // Material and placement changes use the same live renderer.
-                store.value.appearance.opacityAnimation.mode = .off
-                store.value.appearance.material.mode = .gold
-                store.value.appearance.material.reflectionEnabled = true
-                store.value.appearance.material.trigger = .continuous
                 func animationKeys(in layer: CALayer) -> [String] {
                     (layer.animationKeys() ?? []) + (layer.sublayers ?? []).flatMap { animationKeys(in: $0) }
                 }
+                store.value.appearance.animations = [AnimationEntry(.opacityPulse, trigger: .continuous)]
+                let canvas = overlay.contentView as! EffectCanvas
+                if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                    check(animationKeys(in: canvas.renderer.root).isEmpty, "Reduced-motion settings animated")
+                } else {
+                    check(!animationKeys(in: canvas.renderer.root).isEmpty, "Settings animation not running")
+                }
+                // Material and placement changes use the same live renderer.
+                let sweep = AnimationEntry(.metalReflection, trigger: .continuous)
+                store.value.appearance.material.mode = .gold
+                store.value.appearance.animations = [sweep]
+                let travelKey = "\(sweep.id.uuidString)-reflectionTravel"
                 let metalKeys = animationKeys(in: canvas.renderer.root)
-                check(metalKeys.contains("metalReflection") != NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, "Metal reflection motion policy incorrect")
+                check(metalKeys.contains(travelKey) != NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, "Metal reflection motion policy incorrect")
                 for placement in BorderPlacement.allCases {
                     store.value.appearance.placement = placement
                     check(overlay.frame == EffectGeometry.alignedOverlayRect(for: window.frame, appearance: store.value.appearance), "Placement update did not follow window")
                 }
                 store.value.appearance.material.mode = .chrome
                 check(PreferencesStore(defaults: defaults).value.appearance == store.value.appearance, "Metal/placement values not persisted")
-                store.value.appearance.material.trigger = .focus
-                check(!animationKeys(in: canvas.renderer.root).contains("metalReflection"), "Focus reflection started on a settings update")
+                store.value.appearance.animations[0].trigger = .focus
+                check(!animationKeys(in: canvas.renderer.root).contains(travelKey), "Focus reflection started on a settings update")
                 manager.testSettingsFocusAnimation()
                 func reflection(in layer: CALayer) -> CAAnimation? {
-                    layer.animation(forKey: "metalReflection") ?? (layer.sublayers ?? []).compactMap { reflection(in: $0) }.first
+                    layer.animation(forKey: travelKey) ?? (layer.sublayers ?? []).compactMap { reflection(in: $0) }.first
                 }
                 if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
                     let before = reflection(in: canvas.renderer.root)!
-                    check(before.duration == store.value.appearance.material.focusDuration && before.repeatCount == 0,
+                    check(before.duration == store.value.appearance.animations[0].duration && before.repeatCount == 1,
                           "Focus reflection did not use one bounded sweep")
                     window.setFrameOrigin(window.frame.origin.applying(CGAffineTransform(translationX: 10,y: -10)))
                     check(reflection(in: canvas.renderer.root)?.beginTime == before.beginTime, "Move restarted focus reflection")
@@ -121,13 +120,13 @@ struct SettingsWindowTests {
                 manager.stop()
                 check(!overlay.isVisible && animationKeys(in: canvas.renderer.root).isEmpty, "Stopped settings frame/animation remained active")
                 settings.model.mutate { $0 = MotionPreset.runner.applying(to: $0) }
-                check(store.value.appearance.motion.mode == .runner, "Runner preset did not apply")
+                check(store.value.appearance.animations.map(\.kind) == [.runner], "Runner preset did not apply")
                 let preview = AnimationPreview(frame: NSRect(x: 0, y: 0, width: 500, height: 260))
                 preview.previewStyle = store.value.appearance
                 window.contentView = preview
                 preview.play()
                 if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-                    check(animationKeys(in: preview.renderer.root).contains("motionRunner"), "Preview did not play runner")
+                    check(animationKeys(in: preview.renderer.root).contains { $0.hasSuffix("-dashTravel") }, "Preview did not play runner")
                 }
                 window.contentView = NSView()
                 check(animationKeys(in: preview.renderer.root).isEmpty, "Detached preview kept animating")

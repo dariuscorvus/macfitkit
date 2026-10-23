@@ -40,7 +40,7 @@ struct OverlayGeometryTests {
         expandedLimits.light.extent = 200
         expandedLimits.shadow.blur = 200; expandedLimits.shadow.spread = 200
         expandedLimits.shadow.offsetX = -200; expandedLimits.shadow.offsetY = 200
-        var metalCombined = expandedLimits; metalCombined.material.mode = .gold; metalCombined.material.reflectionEnabled = true
+        var metalCombined = expandedLimits; metalCombined.material.mode = .gold; metalCombined.animations = [AnimationEntry(.metalReflection)]
         var chromeCombined = metalCombined; chromeCombined.material.mode = .chrome
         let styles = [Appearance(), glow, neon, shadow, negativeShadow, combined, wideFrame, wideCombined, expandedLimits, metalCombined, chromeCombined]
         var checks = 0
@@ -57,15 +57,15 @@ struct OverlayGeometryTests {
                             if step == 2 { target.size.height += 50 }
                             if step == 3 { target = target.offsetBy(dx: 0.25, dy: 0.75) }
                             let canvas = overlay.contentView as! EffectCanvas
-                            let previousMask = canvas.renderer.root.sublayers?.dropFirst().first?.sublayers?.first?.mask
+                            let previousMask = canvas.renderer.frameGroup.sublayers?.first?.mask
                             overlay.show(around: target, appearance: style, focusChanged: step == 1)
                             let expected = EffectGeometry.alignedOverlayRect(for: target, appearance: style)
                             guard overlay.frame == expected else {
                                 print("FAIL: Overlay shifted: requested \(expected), actual \(overlay.frame)")
                                 exit(1)
                             }
-                            let root = (overlay.contentView as! EffectCanvas).renderer.root
-                            let mask = root.sublayers![1].sublayers!.first!.mask as! CAShapeLayer
+                            let renderer = (overlay.contentView as! EffectCanvas).renderer, root = renderer.root
+                            let mask = renderer.frameGroup.sublayers!.first!.mask as! CAShapeLayer
                             if step == 1 || step == 3 { precondition(mask === previousMask, "Move rebuilt contour layers") }
                             let painted = mask.path!.boundingBoxOfPath.applying(root.affineTransform())
                                 .offsetBy(dx: overlay.frame.minX,dy: overlay.frame.minY)
@@ -100,7 +100,7 @@ struct OverlayGeometryTests {
         }
         var a = Appearance(); a.width = 10; a.shadow.enabled = true; a.shadow.colorSource = .gradient
         a.shadow.blur = 4; a.shadow.spread = 8; a.shadow.offsetY = 0; a.shadow.opacity = 0.8
-        a.gradient.mode = .linear; a.gradient.first = EffectColor(1,0,0); a.gradient.second = EffectColor(0,0,1)
+        a.gradient.mode = .linear; a.gradient.stops = [GradientStop(EffectColor(1,0,0), at: 0), GradientStop(EffectColor(0,0,1), at: 1)]
         let pixels = render(a); let left = (150*size+86)*4, right = (150*size+214)*4
         precondition(pixels[left+3] > 10 && pixels[right+3] > 10, "Gradient shadow missing")
         precondition(pixels[left] > pixels[left+2] && pixels[right+2] > pixels[right], "Gradient shadow lost spatial colors")
@@ -111,42 +111,58 @@ struct OverlayGeometryTests {
         let solid = EffectRenderer(); solid.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1)
         let inherited = nodes(solid.root).first { $0.shadowPath != nil }!.shadowColor!
         precondition(NSColor(cgColor: inherited)!.greenComponent == 1 && NSColor(cgColor: inherited)!.redComponent == 0, "Frame-color shadow not inherited")
-        a.shadow.colorSource = .gradient; a.rotation.enabled = true; a.rotation.trigger = .continuous
+        a.shadow.colorSource = .gradient
+        let rotation = AnimationEntry(.gradientRotation, trigger: .continuous); a.animations = [rotation]
         let renderer = EffectRenderer(); renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1)
         renderer.setVisible(true,focusChanged: true)
-        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-            let rotations = nodes(renderer.root).compactMap { $0.animation(forKey: "rotationEffect") }
-            precondition(rotations.count == 2 && rotations[0].beginTime == rotations[1].beginTime, "Shadow rotation not synchronized")
+        let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        func animations(_ entry: AnimationEntry, _ property: AnimationTrack.Property) -> [CAAnimation] {
+            nodes(renderer.root).compactMap { $0.animation(forKey: "\(entry.id.uuidString)-\(property.rawValue)") }
         }
-        for mode in [MotionMode.impulse,.runner,.draw,.breathe,.flow] {
-            a.rotation.enabled = false; a.motion.mode = mode; a.motion.target = .shadow; a.motion.cycles = 2
+        if !reduced {
+            let rotations = animations(rotation, .rotation)
+            precondition(rotations.count == 2 && rotations[0].beginTime == rotations[1].beginTime, "Shadow rotation not synchronized")
+            // A focus change must not restart a continuous entry.
+            renderer.setVisible(true,focusChanged: true)
+            precondition(animations(rotation, .rotation)[0].beginTime == rotations[0].beginTime, "Focus change restarted a continuous animation")
+        }
+        for kind in [AnimationKind.focusPulse,.runner,.draw,.breathe,.colorFlow] {
+            var entry = AnimationEntry(kind); entry.target = .shadow; entry.repeats = 2; a.animations = [entry]
             renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1)
             renderer.setVisible(true,focusChanged: true)
-            let layers = nodes(renderer.root), animated = layers.flatMap { $0.animationKeys() ?? [] }
-            if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { precondition(animated.isEmpty) }
+            let animated = nodes(renderer.root).flatMap { $0.animationKeys() ?? [] }
+            if reduced { precondition(animated.isEmpty) }
             else {
-                precondition(!animated.isEmpty, "Missing motion: \(mode)")
-                let motion = layers.compactMap { $0.animation(forKey: animated[0]) }.first!
-                precondition(motion.repeatCount == 1 && motion.duration == a.motion.duration, "Finite repetition/duration incorrect")
-                if mode == .flow {
-                    let flows = layers.compactMap { $0.animation(forKey: "motionFlow") }
+                precondition(!animated.isEmpty, "Missing motion: \(kind)")
+                let first = entry.tracks()[0], motion = animations(entry, first.property).first!
+                precondition(motion.repeatCount == 2 && motion.duration == entry.duration, "Finite repetition/duration incorrect: \(kind)")
+                if kind == .colorFlow {
+                    let flows = animations(entry, .colorMix)
                     precondition(flows.count == 2 && flows[0].beginTime == flows[1].beginTime, "Frame/shadow color flow not synchronized")
                 }
-                if mode == .draw { precondition(animated.contains("motionTrace"), "Draw does not reveal actual border") }
-                if mode == .breathe { precondition(animated.contains("motionTightShadow"), "Gradient shadow has no compact phase") }
-                let before = layers.compactMap { $0.animation(forKey: animated[0]) }.first!.beginTime
+                if kind == .draw { precondition(animations(entry, .strokeEnd).count >= 2, "Draw does not reveal actual border") }
+                if kind == .breathe { precondition(!animations(entry, .tightShadow).isEmpty, "Gradient shadow has no compact phase") }
+                let before = motion.beginTime
                 renderer.update(bounds: CGRect(x: 0,y: 0,width: 340,height: size),target: target.insetBy(dx: -10,dy: 0),style: a,scale: 1)
                 renderer.setVisible(true,focusChanged: false)
-                let after = nodes(renderer.root).compactMap { $0.animation(forKey: animated[0]) }.first!.beginTime
-                precondition(before == after, "Resize restarted animation")
+                precondition(animations(entry, first.property).first!.beginTime == before, "Resize restarted animation")
             }
             renderer.setVisible(false)
             precondition(nodes(renderer.root).allSatisfy { ($0.animationKeys() ?? []).isEmpty }, "Hidden motion still running")
         }
-        a.motion.mode = .off; a.opacityAnimation.mode = .pulse; a.opacityAnimation.target = .shadow; a.opacityAnimation.trigger = .continuous
+        // Two opacity entries on the shadow: each animates its own nested stage, so the multipliers multiply.
+        var pulse = AnimationEntry(.opacityPulse, trigger: .continuous); pulse.target = .shadow
+        var breathe = AnimationEntry(.breathe, trigger: .continuous); breathe.target = .shadow
+        a.animations = [pulse, breathe]
         renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1); renderer.setVisible(true)
-        precondition(renderer.root.animation(forKey: "opacityEffect") == nil, "Targeted shadow animation pulses whole frame")
-        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, five motion modes, resize phase, hidden cleanup and independent shadow opacity checks.")
+        precondition(renderer.root.animationKeys() == nil, "Targeted shadow animation pulses whole frame")
+        if !reduced {
+            let pulsing = nodes(renderer.root).filter { $0.animation(forKey: "\(pulse.id.uuidString)-opacityMultiplier") != nil }
+            let breathing = nodes(renderer.root).filter { $0.animation(forKey: "\(breathe.id.uuidString)-opacityMultiplier") != nil }
+            precondition(!pulsing.isEmpty && pulsing.count == breathing.count, "Opacity entries missing")
+            precondition(zip(pulsing, breathing).allSatisfy { $0.sublayers?.first === $1 }, "Opacity stages are not nested")
+        }
+        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, continuous clock across focus, five motion kinds, exact repeats, resize phase, hidden cleanup and nested opacity stages.")
     }
     @MainActor private static func verifyPixels() {
         let w = 480, h = 300
