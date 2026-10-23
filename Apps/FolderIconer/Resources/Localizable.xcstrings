@@ -1,0 +1,9 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "FolderIconer" : {
+      "shouldTranslate" : false
+    }
+  },
+  "version" : "1.0"
+}

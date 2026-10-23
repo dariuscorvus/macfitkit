@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="${1:?Usage: preview_ui.sh APP [--dark]}"
-case "$APP_NAME" in FocusFrame|LiveDesktop|DockPreview|MacFitKit|UniversalPiP) ;; *) exit 2;; esac
+case "$APP_NAME" in FocusFrame|LiveDesktop|DockPreview|MacFitKit|UniversalPiP|FolderIconer) ;; *) exit 2;; esac
 BUILD_DIR="${MACFITKIT_BUILD_DIR:-$HOME/Library/Caches/MacFitKit/Monorepo}"
 PREVIEW_DIR=$(mktemp -d "$HOME/Library/Caches/MacFitKit/ui-preview.XXXXXX")
 APP="$PREVIEW_DIR/$APP_NAME.app"
