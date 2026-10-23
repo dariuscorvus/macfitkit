@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%" : {},
+    "%lld folders" : {},
     "%lld of the selected folders have no icon from FolderIconer. FolderIconer only restores icons it applied." : {},
     "%lld pt" : {},
     "Actions" : {},
@@ -171,6 +172,8 @@
     "Palette" : {},
     "Position" : {},
     "Preview at %lld points, light and dark" : {},
+    "Previous Icon Restored" : {},
+    "Previous Icons Restored" : {},
     "Primary Color" : {},
     "Rectangle" : {},
     "Regular" : {},

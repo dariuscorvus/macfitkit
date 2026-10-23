@@ -100,17 +100,22 @@ struct ApplyReport: Equatable {
         }
     }
 
-    /// Finder's "Restore Folder Icon". Returns whether there is something to show: a refusal or folders FolderIconer never changed.
-    func restoreFromFinder(_ urls: [URL]) async -> Bool {
+    /// Finder's "Restore Folder Icon". Returns the names of the restored folders, and whether the window has something to show:
+    /// a refusal or folders FolderIconer never changed.
+    func restoreFromFinder(_ urls: [URL]) async -> (restored: [String], needsWindow: Bool) {
         await refresh() // A launch by the service has not read the registry yet.
         let request = RestoreRequest(selection: urls, entry: entry(for:))
-        for id in request.entries { await restore(id) }
+        var restored: [String] = []
+        for id in request.entries {
+            let name = folders.first { $0.id == id }?.name
+            if await restore(id), let name { restored.append(name) }
+        }
         if request.unknown.count == 1 {
             failure = "“\(FileManager.default.displayName(atPath: request.unknown[0].path))” has no icon from FolderIconer. FolderIconer only restores icons it applied."
         } else if request.unknown.count > 1 {
             failure = "\(request.unknown.count) of the selected folders have no icon from FolderIconer. FolderIconer only restores icons it applied."
         }
-        return failure != nil || restorePrompt != nil
+        return (restored, failure != nil || restorePrompt != nil)
     }
 
     func chooseFolders() {
@@ -164,12 +169,14 @@ struct ApplyReport: Equatable {
 
     // MARK: Entries
 
-    func restore(_ id: RegistryEntry.ID, force: Bool = false) async {
-        guard let applier else { return }
-        do { try await applier.restore(id, force: force) } catch ApplyError.changedExternally { restorePrompt = id } catch {
+    @discardableResult func restore(_ id: RegistryEntry.ID, force: Bool = false) async -> Bool {
+        guard let applier else { return false }
+        var restored = false
+        do { try await applier.restore(id, force: force); restored = true } catch ApplyError.changedExternally { restorePrompt = id } catch {
             failure = Self.restoreFailure(error as? ApplyError ?? .storageFailed)
         }
         await refresh()
+        return restored
     }
 
     /// Forgets an entry without touching its folder. Only offered for unavailable folders.
