@@ -61,7 +61,7 @@ final class EffectRenderer {
         }
         if a.light.mode != .off {
             let inherited = a.material.mode != .standard ? a.material.baseColor :
-                (a.gradient.mode == .off ? EffectColor(a.red, a.green, a.blue) : a.gradient.first)
+                (a.gradient.mode == .off ? EffectColor(a.red, a.green, a.blue) : a.gradient.stops.first?.color ?? EffectColor(a.red, a.green, a.blue))
             lightLayers.append(addShadow(to: effects, geometry: geometry, spread: 0,
                 color: a.light.followsFrame ? inherited : a.light.color,
                 opacity: a.light.intensity, radius: a.light.extent, offset: .zero, scale: scale))
@@ -144,10 +144,10 @@ final class EffectRenderer {
             gradient.colors = a.material.stops.map { color($0.color) }
             gradient.locations = a.material.stops.map { NSNumber(value: $0.location) }
         } else {
-            let first = a.gradient.mode == .off ? EffectColor(a.red,a.green,a.blue) : a.gradient.first
-            let second = a.gradient.mode == .off ? first : a.gradient.second
-            gradient.colors = a.gradient.mode == .conic ? [color(first), color(second), color(first)] : [color(first),color(second)]
-            gradient.locations = a.gradient.mode == .conic ? [0,0.5,1] : [0,1]
+            let frame = EffectColor(a.red,a.green,a.blue)
+            let stops = a.gradient.mode == .off ? [GradientStop(frame, at: 0), GradientStop(frame, at: 1)] : a.gradient.stops
+            gradient.colors = stops.map { color($0.color) }
+            gradient.locations = stops.map { NSNumber(value: $0.location) }
         }
         let conic = !metal && a.gradient.mode == .conic
         gradient.type = conic ? .conic : .axial
@@ -341,9 +341,10 @@ final class EffectRenderer {
             }
         } else if m.mode == .flow && style.material.mode == .standard && style.gradient.mode != .off {
             for gradient in gradients {
-                guard let colors = gradient.colors, colors.count >= 2 else { continue }
+                let order = style.gradient.flowOrder()
+                guard let colors = gradient.colors, colors.count >= 2, order.count == colors.count else { continue }
                 let flow = CAKeyframeAnimation(keyPath: "colors")
-                let swapped = colors.count == 3 ? [colors[1],colors[0],colors[1]] : Array(colors.reversed())
+                let swapped = order.map { colors[$0] }
                 let blended: [Any] = zip(colors,swapped).map { original, changed in
                     guard let first = NSColor(cgColor: original as! CGColor), let second = NSColor(cgColor: changed as! CGColor) else { return original }
                     return first.blended(withFraction: m.strength, of: second)?.cgColor ?? original
