@@ -1,18 +1,19 @@
 # MacFitKit
 
-Native macOS-Tools für Fenstermarkierung, Videohintergründe, Dock-Vorschauen und Bild-in-Bild. Jede App funktioniert eigenständig. Das optionale MacFitKit-Menü bündelt ihre Menüleistensymbole und Bedienelemente.
+Native macOS-Tools für Fenstermarkierung, Videohintergründe, Dock-Vorschauen, Bild-in-Bild und eigene Ordnersymbole. Jede App funktioniert eigenständig. Das optionale MacFitKit-Menü bündelt ihre Menüleistensymbole und Bedienelemente.
 
 ## Downloads
 
-Die aktuellen **Preview-5-Pakete** sind mit Developer ID signiert und von Apple notarisiert. DMG und ZIP enthalten dieselbe Universal-App für Apple Silicon und Intel, die MIT-Lizenz und Installationshinweise. Prüfsummen stehen jeweils im Release.
+Die aktuellen **Preview-6-Pakete** sind mit Developer ID signiert und von Apple notarisiert. DMG und ZIP enthalten dieselbe Universal-App für Apple Silicon und Intel, die MIT-Lizenz und Installationshinweise. Prüfsummen stehen jeweils im Release.
 
 | App | Wofür? | Mindestversion | Download |
 |---|---|---|---|
-| **FocusFrame** | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 | [FocusFrame 0.9.0 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/focusframe-v0.9.0-preview.5) |
-| **LiveDesktop** | Lokale Videos als Hintergrund, Favoriten und Wechsellisten | macOS 26 | [LiveDesktop 0.4.0 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/livedesktop-v0.4.0-preview.5) |
-| **DockPreview** | Beim Dock-Hover Fenstervorschauen anzeigen und Fenster auswählen | macOS 14 | [DockPreview 0.2.0 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/dockpreview-v0.2.0-preview.5) |
-| **UniversalPiP** | Ein ausgewähltes Fenster als skalierbare Live-Vorschau im Vordergrund behalten | macOS 14 | [UniversalPiP 0.1.2 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/universalpip-v0.1.2-preview.5) |
-| **MacFitKit** (optional) | Tools installieren, aktualisieren, deinstallieren und steuern | macOS 14 | [MacFitKit 0.4.4 Preview 5](https://github.com/dariuscorvus/macfitkit/releases/tag/macfitkit-v0.4.4-preview.5) |
+| **FocusFrame** | Das aktive Fenster mit einem anpassbaren Rahmen hervorheben | macOS 14 | [FocusFrame 0.9.0 Preview 6](https://github.com/dariuscorvus/macfitkit/releases/tag/focusframe-v0.9.0-preview.6) |
+| **LiveDesktop** | Lokale Videos als Hintergrund, Favoriten und Wechsellisten | macOS 26 | [LiveDesktop 0.4.0 Preview 6](https://github.com/dariuscorvus/macfitkit/releases/tag/livedesktop-v0.4.0-preview.6) |
+| **DockPreview** | Beim Dock-Hover Fenstervorschauen anzeigen und Fenster auswählen | macOS 14 | [DockPreview 0.2.0 Preview 6](https://github.com/dariuscorvus/macfitkit/releases/tag/dockpreview-v0.2.0-preview.6) |
+| **UniversalPiP** | Ein ausgewähltes Fenster als skalierbare Live-Vorschau im Vordergrund behalten | macOS 14 | [UniversalPiP 0.1.2 Preview 6](https://github.com/dariuscorvus/macfitkit/releases/tag/universalpip-v0.1.2-preview.6) |
+| **FolderIconer** | Ordnersymbole aus Ebenen gestalten: Bild, Text, Emoji, Symbole und Formen | macOS 14 | [FolderIconer 0.1.0 Preview 6](https://github.com/dariuscorvus/macfitkit/releases/tag/foldericoner-v0.1.0-preview.6) |
+| **MacFitKit** (optional) | Tools installieren, aktualisieren, deinstallieren und steuern | macOS 14 | [MacFitKit 0.5.0 Preview 6](https://github.com/dariuscorvus/macfitkit/releases/tag/macfitkit-v0.5.0-preview.6) |
 
 [Alle Releases und ältere Versionen](https://github.com/dariuscorvus/macfitkit/releases)
 
@@ -23,7 +24,7 @@ Die angegebenen Mindestversionen entsprechen den Builds. Echte Intel- und Mindes
 1. Lade das **DMG** oder **ZIP** der gewünschten App herunter und öffne beziehungsweise entpacke es.
 2. Kopiere die `.app` nach **Programme** oder in deinen persönlichen Programme-Ordner. Zum Testen oder Nutzen ist Xcode nicht erforderlich.
 3. Starte die kopierte App. macOS kann beim ersten Öffnen die übliche Bestätigung für einen Download verlangen.
-4. Die Apps sind über die **Menüleiste oben am Bildschirm** erreichbar. Klicke auf das jeweilige Symbol, um die Einstellungen zu öffnen.
+4. Die Apps sind über die **Menüleiste oben am Bildschirm** erreichbar. Klicke auf das jeweilige Symbol, um die Einstellungen zu öffnen. FolderIconer ist eine normale App mit Fenster und Dock-Symbol.
 
 **Bei einem Update:** Beende die App zuerst, sichere ihre bisherige Version und ersetze sie am bisherigen Installationsort. Lege keine zweite Kopie in einem anderen Programme-Ordner an. Die bestehenden Einstellungen bleiben in ihrem bisherigen Store. Beim Wechsel von einer anders signierten lokalen Entwicklungsversion kann macOS erneut Freigaben verlangen.
 
@@ -37,6 +38,7 @@ Die Downloads sind notarisiert; Gatekeeper muss dafür nicht global abgeschaltet
 | LiveDesktop | In **Hintergründe** ein vorhandenes Video wählen oder eigene Videos hinzufügen. Die App benötigt Dateizugriff auf die verwendeten Videos und Ordner. |
 | DockPreview | Bedienungshilfen für Erkennung/Fensterwahl und Bildschirmaufnahme für Miniaturen freigeben. Danach den Zeiger über ein App-Symbol im Dock bewegen. |
 | UniversalPiP | Bildschirmaufnahme freigeben und ein Fenster aus der Auswahlliste wählen. Bedienungshilfen werden zusätzlich für die optionale Aktivierung des Originalfensters benötigt. |
+| FolderIconer | Keine Freigabe nötig. Symbol aus Ebenen gestalten und mit **Apply…** auf Ordner anwenden, oder im Finder per Rechtsklick → **Dienste → Customize Icon…**. **Restore Folder Icon** stellt das vorherige Symbol wieder her. Für Ordner in Schreibtisch, Dokumente oder Downloads fragt macOS einmal nach dem Zugriff. Die Oberfläche ist englisch. |
 | MacFitKit | Die gewünschten Tools direkt im Tool-Katalog installieren oder die Einzelpakete verwenden. Das gemeinsame Menü benötigt selbst keine Bildschirmaufnahme- oder Bedienungshilfen-Freigabe. |
 
 Die Freigaben werden je App unter **Systemeinstellungen → Datenschutz & Sicherheit** erteilt. Je nach macOS-Version heißt die Aufnahmefreigabe **Bildschirmaufnahme** oder **Bildschirm- & Systemaudioaufnahme**. Folge einem von macOS verlangten App-Neustart. Freigaben werden beim Update nicht automatisch zurückgesetzt.
@@ -53,9 +55,9 @@ Manuelle Aktivierung hebt automatische LiveDesktop-Pausen durch Stromsparmodus, 
 
 ## Tool-Verwaltung ab MacFitKit 0.4.4
 
-MacFitKit zeigt alle vier Tools an, auch wenn sie noch nicht installiert sind. „Installieren“ kopiert das mitgelieferte, signaturgeprüfte App-Paket nach `~/Applications`. Danach stehen „Starten“ und die bestehende Steuerung bereit. Die Installation benötigt weder Netzwerkzugriff noch Administratorrechte und startet das Tool nicht automatisch. Vorhandene Apps werden niemals überschrieben. Eine unterbrochene Kopie wird nicht als fertige App veröffentlicht; temporäre Dateien werden bei einem Fehler entfernt. LiveDesktop benötigt weiterhin macOS 26.
+MacFitKit zeigt alle Tools an, auch wenn sie noch nicht installiert sind. „Installieren“ kopiert das mitgelieferte, signaturgeprüfte App-Paket nach `~/Applications`. Danach stehen „Starten“ und die bestehende Steuerung bereit. Die Installation benötigt weder Netzwerkzugriff noch Administratorrechte und startet das Tool nicht automatisch. Vorhandene Apps werden niemals überschrieben. Eine unterbrochene Kopie wird nicht als fertige App veröffentlicht; temporäre Dateien werden bei einem Fehler entfernt. LiveDesktop benötigt weiterhin macOS 26. FolderIconer ist eine Dock-App: Im Menü steht **Öffnen** statt Starten und Pausieren, laufend zusätzlich **Beenden**. Für Updates und Deinstallation wird sie regulär beendet.
 
-`./script/build.sh MacFitKit Release` (bzw. `Debug` oder `all`) baut zuerst alle vier Tools, bündelt sie unter `MacFitKit.app/Contents/Resources/ToolPayloads` und signiert anschließend den Hub erneut. Für die Weitergabe muss dieses vollständige Bundle verwendet werden. Ein einzelner Xcode-Scheme-Build des Hubs erzeugt keine neuen Installationspakete; fehlen diese, zeigt die Oberfläche das an. Die UI-/Menü-Vorschauen deaktivieren Installationen.
+`./script/build.sh MacFitKit Release` (bzw. `Debug` oder `all`) baut zuerst alle Tools, bündelt sie unter `MacFitKit.app/Contents/Resources/ToolPayloads` und signiert anschließend den Hub erneut. Für die Weitergabe muss dieses vollständige Bundle verwendet werden. Ein einzelner Xcode-Scheme-Build des Hubs erzeugt keine neuen Installationspakete; fehlen diese, zeigt die Oberfläche das an. Die UI-/Menü-Vorschauen deaktivieren Installationen.
 
 ## Versionen und Updateprüfung
 
@@ -90,6 +92,7 @@ Bitte entferne private Fenstertitel, Dateipfade, Kontodaten und andere persönli
 - Die Apps sind Vorabversionen. Vollständige VoiceOver-, Kontrast- und Tastaturprüfungen aller Ansichten sind noch offen.
 - Intel, ältere unterstützte macOS-Versionen sowie Mehrmonitor-, Spaces-, Vollbild- und Energie-Sonderfälle sind noch nicht vollständig auf echter Hardware geprüft.
 - UniversalPiP hat offene Langzeit-, Speicher- und Latenzprüfungen.
+- FolderIconer: Eigene Ordnersymbole sind statische Bilder und folgen nicht dem hellen, dunklen oder getönten Ordnerstil. iCloud Drive synchronisiert die Symboldatei `Icon\r` nicht; auf anderen Macs erscheint vermutlich ein normaler Ordner. SVG ist unter macOS 14 und 15 nicht geprüft; schlägt die Laufzeitprüfung fehl, ist der SVG-Import abgeschaltet. In Git-Repositories bietet FolderIconer an, `Icon?` in `.gitignore` aufzunehmen.
 - FocusFrame verdeckt Rahmen, Leuchten und Schatten bei davorliegenden Fenstern. Native transparente Menümaterialien können weiterhin weichgezeichnete Effektfarben zeigen; diese systemeigene Transparenz ist beabsichtigt. [Prüfungen und Grenzen](docs/focusframe-occlusion-plan.md).
 
 [Bestätigte Prüfungen und offene Abnahmen](docs/validation-monorepo.md) · [UniversalPiP-Testmatrix](docs/universal-pip.md)
@@ -128,7 +131,7 @@ Die Menükommunikation verwendet feste, versionierte Befehle über `DistributedN
 Notarisierte Pakete mit eingebettetem MIT-Lizenztext erzeugen:
 
 ```sh
-python3 script/release.py all --preview 5 --notary-profile DEIN_PROFIL
+python3 script/release.py all --preview 6 --notary-profile DEIN_PROFIL
 ```
 
 Mit `--publish` werden erst nach bestandener Paketprüfung GitHub-Vorab-Releases angelegt. Vorhandene Tags und Downloads werden nicht überschrieben. Der Vorgang installiert keine Apps. Das Profil muss zuvor mit `notarytool store-credentials` im lokalen Schlüsselbund eingerichtet sein; Zugangsdaten gehören nicht ins Repository.
