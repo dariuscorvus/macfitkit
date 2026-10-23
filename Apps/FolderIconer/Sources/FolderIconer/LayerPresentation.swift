@@ -20,19 +20,48 @@ extension Layer {
         get { if case .emoji(let value) = content { value } else { EmojiContent(character: "") } }
         set { if case .emoji = content { content = .emoji(newValue) } }
     }
+    var symbol: SymbolContent {
+        get { if case .symbol(let value) = content { value } else { SymbolContent(name: "") } }
+        set { if case .symbol = content { content = .symbol(newValue) } }
+    }
+    var vector: VectorContent {
+        get { if case .vector(let value) = content { value } else { VectorContent(asset: "") } }
+        set { if case .vector = content { content = .vector(newValue) } }
+    }
+    var shape: ShapeContent {
+        get { if case .shape(let value) = content { value } else { ShapeContent() } }
+        set { if case .shape = content { content = .shape(newValue) } }
+    }
+    /// Why the layer renders empty, for the badge in the layer list.
+    var renderWarning: LocalizedStringResource? {
+        switch content {
+        case .symbol(let symbol) where !SymbolDrawing.exists(symbol.name): "No SF Symbol with this name."
+        case .vector(let vector) where vector.format == .svg && !VectorSupport.svgAvailable: "This version of macOS cannot render SVG files."
+        default: nil
+        }
+    }
 }
 
 extension LayerContent {
     var symbolName: String {
-        switch self { case .folderBase: "folder"; case .image: "photo"; case .text: "textformat"; case .emoji: "face.smiling" }
+        switch self { case .folderBase: "folder"; case .image: "photo"; case .text: "textformat"; case .emoji: "face.smiling"
+        case .symbol: "star.square"; case .vector: "scribble.variable"; case .shape: "square.on.circle" }
     }
     var kindTitle: LocalizedStringResource {
-        switch self { case .folderBase: "Folder Base"; case .image: "Image"; case .text: "Text"; case .emoji: "Emoji" }
+        switch self { case .folderBase: "Folder Base"; case .image: "Image"; case .text: "Text"; case .emoji: "Emoji"; case .symbol: "Symbol"; case .vector: "Vector"; case .shape: "Shape" }
     }
 }
 
 extension FolderBase.Style {
     var title: LocalizedStringResource { switch self { case .system: "System Folder"; case .color: "Colored Folder"; case .none: "No Folder" } }
+}
+
+extension SymbolContent.Rendering {
+    var title: LocalizedStringResource { switch self { case .monochrome: "Monochrome"; case .hierarchical: "Hierarchical"; case .palette: "Palette"; case .multicolor: "Multicolor" } }
+}
+
+extension ShapeContent.Kind {
+    var title: LocalizedStringResource { switch self { case .rectangle: "Rectangle"; case .roundedRectangle: "Rounded Rectangle"; case .circle: "Ellipse" } }
 }
 
 extension ImageContent.Fit {

@@ -140,6 +140,7 @@ import SwiftUI
     @discardableResult func importImages(_ urls: [URL]) -> Bool {
         var added = false
         for url in urls {
+            if VectorContent(asset: url.lastPathComponent).format != nil { added = importVector(url) || added; continue }
             guard let (asset, size) = importAsset(url) else { continue }
             add(Layer(name: url.deletingPathExtension().lastPathComponent, content: .image(ImageContent(asset: asset, size: size))), "Add Image"); added = true
         }
@@ -158,6 +159,8 @@ import SwiftUI
         return (package.addAsset(data, pathExtension: url.pathExtension), aspect >= 1 ? CanvasSize(width: long, height: long / aspect) : CanvasSize(width: long * aspect, height: long))
     }
 
+    /// For importers outside this file (vectors); same rules as `importAsset`.
+    func addAsset(_ data: Data, pathExtension: String) -> AssetID { package.addAsset(data, pathExtension: pathExtension) }
 
     // MARK: Geometry
 

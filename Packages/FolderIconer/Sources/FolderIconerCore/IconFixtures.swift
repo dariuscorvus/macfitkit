@@ -3,7 +3,7 @@ import Foundation
 
 /// Fixed documents for snapshot tests, the perf test and `foldericoner-render --fixture`. Images are generated, so no binary assets ship.
 public enum IconFixtures {
-    public static let names = ["base-system", "base-color-green", "image-fill-clipped-rotated", "text-gradient", "emoji-rotated-half-opacity", "issue-14-example", "six-layers"]
+    public static let names = ["base-system", "base-color-green", "image-fill-clipped-rotated", "text-gradient", "emoji-rotated-half-opacity", "issue-14-example", "six-layers"] + kindNames
 
     public static func package(named name: String) -> DocumentPackage? {
         var package = DocumentPackage(document: IconDocument(id: id(0), layers: [Layer(id: id(1), name: "Folder", content: .folderBase(FolderBase()))]))
@@ -38,7 +38,7 @@ public enum IconFixtures {
             add("Title", .text(TextContent(string: "Six", size: 0.18, fill: sunset))) { $0.transform.y = 0.5 }
             add("Caption", .text(TextContent(string: "layers\nfixture", weight: .medium, size: 0.06))) { $0.transform.y = 0.68; $0.hideBelowSize = 32 }
             add("Tree", .emoji(tree)) { $0.transform = LayerTransform(x: 0.76, y: 0.28, rotation: 45); $0.opacity = 0.5 }
-        default: return nil
+        default: guard addKindFixture(name, to: &package) else { return nil }
         }
         return package
     }

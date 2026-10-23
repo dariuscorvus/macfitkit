@@ -12,6 +12,7 @@ struct InspectorView: View {
                 Group {
                     LayerSection(model: model, layer: layer)
                     ContentInspector(model: model, layer: layer)
+                    EffectsInspector(model: model, layer: layer)
                 }
                 .disabled(layer.locked)
             }

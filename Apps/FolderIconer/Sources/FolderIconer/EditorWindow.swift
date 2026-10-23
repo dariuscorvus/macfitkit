@@ -46,6 +46,9 @@ struct AddLayerMenu: View {
             Button("Add Image…") { model.chooseImage() }
             Button("Add Text") { model.addText() }
             Button("Add Emoji") { model.addEmoji() }
+            Button("Add Symbol") { model.addSymbol() }
+            Button("Add Vector…") { model.chooseVector() }
+            Button("Add Shape") { model.addShape() }
         } label: { Label("Add Layer", systemImage: "plus") }
         .help(Text("Add a layer above the selection"))
     }

@@ -12,6 +12,9 @@ extension IconRenderer {
         case .image(let image): return CGSize(width: image.size.width, height: image.size.height)
         case .text(let text): return measured(textLayout(text, pixelsPerUnit: Self.measureScale))
         case .emoji(let emoji): return measured(emojiLayout(emoji, pixelsPerUnit: Self.measureScale))
+        case .symbol(let symbol): return SymbolDrawing.size(symbol, pixelsPerUnit: Self.measureScale)
+        case .vector(let vector): return CGSize(width: vector.size.width, height: vector.size.height)
+        case .shape(let shape): return CGSize(width: shape.size.width, height: shape.size.height)
         }
     }
 
@@ -31,6 +34,12 @@ extension IconRenderer {
         case .emoji(let emoji):
             let layout = emojiLayout(emoji, pixelsPerUnit: unit)
             context.scaleBy(x: 1 / unit, y: 1 / unit); layout.draw(in: context)
+        case .symbol(let symbol): context.scaleBy(x: 1 / unit, y: 1 / unit); SymbolDrawing.draw(symbol, pixelsPerUnit: unit, in: context)
+        case .vector(let vector):
+            guard let data = package.assets[vector.asset] else { return }
+            // Pixel units, so AppKit never rasterises the SVG at a tiny user-space size.
+            context.scaleBy(x: 1 / unit, y: 1 / unit); VectorSupport.draw(vector, data: data, pixelsPerUnit: unit, in: context)
+        case .shape(let shape): ShapeDrawing.draw(shape, in: context)
         }
     }
 

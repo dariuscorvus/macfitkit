@@ -35,6 +35,9 @@ struct EditorCommands: Commands {
             Button("Add Image…") { model.chooseImage() }.keyboardShortcut("i", modifiers: [.command, .shift])
             Button("Add Text") { model.addText() }.keyboardShortcut("t", modifiers: [.command, .shift])
             Button("Add Emoji") { model.addEmoji() }.keyboardShortcut("e", modifiers: [.command, .shift])
+            Button("Add Symbol") { model.addSymbol() }
+            Button("Add Vector…") { model.chooseVector() }
+            Button("Add Shape") { model.addShape() }
             Divider()
             Button("Duplicate") { model.duplicateSelection() }.keyboardShortcut("d").disabled(!model.canDuplicate || model.editingText != nil)
             // ⌘⌫ in the menu: a bare ⌫ menu shortcut would swallow Backspace in text fields. The list and canvas handle bare ⌫.

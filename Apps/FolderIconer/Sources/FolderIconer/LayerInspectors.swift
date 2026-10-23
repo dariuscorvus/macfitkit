@@ -12,6 +12,9 @@ struct ContentInspector: View {
         case .image: ImageInspector(model: model, layer: layer)
         case .text: TextInspector(model: model, layer: layer)
         case .emoji: EmojiInspector(model: model, layer: layer)
+        case .symbol: SymbolInspector(model: model, layer: layer)
+        case .vector: VectorInspector(model: model, layer: layer)
+        case .shape: ShapeInspector(model: model, layer: layer)
         }
     }
 }

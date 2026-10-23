@@ -64,7 +64,7 @@ private extension Encoder {
 
 extension LayerContent: Codable {
     public var typeName: String {
-        switch self { case .folderBase: "folderBase"; case .image: "image"; case .text: "text"; case .emoji: "emoji" }
+        switch self { case .folderBase: "folderBase"; case .image: "image"; case .text: "text"; case .emoji: "emoji"; case .symbol: "symbol"; case .vector: "vector"; case .shape: "shape" }
     }
     public init(from decoder: any Decoder) throws {
         switch try decoder.typeName() {
@@ -72,6 +72,9 @@ extension LayerContent: Codable {
         case "image": self = .image(try ImageContent(from: decoder))
         case "text": self = .text(try TextContent(from: decoder))
         case "emoji": self = .emoji(try EmojiContent(from: decoder))
+        case "symbol": self = .symbol(try SymbolContent(from: decoder))
+        case "vector": self = .vector(try VectorContent(from: decoder))
+        case "shape": self = .shape(try ShapeContent(from: decoder))
         case let other: throw DocumentError.unknownLayerType(other)
         }
     }
@@ -81,6 +84,9 @@ extension LayerContent: Codable {
         case .image(let image): try encoder.encode(type: typeName, image)
         case .text(let text): try encoder.encode(type: typeName, text)
         case .emoji(let emoji): try encoder.encode(type: typeName, emoji)
+        case .symbol(let symbol): try encoder.encode(type: typeName, symbol)
+        case .vector(let vector): try encoder.encode(type: typeName, vector)
+        case .shape(let shape): try encoder.encode(type: typeName, shape)
         }
     }
 }

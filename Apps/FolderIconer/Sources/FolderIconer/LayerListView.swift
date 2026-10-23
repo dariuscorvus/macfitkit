@@ -39,6 +39,7 @@ struct LayerRow: View {
             Image(systemName: layer.content.symbolName).frame(width: 18).foregroundStyle(.secondary)
                 .accessibilityLabel(Text(layer.content.kindTitle))
             Text(layer.name).lineLimit(1).truncationMode(.middle).foregroundStyle(layer.visible ? .primary : .secondary)
+            if let warning = layer.renderWarning { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange).help(Text(warning)) }
             Spacer(minLength: 4)
             Button { model.edit(layer.locked ? "Unlock Layer" : "Lock Layer") { $0[layer: layer.id]?.locked.toggle() } } label: {
                 Label(layer.locked ? "Unlock Layer" : "Lock Layer", systemImage: layer.locked ? "lock.fill" : "lock.open")

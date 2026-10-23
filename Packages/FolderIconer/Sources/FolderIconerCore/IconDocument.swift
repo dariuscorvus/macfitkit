@@ -35,11 +35,11 @@ public struct LayerTransform: Codable, Hashable, Sendable {
 
 /// Layer kinds. New kinds are added as cases here, in `LayerContent.typeName`, the coding switch and `LayerDrawing`.
 public enum LayerContent: Hashable, Sendable {
-    case folderBase(FolderBase), image(ImageContent), text(TextContent), emoji(EmojiContent)
+    case folderBase(FolderBase), image(ImageContent), text(TextContent), emoji(EmojiContent), symbol(SymbolContent), vector(VectorContent), shape(ShapeContent)
     public var isFolderBase: Bool { if case .folderBase = self { true } else { false } }
     /// Assets the package must keep for this content.
     public var assetIDs: [AssetID] {
-        switch self { case .image(let image): [image.asset]; case .folderBase, .text, .emoji: [] }
+        switch self { case .image(let image): [image.asset]; case .vector(let vector): [vector.asset]; case .folderBase, .text, .emoji, .symbol, .shape: [] }
     }
 }
 
