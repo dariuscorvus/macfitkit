@@ -147,7 +147,7 @@ final class HubController {
     private func stopForMaintenance(_ tool: ToolID) async throws {
         message = "\(tool.name) wird beendet und gesichert …"
         guard running(tool) != nil else { return }
-        bridge.send(.quit, to: tool)
+        quit(tool)
         for _ in 0..<100 {
             if running(tool) == nil { return }
             try await Task.sleep(for: .milliseconds(100))
@@ -234,8 +234,15 @@ final class HubController {
             }
             return "Nicht installiert"
         }
+        if tool.kind == .app { return running(tool) == nil ? "Nicht gestartet" : "Läuft" }
         if let status = bridge.statuses[tool] { return status.detail }
         return running(tool) == nil ? "Nicht gestartet" : "Nicht verbunden · ggf. Update nötig"
+    }
+    func open(_ tool: ToolID) {
+        if let app = running(tool) { app.activate() } else { start(tool) }
+    }
+    func quit(_ tool: ToolID) {
+        if tool.kind == .app { running(tool)?.terminate() } else { bridge.send(.quit, to: tool) }
     }
     func start(_ tool: ToolID, openSettings: Bool = false) {
         guard installing != tool, supported(tool), let url = location(tool) else { return }

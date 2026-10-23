@@ -104,7 +104,7 @@ func allFourRealAppsInstallUpdateTrashAndRestore() async throws {
             "testScope": "isolated signed app fixtures; UI not exercised"])
         print("PASS \(tool.name): bundle install; real release update; backup restore; failed-update rollback; native Trash; uninstall backup restore")
     }
-    #expect(report.count == 4)
+    #expect(report.count == ToolID.allCases.count)
     if let path = ProcessInfo.processInfo.environment["MACFITKIT_FLOW_REPORT"] {
         try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: path))
     }

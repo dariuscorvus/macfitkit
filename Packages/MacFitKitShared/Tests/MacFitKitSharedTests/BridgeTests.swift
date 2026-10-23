@@ -28,6 +28,13 @@ import Foundation
     #expect(ToolID.dockPreview.bundleIdentifier == "tech.highbyte.macfitkit.DockPreview")
     #expect(ToolID.universalPiP.bundleIdentifier == "tech.highbyte.macfitkit.UniversalPiP")
     #expect(ToolID.universalPiP.minimumSystemMajor == 14)
+    #expect(ToolID.folderIconer.bundleIdentifier == "tech.highbyte.macfitkit.FolderIconer")
+    #expect(ToolID.folderIconer.minimumSystemMajor == 14)
+}
+@Test func onlyFolderIconerIsAnAppKindTool() {
+    #expect(ToolID.folderIconer.kind == .app)
+    #expect(ToolID.allCases.filter { $0.kind == .app } == [.folderIconer])
+    #expect(ToolID.folderIconer.name == "FolderIconer")
 }
 
 @Test func numericEditingPreservesLegacyDecimalInput() {

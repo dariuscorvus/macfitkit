@@ -1,10 +1,13 @@
 import Foundation
 
+/// Background tools run a menu bar item and the bridge; app tools are plain Dock apps.
+public enum ToolKind: String, Codable, Sendable { case background, app }
+
 public enum ToolID: String, Codable, CaseIterable, Identifiable, Sendable {
-    case focusFrame, liveDesktop, dockPreview, universalPiP
+    case focusFrame, liveDesktop, dockPreview, universalPiP, folderIconer
     public var id: String { rawValue }
     public var name: String {
-        switch self { case .focusFrame: "FocusFrame"; case .liveDesktop: "LiveDesktop"; case .dockPreview: "DockPreview"; case .universalPiP: "UniversalPiP" }
+        switch self { case .focusFrame: "FocusFrame"; case .liveDesktop: "LiveDesktop"; case .dockPreview: "DockPreview"; case .universalPiP: "UniversalPiP"; case .folderIconer: "FolderIconer" }
     }
     public var bundleIdentifier: String {
         switch self {
@@ -12,12 +15,14 @@ public enum ToolID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .liveDesktop: "tech.highbyte.LiveDesktop.prototype"
         case .dockPreview: "tech.highbyte.macfitkit.DockPreview"
         case .universalPiP: "tech.highbyte.macfitkit.UniversalPiP"
+        case .folderIconer: "tech.highbyte.macfitkit.FolderIconer"
         }
     }
     public var symbol: String {
-        switch self { case .focusFrame: "viewfinder"; case .liveDesktop: "play.rectangle"; case .dockPreview: "macwindow.on.rectangle"; case .universalPiP: "pip" }
+        switch self { case .focusFrame: "viewfinder"; case .liveDesktop: "play.rectangle"; case .dockPreview: "macwindow.on.rectangle"; case .universalPiP: "pip"; case .folderIconer: "folder.badge.gearshape" }
     }
     public var minimumSystemMajor: Int { self == .liveDesktop ? 26 : 14 }
+    public var kind: ToolKind { self == .folderIconer ? .app : .background }
 }
 
 public enum ToolCommand: Codable, Equatable, Sendable {

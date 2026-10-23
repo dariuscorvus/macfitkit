@@ -5,9 +5,9 @@ APP="${1:-all}"
 CONFIGURATION="${2:-Debug}"
 case "$CONFIGURATION" in Debug|Release) ;; *) echo 'Configuration must be Debug or Release' >&2; exit 2;; esac
 case "$APP" in
- all) APPS=(FocusFrame LiveDesktop DockPreview UniversalPiP); [[ ! -d "$ROOT_DIR/Apps/MacFitKit" ]] || APPS+=(MacFitKit) ;;
- MacFitKit) APPS=(FocusFrame LiveDesktop DockPreview UniversalPiP MacFitKit) ;;
- FocusFrame|LiveDesktop|DockPreview|UniversalPiP) APPS=("$APP") ;;
+ all) APPS=(FocusFrame LiveDesktop DockPreview UniversalPiP FolderIconer); [[ ! -d "$ROOT_DIR/Apps/MacFitKit" ]] || APPS+=(MacFitKit) ;;
+ MacFitKit) APPS=(FocusFrame LiveDesktop DockPreview UniversalPiP FolderIconer MacFitKit) ;;
+ FocusFrame|LiveDesktop|DockPreview|UniversalPiP|FolderIconer) APPS=("$APP") ;;
  *) echo 'Unknown MacFitKit app' >&2; exit 2 ;;
 esac
 BUILD_DIR="${MACFITKIT_BUILD_DIR:-$HOME/Library/Caches/MacFitKit/Monorepo}"
@@ -23,12 +23,12 @@ for app in "${APPS[@]}"; do
  codesign --verify --deep --strict "$BUILD_DIR/Build/Products/$CONFIGURATION/$app.app"
 done
 
-# A portable hub includes all four signed tools; no download service or source checkout is needed at runtime.
+# A portable hub includes every signed tool; no download service or source checkout is needed at runtime.
 if [[ " ${APPS[*]} " == *" MacFitKit "* ]]; then
  PRODUCTS="$BUILD_DIR/Build/Products/$CONFIGURATION"
  PAYLOADS="$PRODUCTS/MacFitKit.app/Contents/Resources/ToolPayloads"
  mkdir -p "$PAYLOADS"
- for tool in FocusFrame LiveDesktop DockPreview UniversalPiP; do
+ for tool in FocusFrame LiveDesktop DockPreview UniversalPiP FolderIconer; do
    rm -rf "$PAYLOADS/$tool.app"
    ditto "$PRODUCTS/$tool.app" "$PAYLOADS/$tool.app"
    codesign --verify --deep --strict "$PAYLOADS/$tool.app"

@@ -17,6 +17,7 @@ body:
         - LiveDesktop
         - DockPreview
         - UniversalPiP
+        - FolderIconer
         - MacFitKit-Menü
         - Mehrere Apps
     validations:

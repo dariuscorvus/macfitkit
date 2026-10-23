@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME=DockPreview
-case "${1:-}" in FocusFrame|LiveDesktop|DockPreview|MacFitKit|UniversalPiP) APP_NAME="$1"; shift;; esac
+case "${1:-}" in FocusFrame|LiveDesktop|DockPreview|MacFitKit|UniversalPiP|FolderIconer) APP_NAME="$1"; shift;; esac
 MODE="${1:-run}"
 case "$MODE" in run|--build-only|--debug|--logs|--telemetry|--verify|--settings|--xcode) ;; *) echo "Usage: $0 [APP] [--build-only|--verify|--settings|--debug|--logs|--telemetry]" >&2; exit 2;; esac
 "$ROOT_DIR/script/build.sh" "$APP_NAME" Debug

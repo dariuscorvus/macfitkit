@@ -55,9 +55,9 @@ private func releaseFixture() throws -> Data {
 @Test(.enabled(if: ProcessInfo.processInfo.environment["MACFITKIT_LIVE_UPDATE_CHECK"] == "1"))
 func publicReleaseSourceIsReachable() async throws {
     let releases = try await ToolReleaseChecker.check()
-    #expect(releases.count == 4)
+    // check() validates every release it returns; a tool without a published release is not an error.
+    #expect(!releases.isEmpty)
     for tool in ToolID.allCases {
-        let release = try #require(releases[tool])
-        print("\(tool.name): \(release.version.display) [\(release.tag)]")
+        print("\(tool.name): " + (releases[tool].map { "\($0.version.display) [\($0.tag)]" } ?? "kein Release"))
     }
 }

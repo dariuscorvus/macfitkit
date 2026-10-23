@@ -42,6 +42,9 @@ import MacFitKitPlatform
             submenu.addItem(NSMenuItem(title: String(controller.description(tool).prefix(30)), action: nil, keyEquivalent: ""))
             if !controller.installed(tool) {
                 add(controller.installing == tool ? "Wird installiert …" : "Installieren", action: #selector(installTool(_:)), tool: tool, menu: submenu).isEnabled = controller.canInstall(tool)
+            } else if tool.kind == .app {
+                add("Öffnen", action: #selector(openTool(_:)), tool: tool, menu: submenu).isEnabled = controller.supported(tool)
+                if controller.running(tool) != nil { add("Beenden", action: #selector(quitTool(_:)), tool: tool, menu: submenu) }
             } else if controller.running(tool) == nil {
                 add("Starten", action: #selector(startTool(_:)), tool: tool, menu: submenu).isEnabled = controller.supported(tool)
             } else if let status = controller.bridge.statuses[tool] {
@@ -80,7 +83,8 @@ import MacFitKitPlatform
     @objc private func startTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.start(id) } }
     @objc private func toggleTool(_ sender: NSMenuItem) { if let id = tool(sender), let status = controller.bridge.statuses[id] { controller.bridge.send(.setEnabled(!status.enabled), to: id) } }
     @objc private func settingsTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.bridge.send(.openSettings, to: id) } }
-    @objc private func quitTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.bridge.send(.quit, to: id) } }
+    @objc private func openTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.open(id) } }
+    @objc private func quitTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.quit(id) } }
     @objc private func refreshTool(_ sender: NSMenuItem) { if let id = tool(sender) { controller.bridge.send(.requestStatus, to: id) } }
     @objc private func showSettings() {
         if window == nil {
