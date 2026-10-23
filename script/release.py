@@ -149,13 +149,14 @@ Update: Vorhandene App und Einstellungen sichern, die App beenden und am bisheri
 Ort ersetzen. Keine zweite Kopie installieren. Ein Wechsel der lokalen Signatur
 kann eine erneute Freigabe durch macOS erfordern. Gatekeeper nicht global abschalten.
 
-Ab MacFitKit 0.4.4 können alle vier Tools im Tool-Katalog installiert, aktualisiert
-und deinstalliert werden. Updates und Deinstallationen sichern die alte App samt
+Ab MacFitKit 0.4.4 können die Tools im Tool-Katalog installiert, aktualisiert
+und deinstalliert werden, ab MacFitKit 0.5.0 auch FolderIconer. Updates und Deinstallationen sichern die alte App samt
 exportierten Einstellungen; vorhandene Daten bleiben erhalten. Die Wiederherstellung
 aus einem Backup ist derzeit manuell. Die App-Versionen entscheiden über Updates,
 nicht die Preview-Nummer; gleich versionierte Tools werden nicht erneut angeboten.
 
-Die Apps sind über ihre Menüleistensymbole erreichbar. MacFitKit ist optional;
+Die Apps sind über ihre Menüleistensymbole erreichbar; FolderIconer ist eine
+normale App mit Fenster und Dock-Symbol. MacFitKit ist optional;
 die anderen Tools bleiben eigenständig nutzbar. Autostart wird je App unter
 Allgemein → Beim Anmelden starten eingestellt.
 
@@ -228,15 +229,19 @@ neben der App im DMG/ZIP. `LICENSE.txt` liegt außerdem direkt im Release.
 - Herkunft: [`{revision[:12]}`](https://github.com/{REPO}/commit/{revision}).
 - Installation und Prüfsummen: `Installation.txt`, `Release-info.json`, `SHA256SUMS.txt`.
 
-Neu in Preview 5:
-- MacFitKit 0.4.4 (Build 8): alle vier Tools direkt installieren, Versionen anzeigen,
-  Releases prüfen, Updates mit geprüftem Backup installieren und Apps deinstallieren.
+Neu in Preview 6:
+- FolderIconer 0.1.0 (Build 1), neu: Ordnersymbole aus Ebenen gestalten – Ordnerbasis,
+  Bild, Text, Emoji, SF Symbol, SVG/PDF und Formen, mit Kontur, Schatten und Leuchten.
+  Symbole auf Ordner anwenden und das vorherige Symbol wiederherstellen, auch im Finder
+  über Dienste „Customize Icon…“ und „Restore Folder Icon“. Die Oberfläche ist englisch.
+- MacFitKit 0.5.0 (Build 9): FolderIconer im Tool-Katalog installieren, öffnen,
+  aktualisieren und deinstallieren. Laufende Dock-Apps werden für Updates regulär beendet.
 - Der Hub enthält dieselben fertig notarisierten Tools wie die Einzelpakete.
-- UniversalPiP 0.1.2 (Build 3): dauerhaftes X zum Schließen der Vorschau;
-  die App bleibt zur Fensterauswahl geöffnet. Explizites Beenden hängt nicht mehr.
-- FocusFrame 0.9.0 (Build 9), LiveDesktop 0.4.0 (Build 5) und DockPreview 0.2.0
-  (Build 2) behalten ihre bisherigen Bundle-Versionen. Eine neue Preview-Nummer
-  allein löst kein Update aus. MacFitKit selbst wird über seinen Download aktualisiert.
+- FocusFrame 0.9.0 (Build 9), LiveDesktop 0.4.0 (Build 5), DockPreview 0.2.0 (Build 2)
+  und UniversalPiP 0.1.2 (Build 3) behalten ihre Bundle-Versionen. Eine neue
+  Preview-Nummer allein löst kein Update aus. MacFitKit selbst wird über seinen Download aktualisiert.
+- FolderIconer-Grenzen: iCloud Drive synchronisiert eigene Ordnersymbole nicht;
+  SVG ist unter macOS 14 und 15 nicht geprüft.
 
 Die README und GitHub-Formulare helfen bei Einrichtung, Fehlern und Wünschen.
 FocusFrame verdeckt Rahmen, Leuchten und Schatten bei davorliegenden Fenstern.
