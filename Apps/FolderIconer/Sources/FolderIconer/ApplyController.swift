@@ -37,6 +37,8 @@ struct ApplyReport: Equatable {
     /// Opening this entry's document would discard unapplied edits; the alert asks first.
     var pendingOpen: RegistryEntry.ID?
     var failure: LocalizedStringResource?
+    /// Folders from Finder's "Customize Icon…" that the next Apply targets.
+    var pending = PendingTargets()
     private var editing: Editing?
     @ObservationIgnored let model: EditorModel
     @ObservationIgnored private let applier: FolderIconApplier?
@@ -80,9 +82,22 @@ struct ApplyReport: Equatable {
 
     // MARK: Apply
 
-    /// Updates the folder being edited, else asks for folders.
+    /// Applies to the pending folders, else updates the folder being edited, else asks for folders.
     func applyAction() {
-        if let folder = editingEntry?.folder { apply(to: [folder]) } else { chooseFolders() }
+        if !pending.isEmpty { let targets = pending.folders; pending.removeAll(); apply(to: targets) }
+        else if let folder = editingEntry?.folder { apply(to: [folder]) } else { chooseFolders() }
+    }
+
+    /// Finder's "Customize Icon…": one folder with a FolderIconer icon opens its document; other folders wait as pending targets.
+    func customize(_ urls: [URL]) {
+        Task {
+            await refresh() // A launch by the service has not read the registry yet.
+            switch ServiceRequest(selection: urls, entry: entry(for:)) {
+            case .edit(let id): edit(id)
+            case .target(let folders): pending.add(folders)
+            case nil: break
+            }
+        }
     }
 
     func chooseFolders() {
@@ -95,10 +110,7 @@ struct ApplyReport: Equatable {
 
     /// Folders get the icon; every other file goes to the image import.
     func drop(_ urls: [URL]) -> Bool {
-        let folders = urls.filter { url in
-            let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
-            return values?.isDirectory == true && values?.isPackage != true
-        }
+        let folders = PendingTargets.plainFolders(urls)
         let files = urls.filter { !folders.contains($0) }
         if !folders.isEmpty { apply(to: folders) }
         return model.importImages(files) || !folders.isEmpty

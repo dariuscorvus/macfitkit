@@ -18,7 +18,7 @@ struct EditorWindow: View {
                 PreviewStrip(model: model)
             }
             .frame(minWidth: 520)
-            .safeAreaInset(edge: .top, spacing: 0) { ApplyBanner(applying: applying) }
+            .safeAreaInset(edge: .top, spacing: 0) { VStack(spacing: 0) { PendingTargetsBar(applying: applying); ApplyBanner(applying: applying) } }
             .inspector(isPresented: $showsInspector) { InspectorView(model: model).inspectorColumnWidth(min: 260, ideal: 300, max: 400) }
         }
         .toolbar {

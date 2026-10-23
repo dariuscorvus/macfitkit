@@ -13,8 +13,10 @@ import SwiftUI
 @MainActor final class FolderIconerAppDelegate: NSObject, NSApplicationDelegate {
     let model = EditorModel()
     lazy var applying = ApplyController(model: model)
+    private var services: ServiceProvider?
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if model.isPreview { UIPreview.present() }
+        if model.isPreview { UIPreview.present(); return }
+        services = ServiceProvider(applying: applying); NSApp.servicesProvider = services; NSUpdateDynamicServices()
     }
     /// The editor window reopens from the Dock.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

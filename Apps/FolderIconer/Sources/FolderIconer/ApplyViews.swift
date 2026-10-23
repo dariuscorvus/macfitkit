@@ -1,13 +1,16 @@
 import FolderIconerCore
 import SwiftUI
 
-/// Toolbar Apply. While an applied folder's document is open it reads "Update Icon".
+/// Toolbar Apply. Pending folders from Finder come first; while an applied folder's document is open it reads "Update Icon".
 struct ApplyButton: View {
     let applying: ApplyController
 
     var body: some View {
         Group {
-            if let entry = applying.editingEntry, entry.folder != nil {
+            if !applying.pending.isEmpty {
+                Button { applying.applyAction() } label: { Label { PendingApplyTitle(folders: applying.pending.folders) } icon: { Image(systemName: "folder.badge.gearshape") } }
+                    .help(Text("Apply the icon to the folders chosen in Finder"))
+            } else if let entry = applying.editingEntry, entry.folder != nil {
                 Menu {
                     Button("Apply to Other Folders…") { applying.chooseFolders() }
                 } label: { Label("Update Icon", systemImage: "folder.badge.gearshape") } primaryAction: { applying.applyAction() }
@@ -19,6 +22,49 @@ struct ApplyButton: View {
         }
         .labelStyle(.titleAndIcon)
         .disabled(applying.isWorking)
+    }
+}
+
+/// "Apply to “Name”" or "Apply to N Folders".
+struct PendingApplyTitle: View {
+    let folders: [URL]
+    var body: some View {
+        if folders.count == 1 { Text("Apply to “\(FileManager.default.displayName(atPath: folders[0].path))”") } else { Text("Apply to \(folders.count) Folders") }
+    }
+}
+
+/// Folders handed over by Finder's "Customize Icon…", above the canvas. Each can be removed before applying.
+struct PendingTargetsBar: View {
+    let applying: ApplyController
+
+    var body: some View {
+        if !applying.pending.isEmpty {
+            HStack(spacing: 12) {
+                Image(systemName: "folder.badge.plus").foregroundStyle(.secondary).accessibilityHidden(true)
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(applying.pending.folders, id: \.self) { folder in
+                            HStack(spacing: 4) {
+                                Text(verbatim: FileManager.default.displayName(atPath: folder.path)).lineLimit(1)
+                                Button { applying.pending.remove(folder) } label: { Label("Remove", systemImage: "xmark.circle.fill") }
+                                    .labelStyle(.iconOnly).buttonStyle(.borderless).foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(.quaternary, in: Capsule())
+                            .help(Text(verbatim: folder.path))
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+                Button("Cancel") { applying.pending.removeAll() }
+                Button { applying.applyAction() } label: { PendingApplyTitle(folders: applying.pending.folders) }
+                    .buttonStyle(.borderedProminent).disabled(applying.isWorking)
+            }
+            .font(.callout)
+            .padding(12)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .padding([.horizontal, .top], 16)
+        }
     }
 }
 
