@@ -4,14 +4,15 @@ import SwiftUI
 @main struct FolderIconerApp: App {
     @NSApplicationDelegateAdaptor(FolderIconerAppDelegate.self) private var delegate
     var body: some Scene {
-        Window("FolderIconer", id: EditorCommands.editorWindowID) { EditorWindow(model: delegate.model) }
+        Window("FolderIconer", id: EditorCommands.editorWindowID) { EditorWindow(model: delegate.model, applying: delegate.applying) }
             .defaultSize(width: 1180, height: 800)
-            .commands { EditorCommands(model: delegate.model) }
+            .commands { EditorCommands(model: delegate.model, applying: delegate.applying) }
     }
 }
 
 @MainActor final class FolderIconerAppDelegate: NSObject, NSApplicationDelegate {
     let model = EditorModel()
+    lazy var applying = ApplyController(model: model)
     func applicationDidFinishLaunching(_ notification: Notification) {
         if model.isPreview { UIPreview.present() }
     }
@@ -22,11 +23,14 @@ import SwiftUI
 
 struct EditorCommands: Commands {
     static let editorWindowID = "editor"
-    let model: EditorModel
+    let model: EditorModel, applying: ApplyController
     @Environment(\.openWindow) private var openWindow
     var body: some Commands {
         CommandGroup(before: .windowList) { Button("Editor") { openWindow(id: Self.editorWindowID) }.keyboardShortcut("0") }
         CommandGroup(replacing: .newItem) { Button("New Icon") { model.newIcon() }.keyboardShortcut("n") }
+        CommandGroup(after: .newItem) {
+            Button("Apply to Folders…") { applying.chooseFolders() }.keyboardShortcut("a", modifiers: [.command, .shift]).disabled(applying.isWorking)
+        }
         CommandMenu("Layer") {
             Button("Add Image…") { model.chooseImage() }.keyboardShortcut("i", modifiers: [.command, .shift])
             Button("Add Text") { model.addText() }.keyboardShortcut("t", modifiers: [.command, .shift])

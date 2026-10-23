@@ -5,6 +5,7 @@ import SwiftUI
 /// The 512 pt editing canvas: the rendered document, the selection box and its handles.
 struct CanvasView: View {
     let model: EditorModel
+    @Environment(ApplyController.self) private var applying
     @State private var drag: DragState?
     @State private var missed = false
     @FocusState private var focused: Bool
@@ -36,7 +37,7 @@ struct CanvasView: View {
             model.nudge(dx: dx, dy: dy, large: press.modifiers.contains(.shift)); return .handled
         }
         .onDeleteCommand { model.deleteSelection() }
-        .dropDestination(for: URL.self) { urls, _ in model.importImages(urls) }
+        .dropDestination(for: URL.self) { urls, _ in applying.drop(urls) }
         .accessibilityLabel(Text("Canvas"))
     }
 

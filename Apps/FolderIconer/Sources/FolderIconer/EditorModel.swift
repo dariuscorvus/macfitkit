@@ -62,6 +62,8 @@ import SwiftUI
     }
 
     func newIcon() { endTextEditing(); edit("New Icon") { $0 = .newDocument() }; selection = nil }
+    /// Replaces the open document, e.g. with an applied folder's. Not undoable: undo would mix two documents' assets.
+    func open(_ opened: DocumentPackage) { endTextEditing(); undoManager?.removeAllActions(); package = opened; selection = nil; documentChanged() }
 
     func add(_ layer: Layer, _ name: LocalizedStringResource) {
         edit(name) { document in
