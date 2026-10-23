@@ -100,6 +100,19 @@ struct ApplyReport: Equatable {
         }
     }
 
+    /// Finder's "Restore Folder Icon". Returns whether there is something to show: a refusal or folders FolderIconer never changed.
+    func restoreFromFinder(_ urls: [URL]) async -> Bool {
+        await refresh() // A launch by the service has not read the registry yet.
+        let request = RestoreRequest(selection: urls, entry: entry(for:))
+        for id in request.entries { await restore(id) }
+        if request.unknown.count == 1 {
+            failure = "“\(FileManager.default.displayName(atPath: request.unknown[0].path))” has no icon from FolderIconer. FolderIconer only restores icons it applied."
+        } else if request.unknown.count > 1 {
+            failure = "\(request.unknown.count) of the selected folders have no icon from FolderIconer. FolderIconer only restores icons it applied."
+        }
+        return failure != nil || restorePrompt != nil
+    }
+
     func chooseFolders() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.allowsMultipleSelection = true; panel.canCreateDirectories = true

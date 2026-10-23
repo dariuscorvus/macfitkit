@@ -54,6 +54,9 @@ struct AppliedFolderRow: View {
             if applying.editingEntry?.id == folder.id {
                 Image(systemName: "pencil").foregroundStyle(.secondary).accessibilityLabel(Text("Open in the editor"))
             }
+            Button { Task { await applying.restore(folder.id) } } label: { Label("Restore Previous Icon", systemImage: "arrow.uturn.backward.circle") }
+                .buttonStyle(.borderless).labelStyle(.iconOnly).foregroundStyle(.secondary).disabled(folder.folder == nil)
+                .help(Text("Restore the icon this folder had before FolderIconer"))
             Menu { actions } label: { Label("Actions", systemImage: "ellipsis.circle") }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).labelStyle(.iconOnly).fixedSize()
         }

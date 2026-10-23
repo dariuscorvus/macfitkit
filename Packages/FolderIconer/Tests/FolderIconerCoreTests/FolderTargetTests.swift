@@ -40,3 +40,13 @@ import Testing
     #expect(ResourceFork.iconHash(folder: folders[0]) != hashes[0])
     #expect(Array(folders.dropFirst().map(ResourceFork.iconHash)) == Array(hashes.dropFirst()))
 }
+
+@Test func restoreServiceRestoresRegisteredFoldersAndReportsTheRest() throws {
+    let fixture = ApplyFixture(); defer { fixture.clean() }
+    let a = try fixture.folder("A"), b = try fixture.folder("B"), c = try fixture.folder("C"), file = fixture.root.appendingPathComponent("file.txt")
+    try Data().write(to: file)
+    let ids = [a: UUID(), c: UUID()], entry: (URL) -> RegistryEntry.ID? = { ids[$0] }
+    let request = RestoreRequest(selection: [c, file, b, a, a], entry: entry)
+    #expect(request.entries == [ids[c]!, ids[a]!] && request.unknown == [b])
+    #expect(RestoreRequest(selection: [file], entry: entry) == RestoreRequest(selection: [], entry: entry))
+}

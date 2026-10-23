@@ -42,3 +42,16 @@ public enum ServiceRequest: Equatable, Sendable {
         else { self = .target(folders) }
     }
 }
+
+/// What "Restore Folder Icon" in Finder does: folders with a FolderIconer icon get their previous icon back. The others are only reported;
+/// FolderIconer has no backup of an icon it did not set.
+public struct RestoreRequest: Equatable, Sendable {
+    public let entries: [RegistryEntry.ID]
+    public let unknown: [URL]
+
+    public init(selection: [URL], entry: (URL) -> RegistryEntry.ID?) {
+        var entries: [RegistryEntry.ID] = [], unknown: [URL] = []
+        for folder in PendingTargets(selection).folders { if let id = entry(folder) { entries.append(id) } else { unknown.append(folder) } }
+        self.entries = entries; self.unknown = unknown
+    }
+}

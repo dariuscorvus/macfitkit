@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%" : {},
+    "%lld of the selected folders have no icon from FolderIconer. FolderIconer only restores icons it applied." : {},
     "%lld pt" : {},
     "Actions" : {},
     "Add Emoji" : {},
@@ -188,6 +189,7 @@
     "Resize Vector" : {},
     "Restore Anyway" : {},
     "Restore Previous Icon" : {},
+    "Restore the icon this folder had before FolderIconer" : {},
     "Restore the icons these folders had before" : {},
     "Restore the previous icon anyway?" : {},
     "Rotate Layer" : {},
@@ -249,6 +251,7 @@
     "macOS did not accept the icon." : {},
     "macOS did not accept the previous icon." : {},
     "°" : {},
+    "“%@” has no icon from FolderIconer. FolderIconer only restores icons it applied." : {},
     "“%@” is a git repository. Finder stores custom folder icons in a hidden file named Icon, which git lists as untracked." : {}
   },
   "version" : "1.0"
