@@ -8,35 +8,34 @@ struct EffectTests {
         let json = #"{"appearance":{"red":0.2,"green":0.3,"blue":0.4,"opacity":0.8,"width":7,"radius":13,"gap":4},"excludedApps":["com.apple.finder"],"hideInFullScreen":true,"shortcutEnabled":true}"#
         let c = try JSONDecoder().decode(Configuration.self, from: Data(json.utf8))
         #expect(c.appearance.red == 0.2 && c.appearance.width == 7 && c.appearance.gap == 4)
-        #expect(c.appearance.placement == .outside && c.appearance.material.mode == .standard && !c.appearance.material.reflectionEnabled)
+        #expect(c.appearance.placement == .outside && c.appearance.material.mode == .standard)
         #expect(c.excludedApps == ["com.apple.finder"] && c.hideInFullScreen && c.shortcutEnabled)
         #expect(c.appearance.light.mode == .off && !c.appearance.shadow.enabled)
-        #expect(c.appearance.gradient.mode == .off && c.appearance.opacityAnimation.mode == .off && !c.appearance.rotation.enabled)
+        #expect(c.appearance.gradient.mode == .off && c.appearance.animations.isEmpty)
     }
     @Test func combinedEffectsSurvivePersistence() throws {
         var c = Configuration()
         c.appearance.placement = .inside; c.appearance.material.mode = .gold
-        c.appearance.material.gloss = 0.8; c.appearance.material.reflectionEnabled = true
-        c.appearance.material.trigger = .continuous; c.appearance.material.reflectionWidth = 0.3
+        c.appearance.material.gloss = 0.8; c.appearance.material.reflectionWidth = 0.3
         c.appearance.light.mode = .neon; c.appearance.light.followsFrame = false
         c.appearance.light.color = EffectColor(0.4,0.1,0.9)
         c.appearance.shadow.enabled = true; c.appearance.shadow.offsetX = -23
         c.appearance.gradient.mode = .conic; c.appearance.gradient.angle = 127
-        c.appearance.opacityAnimation.mode = .blink; c.appearance.opacityAnimation.trigger = .continuous
-        c.appearance.rotation.enabled = true; c.appearance.rotation.clockwise = false
+        var rotation = AnimationEntry(.gradientRotation, trigger: .continuous); rotation.clockwise = false
+        c.appearance.animations = [AnimationEntry(.opacityBlink, trigger: .continuous), rotation, AnimationEntry(.metalReflection, trigger: .continuous)]
         #expect(try JSONDecoder().decode(Configuration.self, from: JSONEncoder().encode(c)) == c)
     }
     @Test func unsafeEffectParametersAreBoundedAndOpacityOrdered() {
         var a = Appearance()
         a.light.extent = .infinity; a.light.coreWidth = 0; a.shadow.offsetX = -1000
-        a.shadow.blur = .nan; a.gradient.angle = 500; a.opacityAnimation.maximum = 0.1
-        a.opacityAnimation.pulseMinimum = 0.9; a.opacityAnimation.blinkMinimum = 0.8
-        a.rotation.period = -2
+        a.shadow.blur = .nan; a.gradient.angle = 500
+        var pulse = AnimationEntry(.opacityPulse); pulse.maximum = 0.1; pulse.minimum = 0.9
+        var rotation = AnimationEntry(.gradientRotation); rotation.duration = -2
+        a.animations = [pulse, rotation]
         let n = a.normalized
         #expect(n.light.extent == 12 && n.light.coreWidth == 0.1)
         #expect(n.shadow.offsetX == -200 && n.shadow.blur == 12 && n.gradient.angle == 360)
-        #expect(n.opacityAnimation.pulseMinimum == 0.1 && n.opacityAnimation.blinkMinimum == 0.1)
-        #expect(n.rotation.period == 2)
+        #expect(n.animations[0].minimum == 0.1 && n.animations[1].duration == 0.2)
     }
     @Test func expandedGeometryValuesSurviveNormalizationAndPersistence() throws {
         var c = Configuration()
@@ -142,13 +141,13 @@ struct EffectTests {
     let old = Data("{\"shadow\":{\"enabled\":true,\"blur\":17},\"opacityAnimation\":{\"mode\":\"pulse\"}}".utf8)
     let a = try JSONDecoder().decode(Appearance.self, from: old)
     #expect(a.shadow.colorSource == .custom); #expect(a.shadow.blur == 17)
-    #expect(a.opacityAnimation.target == .all); #expect(a.motion.mode == .off)
+    #expect(a.animations.map { $0.kind } == [.opacityPulse] && a.animations[0].target == .all)
     for preset in MotionPreset.allCases {
         let applied = preset.applying(to: a)
         #expect(try JSONDecoder().decode(Appearance.self, from: JSONEncoder().encode(applied)) == applied)
         var configuration = Configuration(); configuration.appearance = applied
-        #expect(configuration.renderedAppearance(lowPower: true).motion.mode == .off)
+        #expect(configuration.renderedAppearance(lowPower: true).animations.active.isEmpty)
     }
-    var motion = MotionEffect(); motion.duration = -.infinity; motion.cycles = 100; motion.strength = -4
-    #expect(motion.normalized.duration == 1.5); #expect(motion.normalized.cycles == 6); #expect(motion.normalized.strength == 0)
+    var entry = AnimationEntry(.focusPulse); entry.duration = -.infinity; entry.repeats = 100; entry.strength = -4
+    #expect(entry.normalized.duration == 0.8); #expect(entry.normalized.repeats == 10); #expect(entry.normalized.strength == 0)
 }

@@ -15,6 +15,8 @@ final class FocusSettingsModel: ObservableObject {
     @Published var shortcutRegistered = false
     @Published var shortcutPresses = 0
     @Published var playToken = 0
+    /// Set while the preview plays a single entry; nil plays all of them.
+    @Published var previewEntry: UUID?
     @Published var permissionGranted = PrivacyAccess.accessibilityGranted
     init(store: PreferencesStore) { self.store = store }
     func mutate(_ change: (inout Appearance) -> Void) {

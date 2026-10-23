@@ -53,11 +53,11 @@ struct ConfigurationTests {
     let legacy = Data("{\"appearance\":{},\"shortcutEnabled\":true}".utf8)
     let decoded = try JSONDecoder().decode(Configuration.self, from: legacy)
     #expect(decoded.shortcutKeyCode == 3); #expect(decoded.shortcutModifiers == 6144)
-    var value = decoded; value.appearance.rotation.enabled = true
-    value.appearance.opacityAnimation.mode = .pulse; value.appearance.material.reflectionEnabled = true
-    #expect(value.renderedAppearance(lowPower: true).rotation.enabled == false)
-    #expect(value.renderedAppearance(lowPower: false).rotation.enabled == true)
-    #expect(value.appearance.opacityAnimation.mode == .pulse)
+    var value = decoded
+    value.appearance.animations = [AnimationEntry(.gradientRotation), AnimationEntry(.opacityPulse), AnimationEntry(.metalReflection)]
+    #expect(value.renderedAppearance(lowPower: true).animations.active.isEmpty)
+    #expect(value.renderedAppearance(lowPower: false).animations.active.count == 3)
+    #expect(value.appearance.animations.allSatisfy { $0.enabled })
     value.shortcutModifiers = 0; value.shortcutKeyCode = 300
     #expect(value.normalized.shortcutModifiers == 6144); #expect(value.normalized.shortcutKeyCode == 3)
     let transfer = PortablePreferences(configuration: value.normalized, profiles: [AppearanceProfile(name: "Test", appearance: value.appearance)])

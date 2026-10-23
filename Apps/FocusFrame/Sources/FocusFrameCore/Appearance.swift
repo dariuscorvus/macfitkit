@@ -14,14 +14,14 @@ public struct Appearance: Codable, Equatable, Sendable {
     public var light = LightEffect()
     public var shadow = ShadowEffect()
     public var gradient = GradientEffect()
-    public var opacityAnimation = OpacityEffect()
-    public var rotation = RotationEffect()
-    public var motion = MotionEffect()
+    /// Run together; see `AnimationKind` for how entries on the same property combine.
+    public var animations: [AnimationEntry] = []
 
     public init() {}
     private enum CodingKeys: String, CodingKey {
-        case red, green, blue, opacity, width, radius, gap, placement, material, light, shadow, gradient, opacityAnimation, rotation, motion
+        case red, green, blue, opacity, width, radius, gap, placement, material, light, shadow, gradient, animations
     }
+    private enum LegacyKeys: String, CodingKey { case opacityAnimation, rotation, motion, material }
     public init(from decoder: Decoder) throws {
         self.init()
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -37,9 +37,15 @@ public struct Appearance: Codable, Equatable, Sendable {
         light = try c.decodeIfPresent(LightEffect.self, forKey: .light) ?? light
         shadow = try c.decodeIfPresent(ShadowEffect.self, forKey: .shadow) ?? shadow
         gradient = try c.decodeIfPresent(GradientEffect.self, forKey: .gradient) ?? gradient
-        opacityAnimation = try c.decodeIfPresent(OpacityEffect.self, forKey: .opacityAnimation) ?? opacityAnimation
-        motion = try c.decodeIfPresent(MotionEffect.self, forKey: .motion) ?? motion
-        rotation = try c.decodeIfPresent(RotationEffect.self, forKey: .rotation) ?? rotation
+        if let animations = try c.decodeIfPresent([AnimationEntry].self, forKey: .animations) { self.animations = animations; return }
+        // Settings from before animation entries: convert motion, opacity, rotation and reflection once.
+        let legacy = try decoder.container(keyedBy: LegacyKeys.self)
+        var old = LegacyAnimations()
+        old.motion = try legacy.decodeIfPresent(LegacyAnimations.Motion.self, forKey: .motion) ?? old.motion
+        old.opacity = try legacy.decodeIfPresent(LegacyAnimations.Opacity.self, forKey: .opacityAnimation) ?? old.opacity
+        old.rotation = try legacy.decodeIfPresent(LegacyAnimations.Rotation.self, forKey: .rotation) ?? old.rotation
+        old.reflection = try legacy.decodeIfPresent(LegacyAnimations.Reflection.self, forKey: .material) ?? old.reflection
+        animations = old.entries
     }
 
     public var normalized: Self {
@@ -56,8 +62,7 @@ public struct Appearance: Codable, Equatable, Sendable {
         result.gap = clamp(gap, 0...200, fallback: 0)
         result.material = material.normalized
         result.light = light.normalized; result.shadow = shadow.normalized
-        result.gradient = gradient.normalized; result.opacityAnimation = opacityAnimation.normalized
-        result.rotation = rotation.normalized; result.motion = motion.normalized
+        result.gradient = gradient.normalized; result.animations = animations.map(\.normalized)
         return result
     }
 }
@@ -87,10 +92,7 @@ public struct Configuration: Codable, Equatable, Sendable {
     public func renderedAppearance(lowPower: Bool) -> Appearance {
         var result = appearance.normalized
         if savePower && lowPower {
-            result.motion.mode = .off; result.motion.synchronize = false
-            result.opacityAnimation.mode = .off
-            result.rotation.enabled = false
-            result.material.reflectionEnabled = false
+            for i in result.animations.indices { result.animations[i].enabled = false }
         }
         return result
     }

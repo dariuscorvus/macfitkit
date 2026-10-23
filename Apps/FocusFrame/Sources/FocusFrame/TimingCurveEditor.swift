@@ -9,8 +9,6 @@ struct TimingCurveEditor: View {
     let curve: TimingCurve
     let set: (TimingCurve) -> Void
     @State private var search = ""
-    /// A custom Bézier starts from CSS "ease", which matches none of the named curves.
-    static let customStart = TimingCurve.bezier(x1: 0.25, y1: 0.1, x2: 0.25, y2: 1)
 
     var body: some View {
         HStack(alignment: .top, spacing: KitSpacing.medium) {
@@ -48,7 +46,7 @@ struct TimingCurveEditor: View {
     static func groups(matching query: String) -> [Group] {
         let all = [Group(title: "Grundlagen", curves: [.linear, .easeIn, .easeOut, .easeInOut])]
             + EasingFamily.allCases.map { family in Group(title: family.title, curves: EasingDirection.allCases.map { .family(family, $0) }) }
-            + [Group(title: "Eigene", curves: [.defaultSpring, customStart])]
+            + [Group(title: "Eigene", curves: [.defaultSpring, .customStart])]
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return all }
         return all.compactMap { group in
@@ -170,6 +168,9 @@ extension EasingDirection {
 }
 
 extension TimingCurve {
+    /// A custom Bézier starts from CSS "ease", which matches none of the named curves.
+    static let customStart = TimingCurve.bezier(x1: 0.25, y1: 0.1, x2: 0.25, y2: 1)
+
     var title: String {
         switch self {
         case .linear: "Linear"
@@ -186,7 +187,7 @@ extension TimingCurve {
     var listEntry: TimingCurve {
         switch self {
         case .spring: .defaultSpring
-        case .bezier where ![TimingCurve.easeIn, .easeOut, .easeInOut].contains(self): TimingCurveEditor.customStart
+        case .bezier where ![TimingCurve.easeIn, .easeOut, .easeInOut].contains(self): .customStart
         default: self
         }
     }
