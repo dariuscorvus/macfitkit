@@ -66,17 +66,6 @@ public struct ShadowEffect: Codable, Equatable, Sendable {
         return s
     }
 }
-public struct GradientEffect: Codable, Equatable, Sendable {
-    public var mode = GradientMode.off
-    public var first = EffectColor()
-    public var second = EffectColor(0, 1, 1)
-    public var angle = 0.0
-    public init() {}
-    public var normalized: Self {
-        var s = self; s.first = first.normalized; s.second = second.normalized
-        s.angle = bounded(angle, 0...360, 0); return s
-    }
-}
 public struct OpacityEffect: Codable, Equatable, Sendable {
     public var target = AnimationTarget.all
     public var mode = OpacityMode.off
@@ -265,7 +254,10 @@ public enum MotionPreset: String, CaseIterable, Sendable {
             a.motion.mode = .breathe; a.motion.target = .shadow; a.motion.trigger = .continuous; a.motion.duration = 4
         case .colorFlow:
             a.material.mode = .standard
-            if a.gradient.mode == .off { a.gradient.mode = .conic; a.gradient.first = EffectColor(a.red,a.green,a.blue) }
+            if a.gradient.mode == .off {
+                let frame = EffectColor(a.red,a.green,a.blue), second = GradientEffect().stops[1].color
+                a.gradient.mode = .conic; a.gradient.stops = [GradientStop(frame, at: 0), GradientStop(second, at: 0.5), GradientStop(frame, at: 1)]
+            }
             a.shadow.enabled = true; a.shadow.colorSource = .gradient
             a.motion.mode = .flow; a.motion.trigger = .continuous; a.motion.duration = 8
         }

@@ -90,7 +90,12 @@ Im Menüleistenmenü **Einstellungen …** öffnen:
   keine Effekte. Neue Effekte sind zunächst ausgeschaltet; alte Einstellungen
   bleiben erhalten. Lange Seiten sind scrollbar.
 - Glow und Neon sind Alternativen; Schatten, Verlauf und Animation sind frei
-  kombinierbar. Übernommene Leuchtfarbe verwendet bei Verlauf dessen erste Farbe.
+  kombinierbar. Übernommene Leuchtfarbe verwendet bei Verlauf dessen ersten Farbpunkt.
+- Ein Farbverlauf hat beliebig viele Farbpunkte, mindestens zwei. Ein Klick auf den
+  Verlauf fügt einen Punkt hinzu, Punkte lassen sich ziehen oder per Position setzen.
+  Ein umlaufender Verlauf zeigt am Startwinkel eine harte Kante, wenn der letzte Punkt
+  nicht in der Farbe des ersten endet; „Naht schließen“ gleicht das an. Bisherige
+  Zwei-Farben-Verläufe werden ohne sichtbare Änderung übernommen.
   Positiver vertikaler Schattenversatz bedeutet nach unten.
 - Animationen laufen über Core Animation, ohne Zeichentimer oder weitere
   AX-Abfragen. Verborgene Rahmen stoppen die Animationen. macOS „Bewegung

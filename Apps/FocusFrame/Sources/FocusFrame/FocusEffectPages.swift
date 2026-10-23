@@ -74,8 +74,7 @@ extension FocusSettingsView {
             conditional([note( "Aktuell wird Gold oder Chrom angezeigt. Wähle unter Darstellung die Oberfläche ‘Farbe / Farbverlauf’, um diese Farben wieder zu sehen.")]) { $0.material.mode != .standard },
             effectChoice("Farbverlauf", \.gradient.mode, [("Aus",.off),("Linear",.linear),("Umlaufend",.conic)]),
             conditional([
-                effectColor("Erste Farbe", \.gradient.first),
-                effectColor("Zweite Farbe", \.gradient.second),
+                AnyView(GradientStopEditor(gradient: store.value.appearance.gradient) { gradient in model.mutate { $0.gradient = gradient } }),
                 effectSlider("Winkel / Startwinkel", \.gradient.angle, 0...360, unit: "°")
             ]) { $0.gradient.mode != .off },
             resetEffect("Farbverlauf zurücksetzen") { $0.gradient = GradientEffect() }
@@ -180,7 +179,7 @@ extension FocusSettingsView {
     }
     func effectChoice<T: Hashable>(_ title: String, _ key: WritableKeyPath<Appearance, T>, _ choices: [(String,T)]) -> AnyView {
         AnyView(ChoiceRow(title, selection: Binding(get: { store.value.appearance[keyPath: key] }, set: { v in model.mutate { a in
-            if title == "Farbverlauf", a.gradient.mode == .off { a.gradient.first = EffectColor(a.red,a.green,a.blue) }
+            if title == "Farbverlauf", a.gradient.mode == .off { a.gradient.stops[0].color = EffectColor(a.red,a.green,a.blue) }
             a[keyPath: key] = v
         }}), options: choices))
     }
