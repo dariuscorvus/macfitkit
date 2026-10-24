@@ -8,6 +8,8 @@ final class EffectRenderer {
     let root = CALayer()
     // Animated layers; `EffectRenderer+Animations.swift` drives them.
     var gradients: [CAGradientLayer] = []
+    /// Whitening per gradient layer (the neon core is lighter), so a color morph can rebuild its colors.
+    var gradientWhitening: [ObjectIdentifier: Double] = [:]
     var reflections: [(layer: CAGradientLayer, travel: CGSize)] = []
     var frameGroup = CALayer()
     /// Everything inside `root`; opacity stages for the "Alles" target wrap it.
@@ -31,6 +33,7 @@ final class EffectRenderer {
 
     func update(bounds: CGRect, target: CGRect, style: Appearance, scale: CGFloat) {
         stop()
+        let previous = self.style, hadContent = !(root.sublayers ?? []).isEmpty
         if self.style != style.normalized { focusUntil = 0; focusEpoch = 0; continuousEpoch = 0 }
         self.style = style.normalized
         let a = self.style, entries = a.animations.active
@@ -38,7 +41,7 @@ final class EffectRenderer {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         root.transform = CATransform3DIdentity
         root.frame = bounds; root.contentsScale = scale; root.opacity = Float(a.opacity)
-        root.sublayers?.forEach { $0.removeFromSuperlayer() }; gradients.removeAll(); reflections.removeAll(); shadowLayers.removeAll(); lightLayers.removeAll(); tightShadows.removeAll(); drawMasks.removeAll(); accents.removeAll(); stages.removeAll()
+        root.sublayers?.forEach { $0.removeFromSuperlayer() }; gradients.removeAll(); gradientWhitening.removeAll(); reflections.removeAll(); shadowLayers.removeAll(); lightLayers.removeAll(); tightShadows.removeAll(); drawMasks.removeAll(); accents.removeAll(); stages.removeAll()
         content = CALayer(); content.frame = bounds; root.addSublayer(content)
         frameGroup = CALayer(); frameGroup.frame = bounds
         let geometry = EffectGeometry.contour(for: target, appearance: a)
@@ -98,6 +101,7 @@ final class EffectRenderer {
             frameGroup.addSublayer(line); accents[entry.id] = line
         }
         buildStages(for: entries)
+        if hadContent { morphColors(from: previous) }
         CATransaction.commit()
     }
 
@@ -165,6 +169,7 @@ final class EffectRenderer {
         gradient.startPoint = conic ? CGPoint(x: 0.5,y: 0.5) : CGPoint(x: 0,y: 0.5)
         gradient.endPoint = CGPoint(x: 1,y: 0.5)
         gradient.transform = CATransform3DMakeRotation((metal ? a.material.angle : a.gradient.angle) * .pi / 180, 0,0,1)
+        gradientWhitening[ObjectIdentifier(gradient)] = whitening
         return gradient
     }
     private func addGradientShadow(to parent: CALayer, geometry: BorderContour, target: CGRect, offset: CGSize, scale: CGFloat, blur: Double? = nil) -> CALayer {

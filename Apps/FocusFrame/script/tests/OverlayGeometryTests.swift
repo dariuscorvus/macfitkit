@@ -164,6 +164,23 @@ struct OverlayGeometryTests {
             precondition(out.repeatCount == 1 && (out.values as! [Double]).last == 0, "Crossfade did not fade the first entry out")
             precondition(abs(into.beginTime - out.beginTime - 1.3) < 1e-9, "Crossfade window misplaced")
         }
+        // A morph between two runners: the first stops at the window, the second starts there on its own line.
+        if !reduced {
+            var morph = AnimationEntry(.runner, duration: 1); morph.start = .morph; morph.transition = 0.5
+            a.animations = [first, morph]
+            renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1); renderer.setVisible(true,focusChanged: true)
+            let source = animations(first, .accentOpacity).first!, into = animations(morph, .accentOpacity).first!
+            precondition(abs(source.duration - 1.3) < 1e-9 && abs(into.beginTime - source.beginTime - 1.3) < 1e-9, "Morph handover misplaced")
+            // A gradient change from two to three stops morphs every gradient layer; the layers keep the new stops as their model.
+            precondition(a.gradient.mode == .linear, "Test expects the linear frame gradient set above")
+            var recolored = a; recolored.gradient.stops = [GradientStop(EffectColor(0,1,0), at: 0), GradientStop(EffectColor(1,0,0), at: 0.5), GradientStop(EffectColor(0,0,1), at: 1)]
+            renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: recolored,scale: 1)
+            let morphs = nodes(renderer.root).compactMap { $0.animation(forKey: "appearanceMorph") }
+            precondition(!morphs.isEmpty && morphs.count == renderer.gradients.count, "Color change did not morph every gradient")
+            precondition(renderer.gradients.allSatisfy { $0.colors?.count == 3 }, "Morph replaced the layer's model stops")
+            renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: recolored,scale: 1)
+            precondition(nodes(renderer.root).allSatisfy { $0.animation(forKey: "appearanceMorph") == nil }, "Unchanged colors morphed")
+        }
         renderer.setVisible(false)
         // Two opacity entries on the shadow: each animates its own nested stage, so the multipliers multiply.
         var pulse = AnimationEntry(.opacityPulse, trigger: .continuous); pulse.target = .shadow
@@ -177,7 +194,7 @@ struct OverlayGeometryTests {
             precondition(!pulsing.isEmpty && pulsing.count == breathing.count, "Opacity entries missing")
             precondition(zip(pulsing, breathing).allSatisfy { $0.sublayers?.first === $1 }, "Opacity stages are not nested")
         }
-        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, continuous clock across focus, five motion kinds, exact repeats, resize phase, hidden cleanup, sequence and crossfade timing and nested opacity stages.")
+        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, continuous clock across focus, five motion kinds, exact repeats, resize phase, hidden cleanup, sequence, crossfade and morph timing, color morph and nested opacity stages.")
     }
     @MainActor private static func verifyPixels() {
         let w = 480, h = 300

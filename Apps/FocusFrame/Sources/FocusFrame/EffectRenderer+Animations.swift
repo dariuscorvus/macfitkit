@@ -59,8 +59,17 @@ extension EffectRenderer {
         let entry = item.entry
         let metal = style.material.mode != .standard, gradientShown = !metal && style.gradient.mode != .off
         let starting = stages[entry.id]?.first.map { Double($0.presentation()?.opacity ?? $0.opacity) } ?? 1
+        let sources = item.morphSource.map { source in source.entry.tracks().map { track -> AnimationTrack in var t = track; t.delay = source.begin; return t } } ?? []
         for var track in entry.tracks(startingMultiplier: starting) {
-            if entry.trigger == .focus { track.delay = item.begin; track = track.weighted(by: item.fades) }
+            if entry.trigger == .focus {
+                track.delay = item.begin
+                // Morph: the source stops at the window and this entry continues from its values on the same layers.
+                if let cut = item.cut { track = track.ending(at: cut - item.begin) }
+                if let window = item.morph, let source = sources.first(where: { $0.property == track.property }) {
+                    track = track.morphed(from: source, sourceOffset: source.delay - item.begin, window: window)
+                }
+                track = track.weighted(by: item.fades)
+            }
             let key = "\(entry.id.uuidString)-\(track.property.rawValue)"
             /// `scale` converts track units to the layer value; number properties with a running animation hand off from it.
             func add(_ layers: [CALayer], _ keyPath: String, additive: Bool = false, scale: Double? = nil, _ value: (Double, CALayer) -> Any) {
@@ -97,6 +106,37 @@ extension EffectRenderer {
             case .rotation, .colorMix: break
             }
         }
+    }
+
+    /// A changed frame color or gradient blends over 0.3 s instead of jumping. Both stop lists are aligned to the union
+    /// of their positions; the layers keep the new stops as their model, so colour flow still sees the right count.
+    func morphColors(from previous: Appearance) {
+        guard visible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, previous != style,
+              Self.surfaceKind(previous) == Self.surfaceKind(style) else { return }
+        let (from, to) = GradientEffect.aligned(Self.surfaceStops(previous), Self.surfaceStops(style))
+        guard from != to else { return }
+        let locations = to.map { NSNumber(value: $0.location) }
+        for gradient in gradients {
+            let w = gradientWhitening[ObjectIdentifier(gradient)] ?? 0
+            func color(_ c: EffectColor) -> CGColor {
+                NSColor(srgbRed: c.red + (1 - c.red) * w, green: c.green + (1 - c.green) * w, blue: c.blue + (1 - c.blue) * w, alpha: 1).cgColor
+            }
+            let colors = CABasicAnimation(keyPath: "colors"); colors.fromValue = from.map { color($0.color) }; colors.toValue = to.map { color($0.color) }
+            let positions = CABasicAnimation(keyPath: "locations"); positions.fromValue = locations; positions.toValue = locations
+            let group = CAAnimationGroup(); group.animations = [colors, positions]; group.duration = 0.3
+            group.timingFunction = TimingCurve.easeInOut.mediaTimingFunction
+            gradient.add(group, forKey: "appearanceMorph")
+        }
+    }
+
+    /// Gradients only morph within one kind; switching between metal, linear and conic redraws.
+    private static func surfaceKind(_ a: Appearance) -> String {
+        a.material.mode != .standard ? "metal" : a.gradient.mode == .conic ? "conic" : "axial"
+    }
+    private static func surfaceStops(_ a: Appearance) -> [GradientStop] {
+        if a.material.mode != .standard { return a.material.stops.map { GradientStop($0.color, at: $0.location) } }
+        let frame = EffectColor(a.red, a.green, a.blue)
+        return a.gradient.mode == .off ? [GradientStop(frame, at: 0), GradientStop(frame, at: 1)] : a.gradient.stops
     }
 
     private func keyframes(_ track: AnimationTrack, _ keyPath: String, _ epoch: CFTimeInterval, additive: Bool = false, _ value: (Double) -> Any) -> CAKeyframeAnimation {
