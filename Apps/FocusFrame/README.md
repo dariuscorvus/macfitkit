@@ -281,6 +281,14 @@ duplizieren, verschieben und entfernen. Der Bewegungsverlauf wählt aus Linear,
 Ease In/Out, Sine bis Circ, Back, Elastic, Bounce, einer Feder oder einer eigenen
 Bézier-Kurve. Ab mehr als acht Einträgen erscheint ein Hinweis auf die Rechenlast.
 
+Animationen mit Auslöser Fokuswechsel lassen sich verketten. **Start** bezieht sich auf
+die nächste darüberliegende Fokusanimation: „Mit vorheriger“ startet gleichzeitig,
+„Nach vorheriger“ beginnt an deren Ende (optional mit Überlappung), „Überblenden“
+blendet die vorherige aus, während die neue einblendet, mit eigener Dauer und eigenem
+Verlauf. Eine Zeitleiste über der Liste zeigt den Ablauf nach einem Fokuswechsel.
+Ein neuer Fokuswechsel startet die Folge neu; laufende Werte setzen dabei am
+sichtbaren Stand an, statt zu springen.
+
 Treffen mehrere Einträge dieselbe Eigenschaft, multiplizieren sich Deckkraft und
 Stärke, Rotationen addieren sich, und bei Farben gilt der untere Eintrag. Dauerhafte
 Animationen behalten ihren Takt beim Fokuswechsel; Fokusanimationen starten neu.

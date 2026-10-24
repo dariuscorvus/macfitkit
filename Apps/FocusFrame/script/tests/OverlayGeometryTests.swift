@@ -150,6 +150,21 @@ struct OverlayGeometryTests {
             renderer.setVisible(false)
             precondition(nodes(renderer.root).allSatisfy { ($0.animationKeys() ?? []).isEmpty }, "Hidden motion still running")
         }
+        // A sequence starts the second entry when the first ends; a crossfade blends both in one finite pass.
+        let first = AnimationEntry(.runner, duration: 1.8)
+        var second = AnimationEntry(.draw, duration: 1); second.start = .afterPrevious; second.overlap = 0.3
+        a.animations = [first, second]
+        renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1); renderer.setVisible(true,focusChanged: true)
+        if !reduced {
+            let lead = animations(first, .accentOpacity).first!.beginTime, next = animations(second, .accentOpacity).first!.beginTime
+            precondition(abs(next - lead - 1.5) < 1e-9, "Sequence step does not start at the previous end minus overlap")
+            second.start = .crossfade; second.transition = 0.5; a.animations = [first, second]
+            renderer.update(bounds: CGRect(x: 0,y: 0,width: size,height: size),target: target,style: a,scale: 1); renderer.setVisible(true,focusChanged: true)
+            let out = animations(first, .accentOpacity).first as! CAKeyframeAnimation, into = animations(second, .accentOpacity).first as! CAKeyframeAnimation
+            precondition(out.repeatCount == 1 && (out.values as! [Double]).last == 0, "Crossfade did not fade the first entry out")
+            precondition(abs(into.beginTime - out.beginTime - 1.3) < 1e-9, "Crossfade window misplaced")
+        }
+        renderer.setVisible(false)
         // Two opacity entries on the shadow: each animates its own nested stage, so the multipliers multiply.
         var pulse = AnimationEntry(.opacityPulse, trigger: .continuous); pulse.target = .shadow
         var breathe = AnimationEntry(.breathe, trigger: .continuous); breathe.target = .shadow
@@ -162,7 +177,7 @@ struct OverlayGeometryTests {
             precondition(!pulsing.isEmpty && pulsing.count == breathing.count, "Opacity entries missing")
             precondition(zip(pulsing, breathing).allSatisfy { $0.sublayers?.first === $1 }, "Opacity stages are not nested")
         }
-        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, continuous clock across focus, five motion kinds, exact repeats, resize phase, hidden cleanup and nested opacity stages.")
+        print("Passed gradient-shadow colors/transparency, inherited color, synchronized rotation, continuous clock across focus, five motion kinds, exact repeats, resize phase, hidden cleanup, sequence and crossfade timing and nested opacity stages.")
     }
     @MainActor private static func verifyPixels() {
         let w = 480, h = 300
