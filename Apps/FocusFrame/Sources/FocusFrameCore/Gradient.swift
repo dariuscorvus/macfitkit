@@ -76,3 +76,25 @@ public struct GradientEffect: Codable, Equatable, Sendable {
         return order
     }
 }
+
+public extension GradientEffect {
+    /// Both stop lists on the union of their positions, so Core Animation can interpolate them stop by stop.
+    /// Each aligned list draws exactly its original gradient: added stops take the color the gradient already has there,
+    /// and hard edges (several stops at one position) keep their order, padded with the right-hand color.
+    static func aligned(_ a: [GradientStop], _ b: [GradientStop]) -> (from: [GradientStop], to: [GradientStop]) {
+        func normalized(_ stops: [GradientStop]) -> [GradientStop] { var g = GradientEffect(); g.stops = stops; return g.normalized.stops }
+        let first = normalized(a), second = normalized(b)
+        func counts(_ stops: [GradientStop]) -> [Double: Int] { stops.reduce(into: [:]) { $0[$1.location, default: 0] += 1 } }
+        let left = counts(first), right = counts(second)
+        let positions = Set(left.keys).union(right.keys).sorted()
+        func resample(_ stops: [GradientStop]) -> [GradientStop] {
+            var g = GradientEffect(); g.stops = stops
+            return positions.flatMap { x -> [GradientStop] in
+                let own = stops.filter { $0.location == x }, needed = max(left[x] ?? 0, right[x] ?? 0)
+                let base = own.isEmpty ? [GradientStop(g.color(at: x), at: x)] : own
+                return base + Array(repeating: base[base.count - 1], count: needed - base.count)
+            }
+        }
+        return (resample(first), resample(second))
+    }
+}

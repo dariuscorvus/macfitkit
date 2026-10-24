@@ -99,19 +99,19 @@ private struct AnimationEntryRow: View {
                       options: AnimationKind.allCases.map { ($0.title, $0) })
             ChoiceRow("Auslöser", selection: bind(\.trigger), options: [("Beim Fokuswechsel", .focus), ("Dauerhaft", .continuous)])
             if entry.trigger == .focus {
-                ChoiceRow("Start", selection: bind(\.start), options: [("Mit vorheriger", .withPrevious), ("Nach vorheriger", .afterPrevious), ("Überblenden", .crossfade)])
+                ChoiceRow("Start", selection: bind(\.start), options: [("Mit vorheriger", .withPrevious), ("Nach vorheriger", .afterPrevious), ("Überblenden", .crossfade), ("Verwandeln", .morph)])
                 if entry.start == .afterPrevious { SliderRow("Überlappung", value: bind(\.overlap), in: 0...10, unit: "s") }
-                if entry.start == .crossfade {
-                    SliderRow("Überblenddauer", value: bind(\.transition), in: 0.1...10, unit: "s")
+                if entry.start == .crossfade || entry.start == .morph {
+                    SliderRow(entry.start == .morph ? "Verwandlungsdauer" : "Überblenddauer", value: bind(\.transition), in: 0.1...10, unit: "s")
                     HStack {
-                        Text("Überblendverlauf"); Spacer()
+                        Text(entry.start == .morph ? "Verwandlungsverlauf" : "Überblendverlauf"); Spacer()
                         Button(entry.transitionCurve.title) { editingTransition = true }
                             .popover(isPresented: $editingTransition) { TimingCurveEditor(curve: entry.transitionCurve) { curve in var e = entry; e.transitionCurve = curve; change(e) }.padding(KitSpacing.medium) }
                     }
                 }
             }
             SliderRow(entry.kind.durationTitle, value: bind(\.duration), in: 0.2...30, unit: "s")
-            if !(entry.trigger == .focus && entry.start == .crossfade) { SliderRow("Verzögerung", value: bind(\.delay), in: 0...10, unit: "s") }
+            if !(entry.trigger == .focus && (entry.start == .crossfade || entry.start == .morph)) { SliderRow("Verzögerung", value: bind(\.delay), in: 0...10, unit: "s") }
             if entry.trigger == .focus { SliderRow("Durchläufe", value: bind(\.repeats), in: 0.05...10) }
             if entry.kind.hasTarget {
                 ChoiceRow("Wirkt auf", selection: bind(\.target), options: [("Alles", .all), ("Rahmen", .frame), ("Leuchten", .light), ("Schatten", .shadow)])
@@ -131,6 +131,9 @@ private struct AnimationEntryRow: View {
             if let requirement = entry.kind.requirement { StatusMessage(requirement) }
             if entry.trigger == .focus && entry.start != .withPrevious {
                 StatusMessage("Bezieht sich auf die nächste darüberliegende Animation mit Auslöser Fokuswechsel. Dauerhafte Animationen behalten ihren eigenen Takt.")
+            }
+            if entry.trigger == .focus && entry.start == .morph {
+                StatusMessage("Verwandeln geht nur zwischen gleichen Effekten mit gleichem Ziel. Sonst wird überblendet.")
             }
         }
     }
@@ -168,7 +171,7 @@ extension AnimationKind {
 extension AnimationEntry {
     var summary: String {
         let trigger = self.trigger == .focus ? "Fokuswechsel" : "dauerhaft"
-        let order = self.trigger == .continuous ? "" : (start == .afterPrevious ? ", danach" : start == .crossfade ? ", überblendet" : "")
+        let order = self.trigger == .continuous ? "" : (start == .afterPrevious ? ", danach" : start == .crossfade ? ", überblendet" : start == .morph ? ", verwandelt" : "")
         return "· \(trigger)\(order), \(duration.formatted(.number.precision(.fractionLength(0...1)))) s" + (delay > 0 ? ", +\(delay.formatted(.number.precision(.fractionLength(0...1)))) s" : "")
     }
 }
@@ -185,8 +188,8 @@ struct CompositionTimeline: View {
                 HStack(spacing: KitSpacing.small) {
                     Text(item.entry.kind.title).font(.caption).lineLimit(1).frame(width: 130, alignment: .leading)
                     GeometryReader { proxy in
-                        let w = proxy.size.width, x0 = item.begin / total * w, x1 = min(item.end, total) / total * w
-                        RoundedRectangle(cornerRadius: 3).fill(fill(item, length: min(item.end, total) - item.begin))
+                        let w = proxy.size.width, last = min(item.cut ?? item.end, total), x0 = item.begin / total * w, x1 = last / total * w
+                        RoundedRectangle(cornerRadius: 3).fill(fill(item, length: last - item.begin))
                             .frame(width: max(x1 - x0, 2), height: 10).offset(x: x0, y: 3)
                     }
                     .frame(height: 16)
@@ -208,6 +211,8 @@ struct CompositionTimeline: View {
         let color = Color.accentColor.opacity(item.entry.trigger == .continuous ? 0.45 : 0.8)
         var stops = [Gradient.Stop(color: color, location: 0), Gradient.Stop(color: color, location: 1)]
         if let fade = item.fadeIn { stops[0] = .init(color: color.opacity(0), location: 0); stops.insert(.init(color: color, location: fade.length / length), at: 1) }
+        // A morph continues the previous bar's values, so it starts half-strength rather than from nothing.
+        if let morph = item.morph { stops[0] = .init(color: color.opacity(0.4), location: 0); stops.insert(.init(color: color, location: morph.length / length), at: 1) }
         if let fade = item.fadeOut {
             // Fade-in and fade-out can together be longer than the bar; stops must stay in order.
             let from = max(1 - fade.length / length, stops[stops.count - 2].location)

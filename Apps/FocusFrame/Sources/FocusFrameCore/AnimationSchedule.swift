@@ -21,6 +21,16 @@ public struct ScheduledEntry: Equatable, Sendable {
     public var fadeIn: Fade?
     public var fadeOut: Fade?
     public var fades: [Fade] { [fadeIn, fadeOut].compactMap { $0 } }
+    /// Morph target side: the entry it morphs from, where that entry began, and the blend window.
+    public var morphSource: (entry: AnimationEntry, begin: Double)?
+    public var morph: Fade?
+    /// Morph source side: the trigger time at which this entry hands over and stops.
+    public var cut: Double?
+
+    public static func == (a: Self, b: Self) -> Bool {
+        a.entry == b.entry && a.begin == b.begin && a.end == b.end && a.fadeIn == b.fadeIn && a.fadeOut == b.fadeOut
+            && a.morphSource?.entry == b.morphSource?.entry && a.morphSource?.begin == b.morphSource?.begin && a.morph == b.morph && a.cut == b.cut
+    }
 }
 
 public enum AnimationSchedule {
@@ -36,12 +46,18 @@ public enum AnimationSchedule {
                 switch entry.start {
                 case .withPrevious: scheduled.begin = prior.begin + entry.delay
                 case .afterPrevious: scheduled.begin = prior.end - min(entry.overlap, priorSpan) + entry.delay
-                case .crossfade:
-                    // The windows must line up for the weights to sum to 1, so a crossfade ignores the delay.
+                case .crossfade, .morph:
+                    // The windows must line up for the weights to sum to 1, so crossfade and morph ignore the delay.
                     let length = min(entry.transition, priorSpan, span)
                     scheduled.begin = prior.end - length
-                    scheduled.fadeIn = Fade(start: scheduled.begin, length: length, curve: entry.transitionCurve, fadesIn: true)
-                    result[p].fadeOut = Fade(start: scheduled.begin, length: length, curve: entry.transitionCurve, fadesIn: false)
+                    if entry.start == .morph && prior.entry.canMorph(into: entry) {
+                        scheduled.morph = Fade(start: scheduled.begin, length: length, curve: entry.transitionCurve, fadesIn: true)
+                        scheduled.morphSource = (prior.entry, prior.begin)
+                        result[p].cut = scheduled.begin
+                    } else {
+                        scheduled.fadeIn = Fade(start: scheduled.begin, length: length, curve: entry.transitionCurve, fadesIn: true)
+                        result[p].fadeOut = Fade(start: scheduled.begin, length: length, curve: entry.transitionCurve, fadesIn: false)
+                    }
                 }
                 scheduled.end = scheduled.begin + span
             }
@@ -123,6 +139,31 @@ public extension AnimationTrack {
         return unrolled(sampling: windows) { t, v in
             let w = fades.reduce(1.0) { $0 * $1.weight(at: t + delay) }
             return neutral + (v - neutral) * w
+        }
+    }
+
+    /// The track up to `seconds` after its start; Core Animation then removes it and the model value shows.
+    func ending(at seconds: Double) -> AnimationTrack {
+        guard span.isFinite, seconds < span else { return self }
+        let full = unrolled(sampling: [0...seconds]) { _, v in v }, cut = seconds / full.duration
+        var times: [Double] = [], values: [Double] = [], timings: [TimingCurve] = []
+        for (i, k) in full.keyTimes.enumerated() where k <= cut + 1e-12 {
+            times.append(k); values.append(full.values[i]); if i > 0 { timings.append(full.timings[i - 1]) }
+        }
+        var result = full
+        result.keyTimes = times.map { $0 / cut }; result.values = values; result.timings = timings; result.duration = seconds
+        return result
+    }
+
+    /// This track (the morph target) starting at the morph window: inside it, the value moves from `source` to this
+    /// track's own value by the window's weight; afterwards it is this track. `sourceOffset` is the source's start
+    /// relative to this track's start on the trigger clock.
+    func morphed(from source: AnimationTrack, sourceOffset: Double, window: Fade) -> AnimationTrack {
+        guard span.isFinite, source.span.isFinite else { return self }
+        let length = window.length
+        return unrolled(sampling: [0...length]) { t, v in
+            let w = window.weight(at: t + delay), from = source.value(at: t - sourceOffset)
+            return from + (v - from) * w
         }
     }
 

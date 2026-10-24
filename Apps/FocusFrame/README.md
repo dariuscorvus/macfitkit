@@ -285,7 +285,11 @@ Animationen mit Auslöser Fokuswechsel lassen sich verketten. **Start** bezieht 
 die nächste darüberliegende Fokusanimation: „Mit vorheriger“ startet gleichzeitig,
 „Nach vorheriger“ beginnt an deren Ende (optional mit Überlappung), „Überblenden“
 blendet die vorherige aus, während die neue einblendet, mit eigener Dauer und eigenem
-Verlauf. Eine Zeitleiste über der Liste zeigt den Ablauf nach einem Fokuswechsel.
+Verlauf. „Verwandeln“ geht stattdessen Wert für Wert von der vorherigen in die neue
+über, ohne dazwischen auszublenden; das geht nur zwischen gleichen Effekten mit gleichem
+Ziel, sonst wird überblendet. Ändert sich Rahmenfarbe oder Farbverlauf, etwa beim
+Wechsel des Profils, gehen Rahmen und Verlaufsschatten in 0,3 s in die neuen Farben über;
+Verläufe mit unterschiedlich vielen Farbpunkten werden dafür aufeinander abgebildet. Eine Zeitleiste über der Liste zeigt den Ablauf nach einem Fokuswechsel.
 Ein neuer Fokuswechsel startet die Folge neu; laufende Werte setzen dabei am
 sichtbaren Stand an, statt zu springen.
 

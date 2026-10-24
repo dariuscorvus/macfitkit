@@ -20,6 +20,9 @@ public enum EntryStart: String, Codable, CaseIterable, Sendable {
     case afterPrevious
     /// Fades in while the previous entry fades out over `transition`.
     case crossfade
+    /// Interpolates from the previous entry's values to its own over `transition`. Needs a compatible previous entry
+    /// (see `AnimationEntry.canMorph(into:)`); otherwise it crossfades.
+    case morph
 }
 
 /// One independently timed animation. Several entries run together; see `AnimationKind` for how they combine.
@@ -65,6 +68,12 @@ public struct AnimationEntry: Codable, Equatable, Identifiable, Sendable {
     static func defaultDuration(_ kind: AnimationKind) -> Double {
         switch kind { case .focusPulse: 0.8; case .runner: 1.8; case .breathe: 4; case .colorFlow: 8; case .gradientRotation: 8
         case .opacityPulse: 2; case .opacityBlink: 1; case .metalReflection: 1.5; case .draw: 1.5 }
+    }
+
+    /// Morphing interpolates property by property on the same layers, so both entries must animate the same properties there:
+    /// the same effect, and for targeted effects the same target.
+    public func canMorph(into other: AnimationEntry) -> Bool {
+        kind == other.kind && (!kind.hasTarget || target == other.target) && trigger == .focus && other.trigger == .focus
     }
 
     /// Seconds from the trigger until a focus entry has finished.
