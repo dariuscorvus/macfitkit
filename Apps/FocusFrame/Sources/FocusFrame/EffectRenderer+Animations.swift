@@ -43,31 +43,41 @@ extension EffectRenderer {
 
     func animate(focusChanged: Bool) {
         let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        let entries = style.animations.active, now = CACurrentMediaTime()
+        let schedule = AnimationSchedule.make(style.animations), now = CACurrentMediaTime()
         if continuousEpoch == 0 { continuousEpoch = now }
         if focusChanged || focusEpoch == 0 { focusEpoch = now }
-        if focusChanged { focusUntil = now + entries.focusSpan }
+        if focusChanged { focusUntil = now + AnimationSchedule.focusEnd(style.animations) }
         let focusActive = focusChanged || now < focusUntil
-        for entry in entries where EffectAnimationPolicy.shouldAnimate(visible: visible, reducedMotion: reduced, trigger: entry.trigger, focusChanged: focusActive) {
-            play(entry, epoch: entry.trigger == .continuous ? continuousEpoch : focusEpoch)
+        for item in schedule where EffectAnimationPolicy.shouldAnimate(visible: visible, reducedMotion: reduced, trigger: item.entry.trigger, focusChanged: focusActive) {
+            let continuous = item.entry.trigger == .continuous
+            play(item, epoch: continuous ? continuousEpoch : focusEpoch, handOff: focusChanged && !continuous)
         }
     }
 
-    private func play(_ entry: AnimationEntry, epoch: CFTimeInterval) {
+    /// `handOff`: a new focus change interrupts what is playing, so number properties start from what is visible.
+    private func play(_ item: ScheduledEntry, epoch: CFTimeInterval, handOff: Bool) {
+        let entry = item.entry
         let metal = style.material.mode != .standard, gradientShown = !metal && style.gradient.mode != .off
         let starting = stages[entry.id]?.first.map { Double($0.presentation()?.opacity ?? $0.opacity) } ?? 1
-        for track in entry.tracks(startingMultiplier: starting) {
+        for var track in entry.tracks(startingMultiplier: starting) {
+            if entry.trigger == .focus { track.delay = item.begin; track = track.weighted(by: item.fades) }
             let key = "\(entry.id.uuidString)-\(track.property.rawValue)"
-            func add(_ layers: [CALayer], _ keyPath: String, additive: Bool = false, _ value: (Double, CALayer) -> Any) {
-                for layer in layers { layer.add(keyframes(track, keyPath, epoch, additive: additive) { value($0, layer) }, forKey: key) }
+            /// `scale` converts track units to the layer value; number properties with a running animation hand off from it.
+            func add(_ layers: [CALayer], _ keyPath: String, additive: Bool = false, scale: Double? = nil, _ value: (Double, CALayer) -> Any) {
+                var played = track
+                if handOff, let scale, scale != 0, let layer = layers.first, layer.animation(forKey: key) != nil,
+                   let shown = (layer.presentation()?.value(forKeyPath: keyPath) as? NSNumber)?.doubleValue {
+                    played = track.handingOff(from: shown / scale)
+                }
+                for layer in layers { layer.add(keyframes(played, keyPath, epoch, additive: additive) { value($0, layer) }, forKey: key) }
             }
             let accent = accents[entry.id].map { [$0 as CALayer] } ?? []
             switch track.property {
-            case .accentOpacity: add(accent, "opacity") { v, _ in v }
+            case .accentOpacity: add(accent, "opacity", scale: 1) { v, _ in v }
             case .dashTravel: add(accent, "lineDashPhase") { v, _ in v * perimeter }
-            case .strokeEnd: add(accent + drawMasks, "strokeEnd") { v, _ in v }
-            case .opacityMultiplier: add(stages[entry.id] ?? [], "opacity") { v, _ in v }
-            case .shadowBlurScale: add(shadowLayers.filter { $0.shadowPath != nil }, "shadowRadius") { v, _ in v * style.shadow.blur }
+            case .strokeEnd: add(accent + drawMasks, "strokeEnd", scale: 1) { v, _ in v }
+            case .opacityMultiplier: add(stages[entry.id] ?? [], "opacity", scale: 1) { v, _ in v }
+            case .shadowBlurScale: add(shadowLayers.filter { $0.shadowPath != nil }, "shadowRadius", scale: style.shadow.blur) { v, _ in v * style.shadow.blur }
             case .tightShadow:
                 for (layer, base) in tightShadows { layer.add(keyframes(track, "opacity", epoch) { $0 * base }, forKey: key) }
             case .rotation where gradientShown: add(gradients, "transform.rotation.z", additive: true) { v, _ in v }
@@ -83,7 +93,7 @@ extension EffectRenderer {
                     let center = reflection.layer.position, travel = reflection.travel
                     reflection.layer.add(keyframes(track, "position", epoch) { v in NSValue(point: CGPoint(x: center.x + travel.width * v, y: center.y + travel.height * v)) }, forKey: key)
                 }
-            case .reflectionOpacity: add(reflections.map(\.layer), "opacity") { v, _ in v }
+            case .reflectionOpacity: add(reflections.map(\.layer), "opacity", scale: 1) { v, _ in v }
             case .rotation, .colorMix: break
             }
         }

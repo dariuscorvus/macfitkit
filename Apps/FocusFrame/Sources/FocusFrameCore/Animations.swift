@@ -12,6 +12,16 @@ public enum AnimationKind: String, Codable, CaseIterable, Sendable {
     public var hasStrength: Bool { self != .gradientRotation && self != .opacityPulse && self != .opacityBlink && self != .metalReflection }
 }
 
+/// How a focus entry starts relative to the focus entry above it. Continuous entries always keep their own clock.
+public enum EntryStart: String, Codable, CaseIterable, Sendable {
+    /// Together with the previous entry (the default).
+    case withPrevious
+    /// When the previous entry ends, minus `overlap`.
+    case afterPrevious
+    /// Fades in while the previous entry fades out over `transition`.
+    case crossfade
+}
+
 /// One independently timed animation. Several entries run together; see `AnimationKind` for how they combine.
 public struct AnimationEntry: Codable, Equatable, Identifiable, Sendable {
     public static let softLimit = 8
@@ -34,6 +44,12 @@ public struct AnimationEntry: Codable, Equatable, Identifiable, Sendable {
     public var clockwise = true
     /// Focus pulse: settle in two smaller swings instead of one fade (the former "Federnd").
     public var bounce = false
+    public var start = EntryStart.withPrevious
+    /// After previous: seconds this entry starts before the previous one ends.
+    public var overlap = 0.0
+    /// Crossfade: length and curve of the blend.
+    public var transition = 0.5
+    public var transitionCurve = TimingCurve.easeInOut
 
     public init(_ kind: AnimationKind, trigger: AnimationTrigger = .focus, duration: Double? = nil) {
         self.kind = kind; self.trigger = trigger
@@ -59,11 +75,14 @@ public struct AnimationEntry: Codable, Equatable, Identifiable, Sendable {
         s.duration = bounded(duration, 0.2...30, Self.defaultDuration(kind)); s.delay = bounded(delay, 0...10, 0)
         s.repeats = bounded(repeats, 0.05...10, 1); s.strength = bounded(strength, 0...1, 0.65)
         s.maximum = bounded(maximum, 0...1, 1); s.minimum = min(s.maximum, bounded(minimum, 0...1, 0.4))
-        s.curve = curve.normalized
+        s.curve = curve.normalized; s.transitionCurve = transitionCurve.normalized
+        s.overlap = bounded(overlap, 0...30, 0); s.transition = bounded(transition, 0.1...10, 0.5)
         return s
     }
 
-    private enum CodingKeys: String, CodingKey { case id, enabled, kind, trigger, duration, delay, repeats, target, strength, curve, minimum, maximum, clockwise, bounce }
+    private enum CodingKeys: String, CodingKey {
+        case id, enabled, kind, trigger, duration, delay, repeats, target, strength, curve, minimum, maximum, clockwise, bounce, start, overlap, transition, transitionCurve
+    }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         self.init(try c.decode(AnimationKind.self, forKey: .kind), trigger: try c.decodeIfPresent(AnimationTrigger.self, forKey: .trigger) ?? .focus)
@@ -79,6 +98,10 @@ public struct AnimationEntry: Codable, Equatable, Identifiable, Sendable {
         maximum = try c.decodeIfPresent(Double.self, forKey: .maximum) ?? maximum
         clockwise = try c.decodeIfPresent(Bool.self, forKey: .clockwise) ?? clockwise
         bounce = try c.decodeIfPresent(Bool.self, forKey: .bounce) ?? bounce
+        start = try c.decodeIfPresent(EntryStart.self, forKey: .start) ?? start
+        overlap = try c.decodeIfPresent(Double.self, forKey: .overlap) ?? overlap
+        transition = try c.decodeIfPresent(Double.self, forKey: .transition) ?? transition
+        transitionCurve = try c.decodeIfPresent(TimingCurve.self, forKey: .transitionCurve) ?? transitionCurve
     }
 }
 

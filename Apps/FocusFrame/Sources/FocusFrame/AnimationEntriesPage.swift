@@ -27,6 +27,7 @@ struct AnimationEntryList: View {
                 Spacer()
             }
             if entries.isEmpty { StatusMessage("Keine Animationen. Füge eine hinzu oder wähle oben ein Preset.") }
+            else { CompositionTimeline(entries: entries) }
             if entries.count > AnimationEntry.softLimit {
                 StatusMessage("Mehr als \(AnimationEntry.softLimit) Animationen kosten spürbar Rechenzeit, besonders bei großen Fenstern.", error: true)
             }
@@ -59,6 +60,7 @@ private struct AnimationEntryRow: View {
     let entry: AnimationEntry, expanded: Bool, isFirst: Bool, isLast: Bool
     let toggle: () -> Void, change: (AnimationEntry) -> Void, action: (AnimationEntryList.Action) -> Void, preview: () -> Void
     @State private var editingCurve = false
+    @State private var editingTransition = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: KitSpacing.small) {
@@ -96,8 +98,20 @@ private struct AnimationEntryRow: View {
             ChoiceRow("Effekt", selection: Binding(get: { entry.kind }, set: { kind in var e = AnimationEntry(kind, trigger: entry.trigger); e.id = entry.id; e.enabled = entry.enabled; change(e) }),
                       options: AnimationKind.allCases.map { ($0.title, $0) })
             ChoiceRow("Auslöser", selection: bind(\.trigger), options: [("Beim Fokuswechsel", .focus), ("Dauerhaft", .continuous)])
+            if entry.trigger == .focus {
+                ChoiceRow("Start", selection: bind(\.start), options: [("Mit vorheriger", .withPrevious), ("Nach vorheriger", .afterPrevious), ("Überblenden", .crossfade)])
+                if entry.start == .afterPrevious { SliderRow("Überlappung", value: bind(\.overlap), in: 0...10, unit: "s") }
+                if entry.start == .crossfade {
+                    SliderRow("Überblenddauer", value: bind(\.transition), in: 0.1...10, unit: "s")
+                    HStack {
+                        Text("Überblendverlauf"); Spacer()
+                        Button(entry.transitionCurve.title) { editingTransition = true }
+                            .popover(isPresented: $editingTransition) { TimingCurveEditor(curve: entry.transitionCurve) { curve in var e = entry; e.transitionCurve = curve; change(e) }.padding(KitSpacing.medium) }
+                    }
+                }
+            }
             SliderRow(entry.kind.durationTitle, value: bind(\.duration), in: 0.2...30, unit: "s")
-            SliderRow("Verzögerung", value: bind(\.delay), in: 0...10, unit: "s")
+            if !(entry.trigger == .focus && entry.start == .crossfade) { SliderRow("Verzögerung", value: bind(\.delay), in: 0...10, unit: "s") }
             if entry.trigger == .focus { SliderRow("Durchläufe", value: bind(\.repeats), in: 0.05...10) }
             if entry.kind.hasTarget {
                 ChoiceRow("Wirkt auf", selection: bind(\.target), options: [("Alles", .all), ("Rahmen", .frame), ("Leuchten", .light), ("Schatten", .shadow)])
@@ -115,6 +129,9 @@ private struct AnimationEntryRow: View {
                     .popover(isPresented: $editingCurve) { TimingCurveEditor(curve: entry.curve) { curve in var e = entry; e.curve = curve; change(e) }.padding(KitSpacing.medium) }
             }
             if let requirement = entry.kind.requirement { StatusMessage(requirement) }
+            if entry.trigger == .focus && entry.start != .withPrevious {
+                StatusMessage("Bezieht sich auf die nächste darüberliegende Animation mit Auslöser Fokuswechsel. Dauerhafte Animationen behalten ihren eigenen Takt.")
+            }
         }
     }
 
@@ -151,6 +168,58 @@ extension AnimationKind {
 extension AnimationEntry {
     var summary: String {
         let trigger = self.trigger == .focus ? "Fokuswechsel" : "dauerhaft"
-        return "· \(trigger), \(duration.formatted(.number.precision(.fractionLength(0...1)))) s" + (delay > 0 ? ", +\(delay.formatted(.number.precision(.fractionLength(0...1)))) s" : "")
+        let order = self.trigger == .continuous ? "" : (start == .afterPrevious ? ", danach" : start == .crossfade ? ", überblendet" : "")
+        return "· \(trigger)\(order), \(duration.formatted(.number.precision(.fractionLength(0...1)))) s" + (delay > 0 ? ", +\(delay.formatted(.number.precision(.fractionLength(0...1)))) s" : "")
+    }
+}
+
+/// The composition after a focus change: one bar per entry on a shared time axis. Crossfades fade the bar ends;
+/// continuous entries run open-ended to the right.
+struct CompositionTimeline: View {
+    let entries: [AnimationEntry]
+
+    var body: some View {
+        let schedule = AnimationSchedule.make(entries), end = max(AnimationSchedule.focusEnd(entries), 1), total = end * 1.1
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(schedule, id: \.entry.id) { item in
+                HStack(spacing: KitSpacing.small) {
+                    Text(item.entry.kind.title).font(.caption).lineLimit(1).frame(width: 130, alignment: .leading)
+                    GeometryReader { proxy in
+                        let w = proxy.size.width, x0 = item.begin / total * w, x1 = min(item.end, total) / total * w
+                        RoundedRectangle(cornerRadius: 3).fill(fill(item, length: min(item.end, total) - item.begin))
+                            .frame(width: max(x1 - x0, 2), height: 10).offset(x: x0, y: 3)
+                    }
+                    .frame(height: 16)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(label(item))
+            }
+            HStack {
+                Spacer().frame(width: 130 + KitSpacing.small)
+                Text("0 s"); Spacer(); Text("\(end.formatted(.number.precision(.fractionLength(0...1)))) s")
+            }
+            .font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(KitSpacing.small)
+        .background(RoundedRectangle(cornerRadius: 8).stroke(.separator))
+    }
+
+    private func fill(_ item: ScheduledEntry, length: Double) -> LinearGradient {
+        let color = Color.accentColor.opacity(item.entry.trigger == .continuous ? 0.45 : 0.8)
+        var stops = [Gradient.Stop(color: color, location: 0), Gradient.Stop(color: color, location: 1)]
+        if let fade = item.fadeIn { stops[0] = .init(color: color.opacity(0), location: 0); stops.insert(.init(color: color, location: fade.length / length), at: 1) }
+        if let fade = item.fadeOut {
+            // Fade-in and fade-out can together be longer than the bar; stops must stay in order.
+            let from = max(1 - fade.length / length, stops[stops.count - 2].location)
+            stops[stops.count - 1] = .init(color: color.opacity(0), location: 1); stops.insert(.init(color: color, location: from), at: stops.count - 1)
+        }
+        if item.end.isInfinite { stops[stops.count - 1] = .init(color: color.opacity(0.1), location: 1) }
+        return LinearGradient(stops: stops, startPoint: .leading, endPoint: .trailing)
+    }
+
+    private func label(_ item: ScheduledEntry) -> String {
+        let begin = item.begin.formatted(.number.precision(.fractionLength(0...1)))
+        guard item.end.isFinite else { return "\(item.entry.kind.title): dauerhaft ab \(begin) s" }
+        return "\(item.entry.kind.title): \(begin) bis \(item.end.formatted(.number.precision(.fractionLength(0...1)))) s"
     }
 }

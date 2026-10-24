@@ -102,6 +102,6 @@ public extension AnimationEntry {
 public extension Array where Element == AnimationEntry {
     /// Entries that run, with their normalized values. Disabled entries and an empty list both mean "no animation".
     var active: [AnimationEntry] { filter(\.enabled).map(\.normalized) }
-    /// Seconds after a focus change until every focus-triggered entry has finished.
-    var focusSpan: Double { active.filter { $0.trigger == .focus }.map(\.focusSpan).max() ?? 0 }
+    /// Seconds after a focus change until every focus-triggered entry has finished, sequences included.
+    var focusSpan: Double { AnimationSchedule.focusEnd(self) }
 }
